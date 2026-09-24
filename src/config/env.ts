@@ -5,6 +5,8 @@
  * read with a static `process.env.EXPO_PUBLIC_X` expression (no dynamic keys).
  */
 
+import { Platform } from 'react-native';
+
 const DEFAULT_API_BASE_URL = 'https://shareride2go.com';
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -17,8 +19,18 @@ function toPositiveInt(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
+const configuredApiBaseUrl = stripTrailingSlash(
+  process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL,
+);
+
 export const env = {
-  apiBaseUrl: stripTrailingSlash(process.env.EXPO_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL),
+  /**
+   * In the web dev preview, requests go same-origin and the Metro dev server
+   * proxies `/api/*` to the real API (see metro.config.js), because the API's
+   * CORS policy only allows https://shareride2go.com. Native apps aren't
+   * subject to CORS and always call the API directly.
+   */
+  apiBaseUrl: __DEV__ && Platform.OS === 'web' ? '' : configuredApiBaseUrl,
   apiTimeoutMs: toPositiveInt(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
   /**
    * Dev-only convenience to prefill the login form. Wrapped in `__DEV__` so the

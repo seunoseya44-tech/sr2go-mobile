@@ -36,9 +36,10 @@ you were given.
 | `npm run lint`        | ESLint (Expo config + Prettier compatibility) |
 | `npm run verify`      | All of the above, as CI runs it               |
 
-> **Web preview note:** `npm run web` renders the UI, but the API only allows CORS from
-> `https://shareride2go.com`, so API calls from `localhost` fail in the browser. That's expected:
-> iOS and Android apps aren't subject to CORS. Use a device, emulator or Expo Go to sign in.
+> **Web preview:** `npm run web` works too. The API only allows browser (CORS) requests from
+> `https://shareride2go.com`, so in development the Expo dev server proxies `/api/*` to the real API
+> (see [`metro.config.js`](metro.config.js)) and the web app calls it same-origin. Native apps aren't
+> subject to CORS and always call the API directly. The proxy is dev-only.
 
 ### Installable build (no Expo Go needed)
 
