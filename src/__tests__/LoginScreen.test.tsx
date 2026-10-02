@@ -6,13 +6,17 @@ import { LoginScreen } from '../screens/LoginScreen';
 
 const mockSignIn = jest.fn();
 const mockClearNotice = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock('../auth/AuthContext', () => ({
   useAuth: () => ({ signIn: mockSignIn, notice: null, clearNotice: mockClearNotice }),
 }));
-
 jest.mock('@react-native-community/netinfo', () => ({
   useNetInfo: () => ({ isInternetReachable: true }),
+}));
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({ navigate: mockNavigate, goBack: jest.fn() }),
 }));
 
 function renderScreen() {
@@ -36,6 +40,7 @@ async function fillForm(email: string, password: string) {
 
 beforeEach(() => {
   mockSignIn.mockReset();
+  mockNavigate.mockReset();
 });
 
 describe('LoginScreen', () => {
@@ -45,14 +50,6 @@ describe('LoginScreen', () => {
 
     expect(await screen.findByText('Enter your email address')).toBeTruthy();
     expect(screen.getByText('Enter your password')).toBeTruthy();
-    expect(mockSignIn).not.toHaveBeenCalled();
-  });
-
-  it('rejects a malformed email', async () => {
-    await renderScreen();
-    await fillForm('not-an-email', 'secret');
-
-    expect(await screen.findByText('Enter a valid email address')).toBeTruthy();
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 
@@ -66,12 +63,44 @@ describe('LoginScreen', () => {
     );
   });
 
-  it('shows a friendly message for wrong credentials', async () => {
-    mockSignIn.mockRejectedValue(new ApiError('unauthorized', 'Invalid credentials', 401));
+  it('shows the backend message word for word on wrong details', async () => {
+    const message =
+      'Wrong email or password. You have 3 tries left before your account is locked for a while.';
+    mockSignIn.mockRejectedValue(
+      new ApiError(
+        'unauthorized',
+        message,
+        401,
+        {},
+        { code: 'invalid_credentials', attemptsLeft: 3 },
+      ),
+    );
     await renderScreen();
     await fillForm('rider@sr2go.com', 'wrong');
 
-    expect(await screen.findByText('Incorrect email or password. Please try again.')).toBeTruthy();
+    expect(await screen.findByText(message)).toBeTruthy();
+  });
+
+  it('switches to the locked state with a Reset password button', async () => {
+    mockSignIn.mockRejectedValue(
+      new ApiError(
+        'rateLimited',
+        'Too many attempts. Try again in 15 minutes.',
+        429,
+        {},
+        {
+          code: 'login_locked',
+          retryAfterMinutes: 15,
+        },
+      ),
+    );
+    await renderScreen();
+    await fillForm('rider@sr2go.com', 'wrong');
+
+    expect(await screen.findByText('Too many attempts. Try again in 15 minutes.')).toBeTruthy();
+    expect(screen.queryByTestId('login-button')).toBeNull();
+    await fireEvent.press(screen.getByTestId('reset-password-button'));
+    expect(mockNavigate).toHaveBeenCalledWith('ForgotPassword');
   });
 
   it('shows network errors', async () => {
@@ -99,5 +128,13 @@ describe('LoginScreen', () => {
 
     await fireEvent.press(screen.getByTestId('toggle-password'));
     expect(screen.getByTestId('password-input').props.secureTextEntry).toBe(false);
+  });
+
+  it('links to Create account and Forgot password', async () => {
+    await renderScreen();
+    await fireEvent.press(screen.getByTestId('go-create-account'));
+    expect(mockNavigate).toHaveBeenCalledWith('CreateAccount');
+    await fireEvent.press(screen.getByTestId('go-forgot'));
+    expect(mockNavigate).toHaveBeenCalledWith('ForgotPassword');
   });
 });

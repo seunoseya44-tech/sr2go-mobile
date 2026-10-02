@@ -8,7 +8,9 @@
 import { Platform } from 'react-native';
 
 const DEFAULT_API_BASE_URL = 'https://shareride2go.com';
-const DEFAULT_TIMEOUT_MS = 15_000;
+// The brief requires at least 30 s: the first request after the server has
+// been idle can take several seconds.
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '');
@@ -31,7 +33,12 @@ export const env = {
    * subject to CORS and always call the API directly.
    */
   apiBaseUrl: __DEV__ && Platform.OS === 'web' ? '' : configuredApiBaseUrl,
-  apiTimeoutMs: toPositiveInt(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
+  apiTimeoutMs: Math.max(
+    30_000,
+    toPositiveInt(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
+  ),
+  /** Website pages opened from the app (privacy, terms, help). */
+  websiteUrl: DEFAULT_API_BASE_URL,
   /**
    * Dev-only convenience to prefill the login form. Wrapped in `__DEV__` so the
    * minifier strips the values from release bundles entirely.

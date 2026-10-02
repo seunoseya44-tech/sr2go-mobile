@@ -7,13 +7,31 @@ import { parseTokens } from './parsers';
 import type { AuthTokens } from './types';
 
 export const ENDPOINTS = {
+  // Auth
+  register: '/api/auth/register',
   login: '/api/auth/login',
   refresh: '/api/auth/refresh',
   me: '/api/auth/me',
+  verifyPhone: '/api/auth/verify-phone',
+  resendOtp: '/api/auth/resend-otp',
+  fcmToken: '/api/auth/fcm-token',
+  passwordResetRequest: '/api/users/password-reset/request',
+  passwordResetConfirm: '/api/users/password-reset/confirm',
+  // Referral
+  referralValidate: '/api/referral/validate-code',
+  referralProcessSignup: '/api/referral/process-signup',
+  // Rides
+  ridesSearch: '/api/rides/search',
+  ride: (rideId: string) => `/api/rides/${rideId}`,
+  driverPublic: (driverId: string) => `/api/drivers/${driverId}/public`,
+  pricingTicker: '/api/v1/pricing/ticker',
+  // KYC
+  kycStatus: '/api/kyc/status',
+  health: '/api/health',
 } as const;
 
 /** Endpoints where a 401 means "bad credentials", not "session expired". */
-const NO_REFRESH = new Set<string>([ENDPOINTS.login, ENDPOINTS.refresh]);
+const NO_REFRESH = new Set<string>([ENDPOINTS.login, ENDPOINTS.refresh, ENDPOINTS.register]);
 
 const baseConfig = {
   baseURL: env.apiBaseUrl,

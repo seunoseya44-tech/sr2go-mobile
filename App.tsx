@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavigationContainer, DefaultTheme, type Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useFonts,
   Inter_400Regular,
@@ -9,6 +10,11 @@ import {
   Inter_600SemiBold,
   Inter_700Bold,
 } from '@expo-google-fonts/inter';
+import {
+  Montserrat_300Light,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold,
+} from '@expo-google-fonts/montserrat';
 
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
@@ -18,6 +24,12 @@ import { colors } from './src/theme';
 // Keep the native splash visible until fonts and the stored session are ready,
 // so users never see a flash of the login screen before being signed in.
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: { retry: 1, staleTime: 60_000, refetchOnWindowFocus: false },
+  },
+});
 
 const navigationTheme: Theme = {
   ...DefaultTheme,
@@ -54,15 +66,20 @@ export default function App() {
     Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
+    Montserrat_300Light,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold,
   });
 
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <AuthProvider>
-          {/* If fonts fail to load, carry on with system fonts rather than hang. */}
-          <AppContent fontsReady={fontsLoaded || !!fontError} />
-        </AuthProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            {/* If fonts fail to load, carry on with system fonts rather than hang. */}
+            <AppContent fontsReady={fontsLoaded || !!fontError} />
+          </AuthProvider>
+        </QueryClientProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );

@@ -11,7 +11,7 @@ import {
 import { authApi } from '../api/auth';
 import { refreshTokens } from '../api/client';
 import { parseUser } from '../api/parsers';
-import type { AuthTokens, LoginCredentials, User } from '../api/types';
+import type { AuthTokens, LoginCredentials, RegisterPayload, User } from '../api/types';
 import { secureStorage } from '../storage/secureStorage';
 import { decodeJwt, isExpired } from './jwt';
 import { session } from './session';
@@ -50,7 +50,13 @@ function reducer(state: State, action: Action): State {
 }
 
 export interface AuthContextValue extends State {
+  /** True once the user has confirmed their phone with the OTP. */
+  phoneVerified: boolean;
   signIn(credentials: LoginCredentials): Promise<void>;
+  /** Registers, stores the tokens and leaves the user on the OTP step. */
+  register(payload: RegisterPayload): Promise<void>;
+  /** After a successful OTP: marks the phone verified and refreshes the profile. */
+  markPhoneVerified(): Promise<void>;
   signOut(): Promise<void>;
   refreshProfile(): Promise<void>;
   clearNotice(): void;
@@ -104,7 +110,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
         try {
           tokens = await refreshTokens();
         } catch {
-          if (!cancelled) await endSession('Your session has expired. Please sign in again.');
+          if (!cancelled) await endSession('Your session has expired. Please log in again.');
           return;
         }
       }
@@ -138,23 +144,56 @@ export function AuthProvider({ children }: PropsWithChildren) {
     () =>
       session.onExpired(() => {
         void secureStorage.remove(USER_CACHE_KEY);
-        dispatch({ type: 'SIGNED_OUT', notice: 'Your session has expired. Please sign in again.' });
+        dispatch({ type: 'SIGNED_OUT', notice: 'Your session has expired. Please log in again.' });
       }),
     [],
   );
 
-  const signIn = useCallback(async (credentials: LoginCredentials) => {
-    const { tokens, user: loginUser } = await authApi.login(credentials);
+  const settle = useCallback(async (tokens: AuthTokens, fromLogin: User | null) => {
     await session.save(tokens);
-
     // Prefer the full profile from /me; fall back to what login returned,
     // then to the token's own claims. A failing /me must not block sign-in.
     const profile = await authApi.me({ silent: true }).catch(() => null);
-    const user = profile ?? loginUser ?? userFromToken(tokens.accessToken);
+    // Keep login's phone_verified when /me doesn't carry it.
+    const user =
+      profile && fromLogin && profile.phoneVerified == null
+        ? { ...profile, phoneVerified: fromLogin.phoneVerified }
+        : (profile ?? fromLogin ?? userFromToken(tokens.accessToken));
     await cacheUser(user);
-
     dispatch({ type: 'SIGNED_IN', tokens: session.getTokens() ?? tokens, user });
   }, []);
+
+  const signIn = useCallback(
+    async (credentials: LoginCredentials) => {
+      const { tokens, user } = await authApi.login(credentials);
+      await settle(tokens, user);
+    },
+    [settle],
+  );
+
+  const register = useCallback(
+    async (payload: RegisterPayload) => {
+      const { tokens, user } = await authApi.register(payload);
+      // Registration always lands on the OTP step.
+      const unverified = user ? { ...user, phoneVerified: false } : user;
+      await settle(tokens, unverified);
+      if (payload.referralCode) {
+        const id = session.getTokens() ? (user?.id ?? userFromToken(tokens.accessToken)?.id) : null;
+        if (id) {
+          // Linking the referral must never block sign-up.
+          await authApi.processReferralSignup(id, payload.referralCode).catch(() => undefined);
+        }
+      }
+    },
+    [settle],
+  );
+
+  const markPhoneVerified = useCallback(async () => {
+    const profile = await authApi.me({ silent: true }).catch(() => null);
+    const user = { ...(profile ?? state.user ?? ({} as User)), phoneVerified: true } as User;
+    await cacheUser(user);
+    dispatch({ type: 'USER_UPDATED', user, tokens: session.getTokens() });
+  }, [state.user]);
 
   const signOut = useCallback(() => endSession(), [endSession]);
 
@@ -167,8 +206,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const clearNotice = useCallback(() => dispatch({ type: 'NOTICE_CLEARED' }), []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ ...state, signIn, signOut, refreshProfile, clearNotice }),
-    [state, signIn, signOut, refreshProfile, clearNotice],
+    () => ({
+      ...state,
+      // Unknown (null) counts as verified so an older backend response never
+      // traps users on the OTP screen; the API still enforces ERR_014.
+      phoneVerified: state.user?.phoneVerified !== false,
+      signIn,
+      register,
+      markPhoneVerified,
+      signOut,
+      refreshProfile,
+      clearNotice,
+    }),
+    [state, signIn, register, markPhoneVerified, signOut, refreshProfile, clearNotice],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

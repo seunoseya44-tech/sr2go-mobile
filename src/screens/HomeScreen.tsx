@@ -1,296 +1,344 @@
-import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Platform, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { StatusBar } from 'expo-status-bar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { toApiError } from '../api/errors';
+import { ridesApi } from '../api/rides';
 import { useAuth } from '../auth/AuthContext';
-import { getExpiry } from '../auth/jwt';
-import { Banner } from '../components/Banner';
-import { BrandMark } from '../components/BrandMark';
 import { Button } from '../components/Button';
-import { OfflineNotice } from '../components/OfflineNotice';
-import { colors, radius, shadow, spacing, typography } from '../theme';
-import { capitalize, displayName, greeting, initials, relativeExpiry } from '../utils/format';
+import { Screen } from '../components/Screen';
+import {
+  Avatar,
+  Badge,
+  Card,
+  Chip,
+  LinkText,
+  PriceBlock,
+  RoadLine,
+  Stepper,
+} from '../components/ui';
+import { env } from '../config/env';
+import type { AppStackParamList } from '../navigation/types';
+import { searchForm, useSearchForm } from '../state/searchForm';
+import { colors, radius, spacing, TAP, typography } from '../theme';
+import { addDays, chipDate, displayName, greeting, initials } from '../utils/format';
 
-type IconName = keyof typeof Ionicons.glyphMap;
+type Nav = NativeStackNavigationProp<AppStackParamList>;
 
+const TRUST = [
+  {
+    icon: 'shield-checkmark-outline',
+    title: 'Verified drivers',
+    body: 'NIN or BVN plus live selfie check, via Dojah',
+  },
+  {
+    icon: 'time-outline',
+    title: 'Delayed Payout Protection',
+    body: 'Payment held 24–48 hours after your trip',
+  },
+  {
+    icon: 'qr-code-outline',
+    title: 'QR boarding',
+    body: 'Your driver scans your code before you get in',
+  },
+  {
+    icon: 'navigate-outline',
+    title: 'GPS trip tracking',
+    body: "Share your trip's location with family or friends",
+  },
+] as const;
+
+/** Screen 04: Home. Greeting, search card, invite card, popular routes, trust tiles. */
 export function HomeScreen() {
-  const { user, tokens, signOut, refreshProfile } = useAuth();
-  const insets = useSafeAreaInsets();
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const navigation = useNavigation<Nav>();
+  const form = useSearchForm();
+  const ticker = useQuery({
+    queryKey: ['ticker'],
+    queryFn: ridesApi.ticker,
+    staleTime: 10 * 60_000,
+  });
 
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    setRefreshError(null);
-    try {
-      await refreshProfile();
-    } catch (error) {
-      setRefreshError(toApiError(error).message);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [refreshProfile]);
+  const canSearch = !!form.origin && !!form.destination;
+  const verified = user?.kycComplete === true;
 
-  const confirmSignOut = () => {
-    const title = 'Sign out?';
-    const message = "You'll need to sign in again to book or manage rides.";
-    // Alert.alert is a no-op on react-native-web.
-    if (Platform.OS === 'web') {
-      if (window.confirm(`${title}\n\n${message}`)) void signOut();
-      return;
-    }
-    Alert.alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => void signOut() },
-    ]);
+  const search = () => {
+    if (!form.origin || !form.destination) return;
+    navigation.navigate('SearchResults', {
+      params: {
+        origin: form.origin,
+        destination: form.destination,
+        date: form.date,
+        seats: form.seats,
+      },
+    });
   };
 
-  const expiry = tokens ? getExpiry(tokens.accessToken) : null;
-
   return (
-    <View style={styles.root}>
-      <StatusBar style="light" />
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxl }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.textOnBrand}
-            colors={[colors.brand]}
-          />
-        }
-      >
-        <LinearGradient
-          colors={[colors.midnight, colors.navy]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.hero, { paddingTop: insets.top + spacing.lg }]}
+    <Screen testID="home-screen" topBar={null} contentStyle={styles.content}>
+      <View style={styles.topRow}>
+        <Text style={styles.brand}>
+          SR<Text style={styles.brandAccent}>2</Text>Go
+        </Text>
+        <Pressable
+          onPress={() => navigation.navigate('Main', { screen: 'Profile' })}
+          accessibilityRole="button"
+          accessibilityLabel="Profile"
+          style={styles.avatarPress}
         >
-          <View style={styles.topBar}>
-            <BrandMark size="md" />
-            <View style={styles.avatar} accessibilityLabel="Your profile">
-              <Text style={styles.avatarText}>{initials(user)}</Text>
-            </View>
+          <Avatar name={initials(user)} size={36} />
+        </Pressable>
+      </View>
+
+      <View style={styles.greetingRow}>
+        <Text style={styles.greeting} testID="home-greeting">
+          {greeting()}, {displayName(user)}
+        </Text>
+        {verified ? <Badge label="Verified" icon="checkmark" /> : null}
+      </View>
+
+      {!verified ? (
+        <Pressable style={styles.verifyBanner} accessibilityRole="button" testID="verify-banner">
+          <Ionicons name="shield-outline" size={18} color={colors.navy} />
+          <Text style={styles.verifyText}>Verify your identity to book</Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.navy} />
+        </Pressable>
+      ) : null}
+
+      <Card testID="search-card">
+        <Text style={styles.cardTitle}>Where are you travelling?</Text>
+        <View style={styles.routeRow}>
+          <View style={styles.routeLine}>
+            <Ionicons name="radio-button-on" size={14} color={colors.brand} />
+            <RoadLine vertical length={36} />
+            <Ionicons name="location" size={14} color={colors.navy} />
           </View>
-
-          <View style={styles.greetingBlock}>
-            <Text style={styles.greeting} testID="home-greeting">
-              {greeting()}, {displayName(user)}
-            </Text>
-            <Text style={styles.greetingSub}>Where are you heading today?</Text>
+          <View style={styles.routeFields}>
+            <PlaceField
+              label="From"
+              value={form.origin?.name}
+              placeholder="Where are you leaving from?"
+              onPress={() =>
+                navigation.navigate('PlacePicker', { field: 'origin', current: form.origin })
+              }
+              testID="from-field"
+            />
+            <View style={styles.divider} />
+            <PlaceField
+              label="To"
+              value={form.destination?.name}
+              placeholder="Where are you going?"
+              onPress={() =>
+                navigation.navigate('PlacePicker', {
+                  field: 'destination',
+                  current: form.destination,
+                })
+              }
+              testID="to-field"
+            />
           </View>
-        </LinearGradient>
-
-        <OfflineNotice />
-
-        <View style={styles.content}>
-          <View style={[styles.card, styles.successCard]} testID="signed-in-card">
-            <View style={styles.successIcon}>
-              <Ionicons name="checkmark" size={20} color={colors.textOnBrand} />
-            </View>
-            <View style={styles.flex}>
-              <Text style={styles.cardTitle}>You’re signed in</Text>
-              <Text style={styles.cardBody}>Your session is stored securely on this device.</Text>
-            </View>
-          </View>
-
-          {refreshError ? (
-            <Banner tone="error" message={refreshError} onDismiss={() => setRefreshError(null)} />
-          ) : null}
-
-          <Section title="Profile">
-            <Row icon="person-outline" label="Name" value={user?.fullName} />
-            <Row icon="mail-outline" label="Email" value={user?.email} />
-            <Row icon="call-outline" label="Phone" value={user?.phone} />
-            <Row
-              icon="briefcase-outline"
-              label="Account type"
-              value={user?.role ? capitalize(user.role) : null}
-            />
-            <Row
-              icon="shield-checkmark-outline"
-              label="Verification"
-              value={user?.isVerified == null ? null : user.isVerified ? 'Verified' : 'Pending'}
-              valueColor={user?.isVerified ? colors.success : colors.warning}
-              last
-            />
-          </Section>
-
-          <Section title="Session">
-            <Row
-              icon="key-outline"
-              label="Token type"
-              value={capitalize(tokens?.tokenType ?? '')}
-            />
-            <Row
-              icon="time-outline"
-              label="Access token expires"
-              value={expiry ? relativeExpiry(expiry) : 'No expiry set'}
-            />
-            <Row
-              icon="refresh-outline"
-              label="Auto-renewal"
-              value={tokens?.refreshToken ? 'Enabled' : 'Not available'}
-              last
-            />
-          </Section>
-
-          <Button
-            testID="logout-button"
-            title="Sign out"
-            icon="log-out-outline"
-            variant="secondary"
-            onPress={confirmSignOut}
-          />
+          <Pressable
+            onPress={() => searchForm.swap()}
+            accessibilityRole="button"
+            accessibilityLabel="Swap from and to"
+            style={styles.swap}
+            testID="swap-button"
+          >
+            <Ionicons name="swap-vertical" size={18} color={colors.navy} />
+          </Pressable>
         </View>
-      </ScrollView>
-    </View>
-  );
-}
 
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.card}>{children}</View>
-    </View>
-  );
-}
+        <View style={styles.chipsRow}>
+          <View style={styles.dateChips}>
+            <Chip
+              label={chipDate(form.date)}
+              icon="calendar-outline"
+              tone="grey"
+              onPress={() => searchForm.set({ date: addDays(form.date, 1) })}
+              testID="date-chip"
+            />
+            <Pressable
+              onPress={() => searchForm.set({ date: addDays(form.date, -1) })}
+              accessibilityLabel="Previous day"
+              style={styles.dateArrow}
+            >
+              <Ionicons name="chevron-back" size={16} color={colors.textMuted} />
+            </Pressable>
+          </View>
+          <View style={styles.seatsRow}>
+            <Ionicons name="person-outline" size={16} color={colors.textMuted} />
+            <Stepper
+              value={form.seats}
+              min={1}
+              max={4}
+              onChange={(seats) => searchForm.set({ seats })}
+              testID="seats"
+            />
+            <Text style={styles.seatsLabel}>seat{form.seats === 1 ? '' : 's'}</Text>
+          </View>
+        </View>
 
-interface RowProps {
-  icon: IconName;
-  label: string;
-  value: string | null | undefined;
-  valueColor?: string;
-  last?: boolean;
-}
+        <Button title="Find rides" onPress={search} disabled={!canSearch} testID="find-rides" />
+      </Card>
 
-function Row({ icon, label, value, valueColor, last }: RowProps) {
-  return (
-    <View style={[styles.row, !last && styles.rowDivider]}>
-      <Ionicons name={icon} size={18} color={colors.textMuted} />
-      <Text style={styles.rowLabel}>{label}</Text>
-      <Text
-        style={[
-          styles.rowValue,
-          { color: value ? (valueColor ?? colors.text) : colors.textSubtle },
-        ]}
-        numberOfLines={1}
+      <Card
+        tone="blue"
+        onPress={() => navigation.navigate('Main', { screen: 'Wallet' })}
+        testID="invite-card"
       >
-        {value || 'Not provided'}
+        <Text style={styles.inviteTitle}>Invite friends, earn ride credits</Text>
+        <Text style={styles.inviteBody}>
+          Earn credits every time a friend you invite travels with SR2Go.
+        </Text>
+        <View style={styles.inviteLink}>
+          <Text style={styles.inviteLinkText}>Share your invite code</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textOnBrand} />
+        </View>
+      </Card>
+
+      {ticker.data && ticker.data.length > 0 ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Popular routes</Text>
+            <LinkText onPress={() => Linking.openURL(`${env.websiteUrl}/#coverage`)}>
+              See all
+            </LinkText>
+          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.routes}
+          >
+            {ticker.data.map((r) => (
+              <Card
+                key={`${r.origin}-${r.destination}`}
+                style={styles.routeCard}
+                testID="route-card"
+              >
+                <Text style={styles.routeName}>{`${r.origin} → ${r.destination}`}</Text>
+                <Text style={styles.typical}>Typical fare</Text>
+                <PriceBlock
+                  payAmount={r.price}
+                  usualFare={r.motorParkAnchor}
+                  savingsPct={r.savingsPct}
+                  align="left"
+                  suffix="/seat"
+                />
+              </Card>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
+      <View style={styles.trustGrid}>
+        {TRUST.map((t) => (
+          <View key={t.title} style={styles.trustTile}>
+            <Ionicons name={t.icon} size={22} color={colors.brand} />
+            <Text style={styles.trustTitle}>{t.title}</Text>
+            <Text style={styles.trustBody}>{t.body}</Text>
+          </View>
+        ))}
+      </View>
+    </Screen>
+  );
+}
+
+function PlaceField({
+  label,
+  value,
+  placeholder,
+  onPress,
+  testID,
+}: {
+  label: string;
+  value?: string;
+  placeholder: string;
+  onPress: () => void;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={styles.placeField}
+      testID={testID}
+    >
+      <Text style={styles.placeLabel}>{label}</Text>
+      <Text style={[styles.placeValue, !value && styles.placePlaceholder]} numberOfLines={1}>
+        {value ?? placeholder}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  flex: {
-    flex: 1,
-  },
-  hero: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxxl,
-    gap: spacing.xl,
-  },
-  topBar: {
+  content: { gap: spacing.md },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brand: { fontFamily: typography.heading.fontFamily, fontSize: 22, color: colors.midnight },
+  brandAccent: { color: colors.brand },
+  avatarPress: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
+  greetingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
+  greeting: { ...typography.title, color: colors.text },
+  verifyBanner: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    ...typography.label,
-    color: colors.textOnBrand,
-  },
-  greetingBlock: {
-    gap: spacing.xxs,
-  },
-  greeting: {
-    ...typography.title,
-    color: colors.textOnBrand,
-  },
-  greetingSub: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.75)',
-  },
-  content: {
-    marginTop: -spacing.xl,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.xl,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    gap: spacing.xs,
+    backgroundColor: colors.brandSoft,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md,
-    ...shadow.card,
+    minHeight: TAP,
   },
-  successCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  successIcon: {
+  verifyText: { ...typography.bodyMedium, color: colors.navy, flex: 1 },
+  cardTitle: { ...typography.heading, color: colors.text },
+  routeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  routeLine: { alignItems: 'center', gap: 4 },
+  routeFields: { flex: 1 },
+  divider: { height: 1, backgroundColor: colors.border },
+  placeField: { minHeight: 52, justifyContent: 'center', gap: 2 },
+  placeLabel: { ...typography.label, color: colors.textMuted },
+  placeValue: { ...typography.body, color: colors.text },
+  placePlaceholder: { color: colors.textSubtle },
+  swap: {
     width: 40,
     height: 40,
-    borderRadius: radius.pill,
-    backgroundColor: colors.success,
+    borderRadius: 20,
+    backgroundColor: colors.tile,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cardTitle: {
-    ...typography.heading,
-    color: colors.text,
-  },
-  cardBody: {
-    ...typography.label,
-    color: colors.textMuted,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    ...typography.label,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginLeft: spacing.xxs,
-  },
-  row: {
+  chipsRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: spacing.sm,
-    paddingVertical: spacing.md,
+    flexWrap: 'wrap',
   },
-  rowDivider: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
+  dateChips: { flexDirection: 'row', alignItems: 'center' },
+  dateArrow: { width: 32, height: TAP, alignItems: 'center', justifyContent: 'center' },
+  seatsRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  seatsLabel: { ...typography.secondary, color: colors.textMuted },
+  inviteTitle: { ...typography.heading, color: colors.textOnBrand },
+  inviteBody: { ...typography.body, color: 'rgba(255,255,255,0.85)' },
+  inviteLink: { flexDirection: 'row', alignItems: 'center', gap: 2, minHeight: 28 },
+  inviteLinkText: { ...typography.bodyMedium, color: colors.textOnBrand },
+  section: { gap: spacing.sm },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sectionTitle: { ...typography.heading, color: colors.text },
+  routes: { gap: spacing.sm, paddingRight: spacing.xl },
+  routeCard: { width: 190 },
+  routeName: { ...typography.bodySemibold, color: colors.text },
+  typical: { ...typography.label, color: colors.textMuted },
+  trustGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  trustTile: {
+    width: '48%',
+    flexGrow: 1,
+    backgroundColor: colors.tile,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.xxs,
   },
-  rowLabel: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  rowValue: {
-    ...typography.bodyMedium,
-    flex: 1,
-    textAlign: 'right',
-  },
+  trustTitle: { ...typography.bodySemibold, color: colors.text },
+  trustBody: { ...typography.secondary, color: colors.textMuted },
 });

@@ -43,7 +43,10 @@ const profile = {
   fullName: 'Seun Adeyemi',
   phone: null,
   role: 'passenger',
-  isVerified: true,
+  phoneVerified: true,
+  kycComplete: true,
+  ninVerified: null,
+  bankVerified: null,
   raw: {},
 };
 

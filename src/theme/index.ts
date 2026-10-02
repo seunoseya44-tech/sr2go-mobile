@@ -1,6 +1,8 @@
 /**
- * Design tokens. Brand colours are taken from shareride2go.com so the app
- * feels continuous with the live web platform.
+ * Design tokens. Brand palette, type scale and sizes follow the SR2Go Build
+ * Brief v1 and Design Review 3 (29 Sep 2026): Primary Blue, Deep Blue, Deep
+ * Navy, white; Montserrat for titles/prices/buttons, Inter for everything
+ * else; minimum text sizes; no green anywhere.
  */
 
 export const colors = {
@@ -10,22 +12,24 @@ export const colors = {
   navy: '#032C92',
   midnight: '#0A1628',
 
-  background: '#F5F8FC',
+  background: '#FFFFFF',
   surface: '#FFFFFF',
-  border: '#E5E7EB',
+  tile: '#F1F4F9',
+  border: '#E3E9F2',
   borderFocus: '#0099F9',
 
-  text: '#111827',
-  textMuted: '#6B7280',
-  textSubtle: '#9CA3AF',
+  text: '#0A1628',
+  textMuted: '#4A5568',
+  textSubtle: '#8A97A8',
   textOnBrand: '#FFFFFF',
 
-  danger: '#DC2626',
-  dangerSoft: '#FEF2F2',
-  success: '#16A34A',
-  successSoft: '#F0FDF4',
+  danger: '#E11D48',
+  dangerSoft: '#FFE4E6',
   warning: '#B45309',
-  warningSoft: '#FFFBEB',
+  warningSoft: '#FEF3C7',
+  // Confirmations use blue, never green (brand rule).
+  success: '#032C92',
+  successSoft: '#E6F5FE',
 } as const;
 
 export const spacing = {
@@ -41,7 +45,7 @@ export const spacing = {
 
 export const radius = {
   sm: 8,
-  md: 12,
+  md: 10,
   lg: 16,
   xl: 24,
   pill: 999,
@@ -52,22 +56,34 @@ export const fonts = {
   medium: 'Inter_500Medium',
   semibold: 'Inter_600SemiBold',
   bold: 'Inter_700Bold',
+  display: 'Montserrat_600SemiBold',
+  displayBold: 'Montserrat_700Bold',
+  displayLight: 'Montserrat_300Light',
 } as const;
 
+/** Minimum sizes from Design Review 3; never go below these on a 390pt frame. */
 export const typography = {
-  display: { fontFamily: fonts.bold, fontSize: 30, lineHeight: 36, letterSpacing: -0.5 },
-  title: { fontFamily: fonts.bold, fontSize: 24, lineHeight: 30, letterSpacing: -0.3 },
-  heading: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 24 },
-  body: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22 },
-  bodyMedium: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 22 },
-  label: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
-  caption: { fontFamily: fonts.regular, fontSize: 12, lineHeight: 16 },
-  button: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 20 },
+  display: { fontFamily: fonts.displayBold, fontSize: 34, lineHeight: 40, letterSpacing: -0.5 },
+  softTitle: { fontFamily: fonts.displayLight, fontSize: 30, lineHeight: 38 },
+  title: { fontFamily: fonts.display, fontSize: 24, lineHeight: 32 },
+  heading: { fontFamily: fonts.display, fontSize: 18, lineHeight: 26 },
+  price: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30 },
+  priceSmall: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 24 },
+  body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 23 },
+  bodyMedium: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 23 },
+  bodySemibold: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 23 },
+  secondary: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
+  label: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },
+  overline: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0.8 },
+  button: { fontFamily: fonts.display, fontSize: 16, lineHeight: 20 },
 } as const;
 
 export const shadow = {
   card: {
     // Cross-platform on the New Architecture (RN 0.76+); replaces shadow*/elevation.
-    boxShadow: '0px 6px 16px rgba(10, 22, 40, 0.08)',
+    boxShadow: '0px 4px 16px rgba(10, 22, 40, 0.06)',
   },
 } as const;
+
+/** Minimum tap target (Design Review 3). */
+export const TAP = 44;

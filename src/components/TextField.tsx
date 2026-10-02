@@ -2,20 +2,39 @@ import { forwardRef, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import { colors, fonts, radius, spacing, typography } from '../theme';
+import { colors, fonts, spacing, typography } from '../theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
 export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   label: string;
   error?: string;
+  /** Grey helper text under the field (hidden while an error shows). */
+  helper?: string;
   icon?: IconName;
+  /** Fixed text before the input, e.g. "+234". */
+  prefix?: string;
   /** Element rendered at the right edge of the input, e.g. a visibility toggle. */
   accessory?: ReactNode;
 }
 
+/**
+ * Underline-style input (label above, 1px bottom line that turns blue on
+ * focus), as on the approved wireframes.
+ */
 export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
-  { label, error, icon, accessory, onFocus, onBlur, editable = true, ...inputProps },
+  {
+    label,
+    error,
+    helper,
+    icon,
+    prefix,
+    accessory,
+    onFocus,
+    onBlur,
+    editable = true,
+    ...inputProps
+  },
   ref,
 ) {
   const [focused, setFocused] = useState(false);
@@ -28,8 +47,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       <View
         style={[
           styles.field,
-          { borderColor },
-          focused && !error && styles.fieldFocused,
+          { borderBottomColor: borderColor, borderBottomWidth: focused || error ? 2 : 1 },
           !editable && styles.fieldDisabled,
         ]}
       >
@@ -41,6 +59,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
             style={styles.icon}
           />
         ) : null}
+        {prefix ? <Text style={styles.prefix}>{prefix}</Text> : null}
         <TextInput
           ref={ref}
           style={styles.input}
@@ -66,6 +85,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           <Ionicons name="alert-circle" size={14} color={colors.danger} />
           <Text style={styles.error}>{error}</Text>
         </View>
+      ) : helper ? (
+        <Text style={styles.helper}>{helper}</Text>
       ) : null}
     </View>
   );
@@ -73,23 +94,17 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: spacing.xs,
+    gap: spacing.xxs,
   },
   label: {
     ...typography.label,
-    color: colors.text,
+    color: colors.textMuted,
   },
   field: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 54,
-    borderWidth: 1.5,
-    borderRadius: radius.md,
+    minHeight: 48,
     backgroundColor: colors.surface,
-    paddingHorizontal: spacing.md,
-  },
-  fieldFocused: {
-    backgroundColor: '#FBFDFF',
   },
   fieldDisabled: {
     opacity: 0.6,
@@ -97,21 +112,33 @@ const styles = StyleSheet.create({
   icon: {
     marginRight: spacing.sm,
   },
+  prefix: {
+    ...typography.bodyMedium,
+    color: colors.text,
+    marginRight: spacing.xs,
+  },
   input: {
     flex: 1,
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.text,
     paddingVertical: spacing.sm,
+    minHeight: 48,
   },
   errorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xxs,
+    marginTop: spacing.xxs,
   },
   error: {
-    ...typography.caption,
+    ...typography.secondary,
     color: colors.danger,
     flexShrink: 1,
+  },
+  helper: {
+    ...typography.secondary,
+    color: colors.textMuted,
+    marginTop: spacing.xxs,
   },
 });

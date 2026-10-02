@@ -1,7 +1,31 @@
-export type RootStackParamList = {
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
+import type { Place, RideSearchParams } from '../api/types';
+
+export type AuthStackParamList = {
+  Splash: undefined;
   Login: undefined;
-  Home: undefined;
+  CreateAccount: undefined;
+  ForgotPassword: undefined;
 };
+
+export type MainTabParamList = {
+  Home: undefined;
+  Trips: undefined;
+  Wallet: undefined;
+  Profile: undefined;
+};
+
+export type AppStackParamList = {
+  Main: NavigatorScreenParams<MainTabParamList>;
+  PlacePicker: { field: 'origin' | 'destination'; current: Place | null };
+  SearchResults: { params: RideSearchParams };
+  RideDetails: { rideId: string };
+  DriverProfile: { driverId: string; name?: string | null };
+};
+
+export type RootStackParamList = AuthStackParamList &
+  AppStackParamList & { VerifyPhone: undefined };
 
 declare global {
   namespace ReactNavigation {

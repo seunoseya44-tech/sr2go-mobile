@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   text: {
-    ...typography.caption,
+    ...typography.label,
     color: colors.textOnBrand,
   },
 });
