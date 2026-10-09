@@ -18,7 +18,7 @@
       "package": "com.shareride2go.app",
       "allowBackup": false,
       "adaptiveIcon": {
-        "backgroundColor": "#0A1628",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -35,9 +35,9 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0A1628",
+          "backgroundColor": "#FFFFFF",
           "image": "./assets/splash-icon.png",
-          "imageWidth": 160
+          "imageWidth": 220
         }
       ],
       "expo-asset"
