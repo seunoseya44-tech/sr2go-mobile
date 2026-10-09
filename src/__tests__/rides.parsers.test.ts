@@ -107,3 +107,24 @@ describe('format helpers for rides', () => {
     expect(vehicleLabel('Sienna')).toBe('Sienna');
   });
 });
+
+describe('city routes show the price only', () => {
+  it('drops the anchor and badge when the anchor equals the price or savings are 0', () => {
+    const t = parseTicker({
+      routes: [
+        {
+          origin: 'Ikeja',
+          destination: 'Badagry',
+          price: 2350,
+          motor_park_anchor: 2350,
+          savings_pct: 0,
+        },
+      ],
+    });
+    expect(t[0]?.motorParkAnchor).toBeNull();
+    expect(t[0]?.savingsPct).toBeNull();
+    const ride = parseRide({ id: 9, pay_amount: '900', usual_fare: '900', savings_pct: 0 })!;
+    expect(ride.usualFare).toBeNull();
+    expect(ride.savingsPct).toBeNull();
+  });
+});

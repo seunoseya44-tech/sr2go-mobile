@@ -124,6 +124,20 @@ function readDeparture(source: Json): { date: string | null; time: string | null
   return { date: dateField ?? combined, time: null };
 }
 
+/** Null on city trips, or when the anchor equals the price / savings are 0. */
+function usualFareOf(s: Json): string | null {
+  const anchor = money(s.usual_fare);
+  const price = money(s.pay_amount) ?? money(s.display_price) ?? money(s.price_per_seat);
+  const pct = numeric(s.savings_pct);
+  if (!anchor || anchor === price || (pct != null && pct <= 0)) return null;
+  return anchor;
+}
+
+function savingsPctOf(s: Json): number | null {
+  const pct = numeric(s.savings_pct);
+  return pct != null && pct > 0 && usualFareOf(s) ? pct : null;
+}
+
 export function parseRide(payload: unknown): Ride | null {
   const s = unwrap(payload);
   const id = firstString(s, ['id', 'ride_id']);
@@ -151,8 +165,8 @@ export function parseRide(payload: unknown): Ride | null {
     ),
     // display_price on older screens equals pay_amount; prefer pay_amount.
     payAmount: money(s.pay_amount) ?? money(s.display_price) ?? money(s.price_per_seat),
-    usualFare: money(s.usual_fare),
-    savingsPct: numeric(s.savings_pct),
+    usualFare: usualFareOf(s),
+    savingsPct: savingsPctOf(s),
     autoApprove: s.auto_approve === true,
     isAc: s.is_ac === true,
     driverSmokes: s.driver_smokes === true,
@@ -204,12 +218,17 @@ export function parseTicker(payload: unknown): TickerRoute[] {
       const destination = firstString(item, ['destination', 'destination_city', 'to']);
       const price = money(item.price ?? item.pay_amount ?? item.display_price);
       if (!origin || !destination || !price) return null;
+      // City routes come back with the anchor equal to the price and 0% savings;
+      // the rule is to show the price only, so drop both in that case.
+      const anchor = money(item.motor_park_anchor ?? item.usual_fare);
+      const pct = numeric(item.savings_pct);
+      const hasSaving = !!anchor && anchor !== price && (pct == null || pct > 0);
       return {
         origin,
         destination,
         price,
-        motorParkAnchor: money(item.motor_park_anchor ?? item.usual_fare),
-        savingsPct: numeric(item.savings_pct),
+        motorParkAnchor: hasSaving ? anchor : null,
+        savingsPct: hasSaving && pct != null && pct > 0 ? pct : null,
       } satisfies TickerRoute;
     })
     .filter((r): r is TickerRoute => r !== null);
