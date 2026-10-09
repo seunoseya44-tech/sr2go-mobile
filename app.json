@@ -41,6 +41,12 @@
         }
       ],
       "expo-asset"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "2463317f-3243-435d-9a19-f67b53c9091e"
+      }
+    },
+    "owner": "senuxs-team"
   }
 }
