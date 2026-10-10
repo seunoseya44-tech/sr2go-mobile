@@ -124,10 +124,6 @@ export function CreateAccountScreen() {
               Log in
             </LinkText>
           </View>
-          <View style={styles.centerRow}>
-            <Ionicons name="lock-closed-outline" size={12} color={colors.textMuted} />
-            <Text style={styles.security}> Bank-level security</Text>
-          </View>
         </>
       }
     >
@@ -345,6 +341,5 @@ const styles = StyleSheet.create({
   roleLabel: { ...typography.label, color: colors.textMuted },
   centerRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center' },
   muted: { ...typography.secondary, color: colors.textMuted },
-  security: { ...typography.label, color: colors.textMuted },
   link: { color: colors.navy, fontFamily: typography.bodyMedium.fontFamily },
 });
