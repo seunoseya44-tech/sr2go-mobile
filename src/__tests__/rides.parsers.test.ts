@@ -16,6 +16,8 @@ describe('parseRide', () => {
     driver_id: 'd1',
     driver_name: 'Chinedu.O',
     driver_rating: 4.8,
+    driver_verified: true,
+    driver_photo: null,
     pay_amount: '3900.00',
     usual_fare: '4875.00',
     savings_pct: 20,
@@ -35,6 +37,7 @@ describe('parseRide', () => {
       departureDate: '2026-10-03',
       departureTime: '07:30',
       driverName: 'Chinedu.O',
+      driverVerified: true,
       payAmount: '3900.00',
       usualFare: '4875.00',
       savingsPct: 20,
@@ -43,6 +46,13 @@ describe('parseRide', () => {
       prefPets: 'ask',
       maxLuggageKg: 20,
     });
+  });
+
+  it('treats a missing driver_verified as not verified (15 Oct: badge only when true)', () => {
+    expect(parseRide({ id: 1, driver_name: 'X.Y' })!.driverVerified).toBe(false);
+    expect(parseRide({ id: 1, driver: { name: 'X.Y', verified: true } })!.driverVerified).toBe(
+      true,
+    );
   });
 
   it('keeps usual fare null on city trips and falls back to display_price', () => {

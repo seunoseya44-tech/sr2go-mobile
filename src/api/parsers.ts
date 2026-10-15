@@ -100,7 +100,7 @@ export function parseUser(payload: unknown): User | null {
     phone: firstString(source, ['phone', 'phone_number', 'phoneNumber']),
     role: firstString(source, ['role', 'user_type', 'userType', 'account_type']),
     phoneVerified: readBoolean(source, ['phone_verified', 'phoneVerified']),
-    kycComplete: readBoolean(source, ['kyc_complete', 'kycComplete', 'is_verified']),
+    isVerified: readBoolean(source, ['is_verified', 'identity_verified', 'kyc_complete']),
     ninVerified: readBoolean(source, ['nin_verified']),
     bankVerified: readBoolean(source, ['bank_verified']),
     raw: source,
@@ -163,6 +163,8 @@ export function parseRide(payload: unknown): Ride | null {
     driverTripsCompleted: numeric(
       s.driver_trips ?? s.driver_rides_completed ?? driver.rides_completed,
     ),
+    driverVerified:
+      s.driver_verified === true || driver.verified === true || driver.is_verified === true,
     // display_price on older screens equals pay_amount; prefer pay_amount.
     payAmount: money(s.pay_amount) ?? money(s.display_price) ?? money(s.price_per_seat),
     usualFare: usualFareOf(s),
@@ -204,6 +206,7 @@ export function parseDriverProfile(payload: unknown): DriverPublicProfile {
     memberSince: firstString(s, ['member_since', 'created_at', 'joined_at']),
     rating: numeric(s.rating ?? s.driver_rating ?? s.average_rating),
     tripsCompleted: numeric(s.rides_completed ?? s.trips_completed ?? s.total_rides),
+    isVerified: s.is_verified === true || s.identity_verified === true,
     badges,
     vehicle: parts.length ? `${parts.join(' ')}${colour ? ` · ${colour}` : ''}` : null,
     raw: s,

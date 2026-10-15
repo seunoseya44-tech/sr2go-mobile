@@ -43,7 +43,7 @@ const user: User = {
   phone: null,
   role: 'passenger',
   phoneVerified: true,
-  kycComplete: true,
+  isVerified: true,
   ninVerified: true,
   bankVerified: null,
   raw: {},
@@ -66,7 +66,7 @@ describe('HomeScreen', () => {
   });
 
   it('shows the verify banner for an unverified user', async () => {
-    mockAuth.user = { ...user, kycComplete: false };
+    mockAuth.user = { ...user, isVerified: false };
     await renderScreen();
 
     expect(screen.getByTestId('verify-banner')).toBeTruthy();

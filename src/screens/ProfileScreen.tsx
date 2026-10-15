@@ -33,7 +33,7 @@ export function ProfileScreen() {
           <Text style={styles.meta} numberOfLines={1}>
             {[user?.email, user?.phone].filter(Boolean).join(' · ')}
           </Text>
-          {user?.kycComplete ? <Badge label="Verified" icon="checkmark" /> : null}
+          {user?.isVerified ? <Badge label="Verified" icon="checkmark" /> : null}
         </View>
       </View>
 

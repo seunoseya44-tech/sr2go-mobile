@@ -46,7 +46,7 @@ describe('parseUser', () => {
       email: 'ada@example.com',
       fullName: 'Ada Obi',
       role: 'passenger',
-      kycComplete: true,
+      isVerified: true,
     });
   });
 

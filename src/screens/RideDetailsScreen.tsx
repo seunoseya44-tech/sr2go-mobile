@@ -123,7 +123,7 @@ export function RideDetailsScreen() {
       ) : null}
 
       <View style={styles.driverRow}>
-        <Avatar name={ride.driverName} size={44} verified />
+        <Avatar name={ride.driverName} size={44} verified={ride.driverVerified} />
         <View style={styles.flex}>
           <Text style={styles.cardTitle}>{ride.driverName ?? 'Driver'}</Text>
           <Text style={styles.meta}>

@@ -15,7 +15,8 @@ export interface User {
   phone: string | null;
   role: string | null;
   phoneVerified: boolean | null;
-  kycComplete: boolean | null;
+  /** is_verified / identity_verified: identity check passed AND selfie stored. Drives the Verified badge. */
+  isVerified: boolean | null;
   ninVerified: boolean | null;
   bankVerified: boolean | null;
   raw: Record<string, unknown>;
@@ -85,6 +86,8 @@ export interface Ride {
   driverName: string | null;
   driverRating: number | null;
   driverTripsCompleted: number | null;
+  /** driver_verified: show the Verified badge next to the name. Ride cards never carry a driver photo. */
+  driverVerified: boolean;
   /** The bold price a passenger pays. */
   payAmount: string | null;
   /** Crossed-out usual fare; null on city trips. */
@@ -109,6 +112,7 @@ export interface DriverPublicProfile {
   memberSince: string | null;
   rating: number | null;
   tripsCompleted: number | null;
+  isVerified: boolean;
   badges: string[];
   vehicle: string | null;
   raw: Record<string, unknown>;

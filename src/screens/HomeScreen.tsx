@@ -61,7 +61,7 @@ export function HomeScreen() {
   });
 
   const canSearch = !!form.origin && !!form.destination;
-  const verified = user?.kycComplete === true;
+  const verified = user?.isVerified === true;
 
   const search = () => {
     if (!form.origin || !form.destination) return;

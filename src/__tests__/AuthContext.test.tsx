@@ -44,7 +44,7 @@ const profile = {
   phone: null,
   role: 'passenger',
   phoneVerified: true,
-  kycComplete: true,
+  isVerified: true,
   ninVerified: null,
   bankVerified: null,
   raw: {},

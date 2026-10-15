@@ -40,7 +40,11 @@ export function DriverProfileScreen() {
       ) : (
         <>
           <View style={styles.header}>
-            <Avatar name={p?.name ?? params.name ?? null} size={88} verified />
+            <Avatar
+              name={p?.name ?? params.name ?? null}
+              size={88}
+              verified={p?.isVerified === true}
+            />
             <Text style={styles.name}>{p?.name ?? params.name ?? 'Driver'}</Text>
             {since ? <Text style={styles.meta}>Member since {since}</Text> : null}
           </View>

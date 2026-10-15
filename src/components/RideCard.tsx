@@ -40,7 +40,7 @@ export function RideCard({ ride, onPress }: { ride: Ride; onPress: () => void })
       ) : null}
 
       <View style={styles.row}>
-        <Avatar name={ride.driverName} size={32} />
+        <Avatar name={ride.driverName} size={32} verified={ride.driverVerified} />
         <Text style={styles.driver}>{ride.driverName ?? 'Driver'}</Text>
         {ride.driverRating != null ? (
           <Text style={styles.rating}>★ {ride.driverRating.toFixed(1)}</Text>

@@ -8,7 +8,7 @@ const user = (partial: Partial<User>): User => ({
   phone: null,
   role: null,
   phoneVerified: null,
-  kycComplete: null,
+  isVerified: null,
   ninVerified: null,
   bankVerified: null,
   raw: {},
