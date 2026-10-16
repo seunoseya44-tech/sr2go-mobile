@@ -25,6 +25,13 @@ export const ENDPOINTS = {
   ride: (rideId: string) => `/api/rides/${rideId}`,
   driverPublic: (driverId: string) => `/api/drivers/${driverId}/public`,
   pricingTicker: '/api/v1/pricing/ticker',
+  // Offline boarding (16 Oct 2026)
+  boardingPublicKey: '/api/boarding/public-key',
+  boardingPackBooking: (bookingId: string) => `/api/boarding/pack/booking/${bookingId}`,
+  boardingPackRide: (rideId: string) => `/api/boarding/pack/ride/${rideId}`,
+  boardingPackBookingSaved: (bookingId: string) => `/api/boarding/pack/booking/${bookingId}/saved`,
+  boardingPackRideSaved: (rideId: string) => `/api/boarding/pack/ride/${rideId}/saved`,
+  boardingSync: '/api/boarding/sync',
   // KYC
   kycStatus: '/api/kyc/status',
   health: '/api/health',
