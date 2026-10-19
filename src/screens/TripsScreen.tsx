@@ -18,7 +18,8 @@ import { toApiError } from '../api/errors';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
-import { Chip } from '../components/ui';
+import { Chip, LinkText } from '../components/ui';
+import { connectionsApi } from '../api/social';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { shortDate, vehicleLabel } from '../utils/format';
@@ -45,12 +46,20 @@ export function TripsScreen() {
   const navigation = useNavigation<Nav>();
   const [tab, setTab] = useState<Tab>('Upcoming');
   const query = useQuery({ queryKey: ['bookings'], queryFn: bookingsApi.mine });
+  const connections = useQuery({
+    queryKey: ['connections'],
+    queryFn: connectionsApi.mine,
+    retry: false,
+  });
 
   const list = (query.data ?? []).filter((b) => TAB_OF[bookingView(b)] === tab);
 
   return (
     <Screen topBar={null} scroll={false} testID="trips-screen" contentStyle={styles.content}>
-      <Text style={styles.title}>My trips</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>My trips</Text>
+        <LinkText onPress={() => navigation.navigate('TransfersInbox')}>Transfers</LinkText>
+      </View>
       <View style={styles.tabs}>
         {(['Upcoming', 'Completed', 'Cancelled'] as Tab[]).map((t) => (
           <Pressable
@@ -103,6 +112,33 @@ export function TripsScreen() {
             <BookingCard key={b.id} booking={b} onPress={() => openBooking(navigation, b)} />
           ))
         )}
+        {tab === 'Upcoming'
+          ? (connections.data ?? [])
+              .filter((c) => !['completed', 'closed', 'missed_connection'].includes(c.status))
+              .map((c) => (
+                <Pressable
+                  key={c.id}
+                  onPress={() => navigation.navigate('ConnectionStatus', { connectionId: c.id })}
+                  style={styles.card}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.cardTop}>
+                    <Text style={styles.when}>
+                      {shortDate(c.legs[0]?.ride?.departureDate)} ·{' '}
+                      {c.legs[0]?.ride?.departureTime ?? ''}
+                    </Text>
+                    <Chip
+                      label={c.status.replace(/_/g, ' ')}
+                      tone={c.status === 'confirmed' ? 'blue' : 'grey'}
+                    />
+                  </View>
+                  <Text style={styles.meta}>
+                    {c.legs[0]?.ride?.originCity} → {c.legs[1]?.ride?.destinationCity} · 1 stop at{' '}
+                    {c.hub ?? ''}
+                  </Text>
+                </Pressable>
+              ))
+          : null}
       </ScrollView>
     </Screen>
   );
@@ -112,7 +148,14 @@ function openBooking(navigation: Nav, b: Booking) {
   const view = bookingView(b);
   if (view === 'waiting') navigation.navigate('BookingStatus', { bookingId: b.id });
   else if (view === 'payNow') navigation.navigate('Payment', { bookingId: b.id });
-  else if (view === 'confirmed' || view === 'boarded' || view === 'completed') {
+  else if (view === 'completed') {
+    navigation.navigate('RateTrip', {
+      bookingId: b.id,
+      revieweeId: b.ride?.driverId ?? String(b.raw.driver_id ?? ''),
+      name: b.driverName,
+      route: `${b.originCity ?? ''} → ${b.destinationCity ?? ''} · ${shortDate(b.departureDate)}`,
+    });
+  } else if (view === 'confirmed' || view === 'boarded') {
     navigation.navigate('BookingConfirmation', { bookingId: b.id });
   } else navigation.navigate('BookingStatus', { bookingId: b.id });
 }
@@ -146,7 +189,9 @@ function BookingCard({ booking: b, onPress }: { booking: Booking; onPress: () =>
         {b.driverName ?? 'Driver'}
         {b.vehicle ? ` · ${vehicleLabel(b.vehicle)}` : ''}
       </Text>
-      {view === 'payNow' ? (
+      {view === 'completed' ? (
+        <Text style={styles.action}>Rate this trip ›</Text>
+      ) : view === 'payNow' ? (
         <Text style={styles.action}>Pay to keep your seat ›</Text>
       ) : line ? (
         <Text style={styles.meta}>{line}</Text>
@@ -157,6 +202,7 @@ function BookingCard({ booking: b, onPress }: { booking: Booking; onPress: () =>
 
 const styles = StyleSheet.create({
   content: { paddingBottom: 0, gap: spacing.sm, flex: 1 },
+  titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { ...typography.title, color: colors.text },
   tabs: { flexDirection: 'row', gap: spacing.lg },
   tab: { paddingVertical: spacing.xs, minHeight: 44, justifyContent: 'center' },

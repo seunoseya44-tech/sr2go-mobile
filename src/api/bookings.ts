@@ -430,9 +430,13 @@ export function parseBoardingPass(payload: unknown): BoardingPass {
 
 export const paymentsApi = {
   /** POST /api/payments/initiate {booking_id, use_credits}. */
-  async initiate(bookingId: string, useCredits: boolean): Promise<PaymentInitiation> {
+  async initiate(
+    bookingId: string,
+    useCredits: boolean,
+    connectionId?: string,
+  ): Promise<PaymentInitiation> {
     const { data } = await http.post(ENDPOINTS.paymentInitiate, {
-      booking_id: bookingId,
+      ...(connectionId ? { connection_id: connectionId } : { booking_id: bookingId }),
       use_credits: useCredits,
     });
     return parseInitiation(data);

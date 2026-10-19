@@ -30,7 +30,7 @@ export type AppStackParamList = {
   // B2
   BookSeat: { rideId: string };
   BookingStatus: { bookingId: string };
-  Payment: { bookingId: string };
+  Payment: { bookingId: string; connectionId?: string };
   PaymentResult: {
     bookingId: string;
     status: 'paid' | 'failed' | 'refund_due' | 'underpaid' | 'refunded' | 'pending';
@@ -42,6 +42,20 @@ export type AppStackParamList = {
   BoardingPass: { bookingId: string };
   CancelBooking: { bookingId: string };
   ForgotPassword: undefined;
+  // Build 7
+  TransferTicket: { bookingId: string };
+  TransfersInbox: undefined;
+  HandoverRide: { rideId: string };
+  HandoversInbox: undefined;
+  TripChat: { rideId: string; title?: string | null; subtitle?: string | null };
+  TundeChat: undefined;
+  RateTrip: { bookingId: string; revieweeId: string; name: string | null; route?: string | null };
+  RatePassengers: { rideId: string };
+  ReportProblem: { bookingId: string; route?: string | null };
+  MyReports: undefined;
+  ConnectionDetails: { index: number };
+  ConnectionBook: { index: number };
+  ConnectionStatus: { connectionId: string };
   // B6 account and wallet
   KycConsent: { next?: 'book' | 'post' } | undefined;
   KycSelfie: { next?: 'book' | 'post' } | undefined;

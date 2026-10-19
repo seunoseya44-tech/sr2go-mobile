@@ -9,7 +9,7 @@ import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
-import { Avatar, Chip } from '../../components/ui';
+import { Avatar, Chip, LinkText } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { shortDate } from '../../utils/format';
@@ -98,6 +98,25 @@ export function RideRequestsScreen() {
         </View>
       ) : null}
       {error ? <Banner tone="error" message={error} onDismiss={() => setError(null)} /> : null}
+      <View style={styles.twoUp}>
+        <Button
+          title="Trip chat"
+          variant="secondary"
+          icon="chatbubble-ellipses-outline"
+          onPress={() =>
+            navigation.navigate('TripChat', { rideId: params.rideId, title: 'Trip chat' })
+          }
+          style={styles.flex}
+        />
+        <Button
+          title="Hand over"
+          variant="secondary"
+          icon="swap-horizontal-outline"
+          onPress={() => navigation.navigate('HandoverRide', { rideId: params.rideId })}
+          style={styles.flex}
+        />
+      </View>
+      <LinkText onPress={() => navigation.navigate('HandoversInbox')}>My handovers</LinkText>
       {bookings.isPending ? (
         <ActivityIndicator color={colors.brand} />
       ) : bookings.isError ? (
@@ -169,6 +188,7 @@ function PassengerCard({ b, children }: { b: RideBooking; children: React.ReactN
             {b.children ? ` · ${b.children} child${b.children === 1 ? '' : 'ren'}` : ''}
           </Text>
         </View>
+        {b.connecting ? <Chip label="Connecting passenger" tone="blue" /> : null}
         {b.frontSeatPreferred ? <Chip label="Front seat preferred" tone="blue" /> : null}
       </View>
       <Text style={styles.note}>“{b.note ?? 'No note'}”</Text>

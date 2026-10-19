@@ -6,6 +6,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { toApiError } from '../api/errors';
 import { ridesApi } from '../api/rides';
+import { connectionsApi } from '../api/social';
+import { ConnectionCard, setConnectionOptions } from './connections/ConnectionScreens';
 import { Banner } from '../components/Banner';
 import { Button } from '../components/Button';
 import { RideCard } from '../components/RideCard';
@@ -28,6 +30,23 @@ export function SearchResultsScreen() {
     queryKey: ['rides', search],
     queryFn: () => ridesApi.search(search),
   });
+  const connections = useQuery({
+    queryKey: ['connections-search', search],
+    queryFn: async () => {
+      const options = await connectionsApi.search({
+        originLat: search.origin.lat,
+        originLng: search.origin.lng,
+        destLat: search.destination.lat,
+        destLng: search.destination.lng,
+        date: search.date,
+        seats: search.seats,
+      });
+      setConnectionOptions(options);
+      return options;
+    },
+    retry: false,
+  });
+  const options = connections.data ?? [];
 
   const seatsLabel = `${search.seats} seat${search.seats === 1 ? '' : 's'}`;
 
@@ -61,7 +80,7 @@ export function SearchResultsScreen() {
           <Banner tone="error" message={toApiError(query.error).message} />
           <Button title="Try again" variant="secondary" onPress={() => void query.refetch()} />
         </View>
-      ) : query.data.length === 0 ? (
+      ) : query.data.length === 0 && options.length === 0 ? (
         <View style={styles.empty} testID="empty-results">
           <View style={styles.emptyArt}>
             <RoadLine length={120} />
@@ -79,13 +98,25 @@ export function SearchResultsScreen() {
       ) : (
         <View style={styles.gap}>
           <Text style={styles.count} testID="results-count">
-            {query.data.length} ride{query.data.length === 1 ? '' : 's'} found
+            {query.data.length === 0
+              ? 'No direct rides. Travel with one stop:'
+              : `${query.data.length} direct ride${query.data.length === 1 ? '' : 's'}`}
           </Text>
           {query.data.map((ride) => (
             <RideCard
               key={ride.id}
               ride={ride}
               onPress={() => navigation.navigate('RideDetails', { rideId: ride.id })}
+            />
+          ))}
+          {options.length > 0 && query.data.length > 0 ? (
+            <Text style={styles.count}>With one stop</Text>
+          ) : null}
+          {options.map((o, i) => (
+            <ConnectionCard
+              key={o.rideIds.join('-')}
+              option={o}
+              onPress={() => navigation.navigate('ConnectionDetails', { index: i })}
             />
           ))}
           <Pressable

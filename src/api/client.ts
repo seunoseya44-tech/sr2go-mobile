@@ -63,6 +63,24 @@ export const ENDPOINTS = {
   boardingPackBookingSaved: (bookingId: string) => `/api/boarding/pack/booking/${bookingId}/saved`,
   boardingPackRideSaved: (rideId: string) => `/api/boarding/pack/ride/${rideId}/saved`,
   boardingSync: '/api/boarding/sync',
+  // Build 7: transfers, handovers, chat, Tunde, ratings, disputes, connections
+  transfersLookup: '/api/transfers/lookup',
+  transfers: '/api/transfers',
+  transferAction: (id: string, action: 'accept' | 'decline' | 'cancel') =>
+    `/api/transfers/${id}/${action}`,
+  handoversLookup: '/api/handovers/lookup',
+  handovers: '/api/handovers',
+  handoverAction: (id: string, action: 'accept' | 'decline' | 'cancel') =>
+    `/api/handovers/${id}/${action}`,
+  rideMessages: (rideId: string) => `/api/rides/${rideId}/messages`,
+  tundeChat: '/api/tunde/chat',
+  ratings: '/api/ratings/',
+  disputes: '/api/disputes/',
+  disputesMine: '/api/disputes/mine',
+  connectionsSearch: '/api/connections/search',
+  connections: '/api/connections',
+  connection: (id: string) => `/api/connections/${id}`,
+  connectionsMine: '/api/connections/mine',
   // KYC, profile, wallet (B6)
   kycStatus: '/api/kyc/status',
   selfieConsentConfig: '/api/kyc/selfie-consent-config',

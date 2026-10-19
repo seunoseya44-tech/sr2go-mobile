@@ -95,7 +95,17 @@ export function ProfileScreen() {
           title="Change password"
           onPress={() => navigation.navigate('ChangePassword')}
         />
-        <ListRow icon="flag-outline" title="My reports" subtitle="Coming in the next update" />
+        <ListRow
+          icon="flag-outline"
+          title="My reports"
+          onPress={() => navigation.navigate('MyReports')}
+        />
+        <ListRow
+          icon="chatbubbles-outline"
+          title="Chat with Tunde"
+          subtitle="Ask about bookings, refunds and how SR2Go works"
+          onPress={() => navigation.navigate('TundeChat')}
+        />
         <ListRow
           icon="trash-outline"
           title="Delete account"

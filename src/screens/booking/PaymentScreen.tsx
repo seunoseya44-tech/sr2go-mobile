@@ -41,7 +41,8 @@ export function PaymentScreen() {
 
   // First initiate call is a quote: it tells us the credits line and "You pay".
   const initiate = useMutation({
-    mutationFn: (credits: boolean) => paymentsApi.initiate(params.bookingId, credits),
+    mutationFn: (credits: boolean) =>
+      paymentsApi.initiate(params.bookingId, credits, params.connectionId),
     onSuccess: (q) => setQuote(q),
     onError: (e) => handleInitiateError(e),
   });
@@ -83,7 +84,7 @@ export function PaymentScreen() {
 
   const pay = useMutation({
     mutationFn: async () => {
-      const q = await paymentsApi.initiate(params.bookingId, useCredits);
+      const q = await paymentsApi.initiate(params.bookingId, useCredits, params.connectionId);
       setQuote(q);
       if (!q.authorizationUrl) throw new Error('No payment page was returned');
       await WebBrowser.openBrowserAsync(q.authorizationUrl, { showTitle: true });

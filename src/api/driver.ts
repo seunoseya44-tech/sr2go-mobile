@@ -208,6 +208,8 @@ export function parseDriverRide(payload: unknown): DriverRide | null {
 
 export interface RideBooking {
   id: string;
+  passengerId: string | null;
+  connecting: boolean;
   passengerName: string | null;
   passengerVerified: boolean;
   passengerRating: number | null;
@@ -235,6 +237,8 @@ export function parseRideBookings(payload: unknown): RideBooking[] {
       const flags = obj(b.boarding);
       return {
         id,
+        passengerId: first(b, ['passenger_id', 'user_id']),
+        connecting: !!first(b, ['connection_id']) || b.is_connecting === true,
         passengerName: first(b, ['passenger_name', 'name']),
         passengerVerified: b.passenger_verified === true,
         passengerRating: num(b.passenger_rating ?? b.rating),

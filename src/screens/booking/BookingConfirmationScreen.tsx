@@ -200,6 +200,41 @@ export function BookingConfirmationScreen() {
         </View>
       </Section>
 
+      <View style={styles.linkRow}>
+        {b.rideId ? (
+          <Button
+            title="Message"
+            variant="secondary"
+            icon="chatbubble-ellipses-outline"
+            onPress={() =>
+              navigation.navigate('TripChat', {
+                rideId: b.rideId!,
+                title: driverName ?? 'Trip chat',
+                subtitle: `${b.originCity} → ${b.destinationCity} · ${shortDate(b.departureDate)}, ${b.departureTime}`,
+              })
+            }
+            style={styles.flex}
+          />
+        ) : null}
+        <Button
+          title="Transfer my ticket"
+          variant="secondary"
+          icon="swap-horizontal-outline"
+          onPress={() => navigation.navigate('TransferTicket', { bookingId: b.id })}
+          style={styles.flex}
+        />
+      </View>
+      <LinkText
+        onPress={() =>
+          navigation.navigate('ReportProblem', {
+            bookingId: b.id,
+            route: `${b.originCity} → ${b.destinationCity} · ${shortDate(b.departureDate)}`,
+          })
+        }
+      >
+        Report a problem
+      </LinkText>
+
       <InfoBanner tone="amber" icon="shield-checkmark-outline">
         Safety tip: At the car, scan or type the code on your driver&apos;s phone, then check their
         photo. Your driver checks yours too.
@@ -297,4 +332,5 @@ const styles = StyleSheet.create({
   },
   consent: { ...typography.secondary, color: colors.textMuted, flex: 1 },
   footerRow: { flexDirection: 'row', gap: spacing.sm },
+  linkRow: { flexDirection: 'row', gap: spacing.sm },
 });

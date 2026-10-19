@@ -57,6 +57,24 @@ import {
 import { RideRequestsScreen } from '../screens/driver/RideRequestsScreen';
 import { DriverReviewScreen, VehicleProfileScreen } from '../screens/driver/VehicleProfileScreen';
 import { useAppMode } from '../state/mode';
+import {
+  ConnectionBookScreen,
+  ConnectionDetailsScreen,
+  ConnectionStatusScreen,
+} from '../screens/connections/ConnectionScreens';
+import {
+  MyReportsScreen,
+  RatePassengersScreen,
+  RateTripScreen,
+  ReportProblemScreen,
+} from '../screens/social/AfterTripScreens';
+import { TripChatScreen, TundeChatScreen } from '../screens/social/ChatScreens';
+import {
+  HandoverRideScreen,
+  HandoversInboxScreen,
+  TransferTicketScreen,
+  TransfersInboxScreen,
+} from '../screens/social/OfferScreens';
 import { VerifyPhoneScreen } from '../screens/VerifyPhoneScreen';
 import { colors, fonts } from '../theme';
 import type {
@@ -207,6 +225,19 @@ export function RootNavigator() {
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <App.Screen name="CancelBooking" component={CancelBookingScreen} />
+      <App.Screen name="TransferTicket" component={TransferTicketScreen} />
+      <App.Screen name="TransfersInbox" component={TransfersInboxScreen} />
+      <App.Screen name="HandoverRide" component={HandoverRideScreen} />
+      <App.Screen name="HandoversInbox" component={HandoversInboxScreen} />
+      <App.Screen name="TripChat" component={TripChatScreen} />
+      <App.Screen name="TundeChat" component={TundeChatScreen} />
+      <App.Screen name="RateTrip" component={RateTripScreen} />
+      <App.Screen name="RatePassengers" component={RatePassengersScreen} />
+      <App.Screen name="ReportProblem" component={ReportProblemScreen} />
+      <App.Screen name="MyReports" component={MyReportsScreen} />
+      <App.Screen name="ConnectionDetails" component={ConnectionDetailsScreen} />
+      <App.Screen name="ConnectionBook" component={ConnectionBookScreen} />
+      <App.Screen name="ConnectionStatus" component={ConnectionStatusScreen} />
       <App.Screen name="KycConsent" component={KycConsentScreen} />
       <App.Screen name="KycSelfie" component={KycSelfieScreen} />
       <App.Screen name="KycId" component={KycIdScreen} />
