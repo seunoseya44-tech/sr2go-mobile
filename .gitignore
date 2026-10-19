@@ -46,3 +46,8 @@ yarn-error.*
 
 # test output
 coverage/
+
+# Claude Code / AI assistant files (local only)
+.claude/
+CLAUDE.md
+AGENTS.md
