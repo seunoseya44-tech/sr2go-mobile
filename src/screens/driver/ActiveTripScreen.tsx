@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 
 import { driverApi } from '../../api/driver';
+import { readEmergencyContact } from '../profile/ProfileScreens';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -105,10 +106,12 @@ export function ActiveTripScreen() {
       const first = paid[0];
       if (!first) throw new Error('No active booking to attach the alert to.');
       const { http, ENDPOINTS } = await import('../../api/client');
+      const contact = await readEmergencyContact();
       await http.post(`${ENDPOINTS.bookings}/${first.id}/sos`, {
         latitude: pos?.coords.latitude ?? null,
         longitude: pos?.coords.longitude ?? null,
         message: 'SOS from the driver app',
+        emergency_contact_phone: contact?.phone ?? null,
       });
     },
   });

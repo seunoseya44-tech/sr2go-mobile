@@ -63,8 +63,23 @@ export const ENDPOINTS = {
   boardingPackBookingSaved: (bookingId: string) => `/api/boarding/pack/booking/${bookingId}/saved`,
   boardingPackRideSaved: (rideId: string) => `/api/boarding/pack/ride/${rideId}/saved`,
   boardingSync: '/api/boarding/sync',
-  // KYC
+  // KYC, profile, wallet (B6)
   kycStatus: '/api/kyc/status',
+  selfieConsentConfig: '/api/kyc/selfie-consent-config',
+  selfieConsent: '/api/kyc/selfie-consent',
+  kycDojah: '/api/auth/kyc/dojah',
+  kycBanks: '/api/kyc/banks',
+  kycBanksResolve: '/api/kyc/banks/resolve',
+  kycBankRegister: '/api/kyc/bank/register',
+  usersMe: '/api/users/me',
+  usersMePassword: '/api/users/me/password',
+  referralWallet: '/api/referral/wallet',
+  referralDashboard: '/api/referral/dashboard',
+  referralGenerateCode: '/api/referral/generate-code',
+  walletGiftLookup: '/api/wallet/gift/lookup',
+  walletGift: '/api/wallet/gift',
+  walletTopUpAccount: '/api/wallet/topup/account',
+  walletTopUpInitiate: '/api/wallet/topup/initiate',
   health: '/api/health',
 } as const;
 

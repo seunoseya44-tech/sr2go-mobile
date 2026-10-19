@@ -45,13 +45,35 @@ export function ProfileScreen() {
       </View>
 
       <View>
-        <ListRow icon="person-outline" title="Personal details" subtitle="Name and phone" />
+        {!user?.isVerified ? (
+          <ListRow
+            icon="shield-checkmark-outline"
+            title="Verify your identity"
+            subtitle="NIN or BVN and a live selfie, about 2 minutes"
+            onPress={() => navigation.navigate('KycConsent')}
+            testID="verify-row"
+          />
+        ) : null}
         <ListRow
-          icon="card-outline"
-          title="Bank account"
-          subtitle={user?.bankVerified ? 'Added' : 'Not added yet'}
+          icon="person-outline"
+          title="Personal details"
+          subtitle="Name and phone"
+          onPress={() => navigation.navigate('PersonalDetails')}
         />
-        <ListRow icon="call-outline" title="Emergency contact" subtitle="Used by the SOS button" />
+        {user?.role === 'driver' ? (
+          <ListRow
+            icon="card-outline"
+            title="Bank account"
+            subtitle={user?.bankVerified ? 'Added' : 'Not added yet'}
+            onPress={() => navigation.navigate('KycBank')}
+          />
+        ) : null}
+        <ListRow
+          icon="call-outline"
+          title="Emergency contact"
+          subtitle="Used by the SOS button"
+          onPress={() => navigation.navigate('EmergencyContact')}
+        />
         <ListRow
           icon="car-outline"
           title={mode === 'driver' ? 'Switch to travelling' : 'Drive with SR2Go'}
@@ -68,8 +90,17 @@ export function ProfileScreen() {
           }}
           testID="drive-row"
         />
-        <ListRow icon="key-outline" title="Change password" />
-        <ListRow icon="flag-outline" title="My reports" />
+        <ListRow
+          icon="key-outline"
+          title="Change password"
+          onPress={() => navigation.navigate('ChangePassword')}
+        />
+        <ListRow icon="flag-outline" title="My reports" subtitle="Coming in the next update" />
+        <ListRow
+          icon="trash-outline"
+          title="Delete account"
+          onPress={() => navigation.navigate('DeleteAccount')}
+        />
       </View>
 
       <View style={styles.links}>

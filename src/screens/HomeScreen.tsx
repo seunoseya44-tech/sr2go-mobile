@@ -99,7 +99,12 @@ export function HomeScreen() {
       </View>
 
       {!verified ? (
-        <Pressable style={styles.verifyBanner} accessibilityRole="button" testID="verify-banner">
+        <Pressable
+          style={styles.verifyBanner}
+          accessibilityRole="button"
+          testID="verify-banner"
+          onPress={() => navigation.navigate('KycConsent', { next: 'book' })}
+        >
           <Ionicons name="shield-outline" size={18} color={colors.navy} />
           <Text style={styles.verifyText}>Verify your identity to book</Text>
           <Ionicons name="chevron-forward" size={18} color={colors.navy} />

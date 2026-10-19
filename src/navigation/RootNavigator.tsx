@@ -13,7 +13,25 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { RideDetailsScreen } from '../screens/RideDetailsScreen';
 import { SearchResultsScreen } from '../screens/SearchResultsScreen';
 import { SplashScreen } from '../screens/SplashScreen';
-import { WalletScreen } from '../screens/PlaceholderScreens';
+import {
+  KycBankScreen,
+  KycConsentScreen,
+  KycDoneScreen,
+  KycIdScreen,
+  KycSelfieScreen,
+} from '../screens/kyc/KycScreens';
+import {
+  ChangePasswordScreen,
+  DeleteAccountScreen,
+  EmergencyContactScreen,
+  PersonalDetailsScreen,
+} from '../screens/profile/ProfileScreens';
+import {
+  InviteScreen,
+  SendCreditScreen,
+  TopUpScreen,
+  WalletScreen,
+} from '../screens/wallet/WalletScreens';
 import { TripsScreen } from '../screens/TripsScreen';
 import { BoardingPassScreen } from '../screens/booking/BoardingPassScreen';
 import { BookingConfirmationScreen } from '../screens/booking/BookingConfirmationScreen';
@@ -189,6 +207,19 @@ export function RootNavigator() {
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <App.Screen name="CancelBooking" component={CancelBookingScreen} />
+      <App.Screen name="KycConsent" component={KycConsentScreen} />
+      <App.Screen name="KycSelfie" component={KycSelfieScreen} />
+      <App.Screen name="KycId" component={KycIdScreen} />
+      <App.Screen name="KycBank" component={KycBankScreen} />
+      <App.Screen name="KycDone" component={KycDoneScreen} options={{ gestureEnabled: false }} />
+      <App.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <App.Screen name="PersonalDetails" component={PersonalDetailsScreen} />
+      <App.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <App.Screen name="EmergencyContact" component={EmergencyContactScreen} />
+      <App.Screen name="DeleteAccount" component={DeleteAccountScreen} />
+      <App.Screen name="Invite" component={InviteScreen} />
+      <App.Screen name="SendCredit" component={SendCreditScreen} />
+      <App.Screen name="TopUp" component={TopUpScreen} />
       <App.Screen name="ScanDriver" component={ScanDriverScreen} options={{ animation: 'fade' }} />
       <App.Screen
         name="ConfirmDriver"

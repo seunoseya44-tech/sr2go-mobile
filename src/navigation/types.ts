@@ -41,6 +41,20 @@ export type AppStackParamList = {
   BookingConfirmation: { bookingId: string };
   BoardingPass: { bookingId: string };
   CancelBooking: { bookingId: string };
+  ForgotPassword: undefined;
+  // B6 account and wallet
+  KycConsent: { next?: 'book' | 'post' } | undefined;
+  KycSelfie: { next?: 'book' | 'post' } | undefined;
+  KycId: { selfieBase64: string; next?: 'book' | 'post' };
+  KycBank: { next?: 'book' | 'post' } | undefined;
+  KycDone: { next?: 'book' | 'post' } | undefined;
+  PersonalDetails: undefined;
+  ChangePassword: undefined;
+  EmergencyContact: undefined;
+  DeleteAccount: undefined;
+  Invite: undefined;
+  SendCredit: undefined;
+  TopUp: undefined;
   // B5 offline boarding
   ScanDriver: { bookingId: string };
   ConfirmDriver: {

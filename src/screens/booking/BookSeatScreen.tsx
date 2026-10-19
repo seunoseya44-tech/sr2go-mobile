@@ -112,7 +112,7 @@ export function BookSeatScreen() {
         <Button
           title="Verify my identity"
           variant="secondary"
-          onPress={() => navigation.navigate('Main', { screen: 'Profile' })}
+          onPress={() => navigation.navigate('KycConsent', { next: 'book' })}
         />
       ) : null}
 
