@@ -13,7 +13,15 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { RideDetailsScreen } from '../screens/RideDetailsScreen';
 import { SearchResultsScreen } from '../screens/SearchResultsScreen';
 import { SplashScreen } from '../screens/SplashScreen';
-import { TripsScreen, WalletScreen } from '../screens/PlaceholderScreens';
+import { WalletScreen } from '../screens/PlaceholderScreens';
+import { TripsScreen } from '../screens/TripsScreen';
+import { BoardingPassScreen } from '../screens/booking/BoardingPassScreen';
+import { BookingConfirmationScreen } from '../screens/booking/BookingConfirmationScreen';
+import { BookingStatusScreen } from '../screens/booking/BookingStatusScreen';
+import { BookSeatScreen } from '../screens/booking/BookSeatScreen';
+import { CancelBookingScreen } from '../screens/booking/CancelBookingScreen';
+import { PaymentResultScreen } from '../screens/booking/PaymentResultScreen';
+import { PaymentScreen } from '../screens/booking/PaymentScreen';
 import { VerifyPhoneScreen } from '../screens/VerifyPhoneScreen';
 import { colors, fonts } from '../theme';
 import type { AppStackParamList, AuthStackParamList, MainTabParamList } from './types';
@@ -97,6 +105,25 @@ export function RootNavigator() {
       <App.Screen name="SearchResults" component={SearchResultsScreen} />
       <App.Screen name="RideDetails" component={RideDetailsScreen} />
       <App.Screen name="DriverProfile" component={DriverProfileScreen} />
+      <App.Screen name="BookSeat" component={BookSeatScreen} />
+      <App.Screen
+        name="BookingStatus"
+        component={BookingStatusScreen}
+        options={{ gestureEnabled: false }}
+      />
+      <App.Screen name="Payment" component={PaymentScreen} />
+      <App.Screen
+        name="PaymentResult"
+        component={PaymentResultScreen}
+        options={{ gestureEnabled: false, animation: 'fade' }}
+      />
+      <App.Screen name="BookingConfirmation" component={BookingConfirmationScreen} />
+      <App.Screen
+        name="BoardingPass"
+        component={BoardingPassScreen}
+        options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+      />
+      <App.Screen name="CancelBooking" component={CancelBookingScreen} />
     </App.Navigator>
   );
 }

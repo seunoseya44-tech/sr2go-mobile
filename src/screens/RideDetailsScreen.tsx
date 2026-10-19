@@ -185,6 +185,7 @@ export function RideDetailsScreen() {
 }
 
 function BottomBar({ ride }: { ride: Ride }) {
+  const navigation = useNavigation<Nav>();
   return (
     <View style={styles.bottomBar}>
       <PriceBlock
@@ -195,8 +196,8 @@ function BottomBar({ ride }: { ride: Ride }) {
       />
       <Button
         title={ride.autoApprove ? 'Book seat' : 'Request to book'}
-        onPress={() => undefined}
-        disabled
+        onPress={() => navigation.navigate('BookSeat', { rideId: ride.id })}
+        disabled={ride.seatsLeft === 0}
         style={styles.bookButton}
         testID="book-button"
       />

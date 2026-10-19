@@ -25,6 +25,16 @@ export const ENDPOINTS = {
   ride: (rideId: string) => `/api/rides/${rideId}`,
   driverPublic: (driverId: string) => `/api/drivers/${driverId}/public`,
   pricingTicker: '/api/v1/pricing/ticker',
+  // Bookings and payment (B2)
+  bookings: '/api/rides/bookings',
+  bookingsMine: '/api/rides/bookings/mine',
+  boardingPass: (bookingId: string) => `/api/rides/bookings/${bookingId}/boarding-pass`,
+  rideContacts: (rideId: string) => `/api/rides/${rideId}/contacts`,
+  trackingLink: (bookingId: string) => `/api/rides/bookings/${bookingId}/tracking-link`,
+  cancellationPolicy: (bookingId: string) => `/api/cancellations/policy/${bookingId}`,
+  cancelBooking: (bookingId: string) => `/api/cancellations/booking/${bookingId}`,
+  paymentInitiate: '/api/payments/initiate',
+  paymentVerify: '/api/payments/verify',
   // Offline boarding (16 Oct 2026)
   boardingPublicKey: '/api/boarding/public-key',
   boardingPackBooking: (bookingId: string) => `/api/boarding/pack/booking/${bookingId}`,

@@ -22,6 +22,20 @@ export type AppStackParamList = {
   SearchResults: { params: RideSearchParams };
   RideDetails: { rideId: string };
   DriverProfile: { driverId: string; name?: string | null };
+  // B2
+  BookSeat: { rideId: string };
+  BookingStatus: { bookingId: string };
+  Payment: { bookingId: string };
+  PaymentResult: {
+    bookingId: string;
+    status: 'paid' | 'failed' | 'refund_due' | 'underpaid' | 'refunded' | 'pending';
+    message?: string | null;
+    youPaid?: string | null;
+    reference?: string | null;
+  };
+  BookingConfirmation: { bookingId: string };
+  BoardingPass: { bookingId: string };
+  CancelBooking: { bookingId: string };
 };
 
 export type RootStackParamList = AuthStackParamList &

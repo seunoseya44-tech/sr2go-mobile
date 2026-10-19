@@ -29,16 +29,6 @@ function Placeholder({
   );
 }
 
-export function TripsScreen() {
-  return (
-    <Placeholder
-      title="My trips"
-      icon="car-outline"
-      body="Your bookings will appear here once you book a seat."
-    />
-  );
-}
-
 export function WalletScreen() {
   return (
     <Placeholder
