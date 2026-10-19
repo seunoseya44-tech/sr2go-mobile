@@ -7,7 +7,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ScreenCapture from 'expo-screen-capture';
 
-import { boardingApi } from '../../api/boarding';
+import { packs, recordCheck, usePendingSync } from '../../boarding/manager';
+import { packStore } from '../../boarding/store';
+import { checkPassengerQr, QR_FAILURE_MESSAGE } from '../../boarding/token';
 import { driverApi, type RideBooking } from '../../api/driver';
 import { toApiError } from '../../api/errors';
 import { SUPPORT_PHONE_FALLBACK } from '../../boarding/types';
@@ -36,11 +38,12 @@ export function DriverBoardingScreen() {
     queryKey: ['ride', params.rideId],
     queryFn: () => driverApi.ride(params.rideId),
   });
+  const pending = usePendingSync();
   const pack = useQuery({
     queryKey: ['driver-pack', params.rideId],
-    queryFn: () => boardingApi.driverPack(params.rideId),
+    queryFn: () => packs.driver(params.rideId),
     retry: false,
-    staleTime: 10 * 60_000,
+    staleTime: 5 * 60_000,
   });
   const bookings = useQuery({
     queryKey: ['ride-bookings', params.rideId],
@@ -117,7 +120,13 @@ export function DriverBoardingScreen() {
       ) : null}
       <View style={styles.rowCenter}>
         <Ionicons name="cloud-upload-outline" size={16} color={colors.textMuted} />
-        <Text style={shared.small}>Saved - will send when you’re back online.</Text>
+        <Text style={shared.small}>
+          {pending > 0
+            ? 'Saved - will send when you’re back online.'
+            : pack.data
+              ? 'Boarding pack on this phone · works without signal'
+              : 'Open the app with signal before departure to board without data.'}
+        </Text>
       </View>
     </Screen>
   );
@@ -143,6 +152,39 @@ export function ScanPassengerScreen() {
 
   const check = useMutation({
     mutationFn: async (input: { qr?: string; pin?: string }) => {
+      // Offline first: a QR is checked against the driver pack on the phone.
+      if (input.qr) {
+        const pack = await packStore.getDriver(params.rideId);
+        if (pack) {
+          const res = checkPassengerQr(
+            input.qr,
+            {
+              rideId: pack.rideId,
+              publicKey: pack.key.publicKey,
+              passengers: pack.passengers.map((p) => ({
+                bookingId: p.bookingId,
+                passengerId: p.passengerId,
+              })),
+            },
+            Math.floor(Date.now() / 1000) + pack.clockOffsetSeconds,
+          );
+          if (!res.ok) throw new Error(QR_FAILURE_MESSAGE);
+          const p = pack.passengers.find((x) => x.bookingId === res.payload.b)!;
+          if (p.heldForReview)
+            throw new Error('This booking is on hold. Do not board. SR2Go will contact you.');
+          const photo = await packStore.photoUri('driver', params.rideId, p.bookingId);
+          return {
+            bookingId: p.bookingId,
+            passengerName: p.name,
+            passengerPhoto: photo,
+            seats: p.seatsBooked,
+            children: p.children,
+            message: null,
+            scanned: input.qr,
+            offline: true,
+          };
+        }
+      }
       // The online calls need a booking id; with a token we can read it from the payload.
       const list = bookings.data ?? (await driverApi.rideBookings(params.rideId));
       let bookingId = params.bookingId ?? null;
@@ -152,7 +194,12 @@ export function ScanPassengerScreen() {
         for (const b of list.filter((x) => x.paid && !x.boarded)) {
           try {
             const res = await driverApi.verifyPin(b.id, input.pin);
-            return { ...res, bookingId: res.bookingId ?? b.id };
+            return {
+              ...res,
+              bookingId: res.bookingId ?? b.id,
+              scanned: input.pin!,
+              offline: false,
+            };
           } catch (e) {
             if (toApiError(e).status === 429) throw e;
           }
@@ -163,7 +210,12 @@ export function ScanPassengerScreen() {
       const res = input.qr
         ? await driverApi.scanQr(bookingId, input.qr)
         : await driverApi.verifyPin(bookingId, input.pin!);
-      return { ...res, bookingId: res.bookingId ?? bookingId };
+      return {
+        ...res,
+        bookingId: res.bookingId ?? bookingId,
+        scanned: input.qr ?? input.pin!,
+        offline: false,
+      };
     },
     onSuccess: (res) => {
       busy.current = false;
@@ -174,6 +226,8 @@ export function ScanPassengerScreen() {
         photo: res.passengerPhoto,
         seats: res.seats,
         children: res.children,
+        scanned: res.scanned,
+        offline: res.offline,
       });
     },
     onError: (e) => {
@@ -285,8 +339,19 @@ export function ConfirmPassengerScreen() {
   }, []);
 
   const confirm = useMutation({
-    mutationFn: (matched: boolean) =>
-      driverApi.confirmBoarding(params.bookingId, matched, matched ? undefined : reason),
+    mutationFn: async (matched: boolean) => {
+      if (params.offline && params.scanned) {
+        await recordCheck({
+          bookingId: params.bookingId,
+          side: 'driver',
+          scanned: params.scanned,
+          faceMatched: matched,
+          reason: matched ? null : reason,
+        });
+        return null;
+      }
+      return driverApi.confirmBoarding(params.bookingId, matched, matched ? undefined : reason);
+    },
     onSuccess: (message, matched) => {
       void queryClient.invalidateQueries({ queryKey: ['ride-bookings', params.rideId] });
       if (matched) navigation.replace('ScanPassenger', { rideId: params.rideId });

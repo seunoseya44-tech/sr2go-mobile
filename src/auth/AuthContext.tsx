@@ -10,6 +10,7 @@ import {
 
 import { authApi } from '../api/auth';
 import { refreshTokens } from '../api/client';
+import { packStore } from '../boarding/store';
 import { parseUser } from '../api/parsers';
 import type { AuthTokens, LoginCredentials, RegisterPayload, User } from '../api/types';
 import { secureStorage } from '../storage/secureStorage';
@@ -91,7 +92,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const endSession = useCallback(async (notice?: string) => {
-    await Promise.all([session.clear(), secureStorage.remove(USER_CACHE_KEY)]);
+    await Promise.all([
+      session.clear(),
+      secureStorage.remove(USER_CACHE_KEY),
+      packStore.wipe().catch(() => undefined),
+    ]);
     dispatch({ type: 'SIGNED_OUT', notice });
   }, []);
 

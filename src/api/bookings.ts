@@ -334,6 +334,44 @@ export const bookingsApi = {
     return parseBoardingPass(data);
   },
 
+  /** Online driver check (no pack): the scanned trip QR text or the 4-digit code. */
+  async scanDriver(
+    bookingId: string,
+    code: string,
+  ): Promise<{
+    name: string | null;
+    verified: boolean;
+    photo: string | null;
+    vehicle: string | null;
+  }> {
+    const { data } = await http.post(ENDPOINTS.scanDriver(bookingId), { code });
+    const s = unwrap(data);
+    const d = obj(s.driver);
+    const v = obj(d.vehicle ?? s.vehicle);
+    const car = [first(v, ['colour', 'color']), first(v, ['make']), first(v, ['model'])]
+      .filter(Boolean)
+      .join(' ');
+    const plate = first(v, ['plate', 'plate_number']);
+    return {
+      name: first(d, ['name']) ?? first(s, ['driver_name', 'name']),
+      verified: d.verified === true || s.driver_verified === true,
+      photo: first(d, ['photo']) ?? first(s, ['driver_photo', 'photo']),
+      vehicle: [car, plate].filter(Boolean).join(' · ') || null,
+    };
+  },
+
+  async passengerConfirm(
+    bookingId: string,
+    faceMatched: boolean,
+    reason?: string,
+  ): Promise<string | null> {
+    const { data } = await http.post(ENDPOINTS.passengerConfirm(bookingId), {
+      face_matched: faceMatched,
+      reason: reason || undefined,
+    });
+    return first(unwrap(data), ['message']);
+  },
+
   async trackingLink(bookingId: string): Promise<TrackingLink> {
     const { data } = await http.get(ENDPOINTS.trackingLink(bookingId));
     const s = unwrap(data);

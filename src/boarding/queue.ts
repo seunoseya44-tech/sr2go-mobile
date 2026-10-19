@@ -50,6 +50,13 @@ export interface NewEvent {
 function uuid(): string {
   const c = globalThis.crypto as { randomUUID?: () => string } | undefined;
   if (c?.randomUUID) return c.randomUUID();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const expo = require('expo-crypto') as { randomUUID?: () => string };
+    if (expo.randomUUID) return expo.randomUUID();
+  } catch {
+    /* tests and web: fall through */
+  }
   // Fallback for runtimes without randomUUID: still 8–64 chars and unique enough per phone.
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
 }

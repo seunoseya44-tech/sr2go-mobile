@@ -41,6 +41,17 @@ export type AppStackParamList = {
   BookingConfirmation: { bookingId: string };
   BoardingPass: { bookingId: string };
   CancelBooking: { bookingId: string };
+  // B5 offline boarding
+  ScanDriver: { bookingId: string };
+  ConfirmDriver: {
+    bookingId: string;
+    scanned: string;
+    name: string | null;
+    verified: boolean;
+    photo: string | null;
+    vehicle: string | null;
+    offline: boolean;
+  };
   // B4 driver mode
   VehicleProfile: undefined;
   DriverReview: undefined;
@@ -57,6 +68,9 @@ export type AppStackParamList = {
     photo: string | null;
     seats: number | null;
     children: number;
+    /** Set when the check was done from the pack: the result is queued, not posted. */
+    scanned?: string;
+    offline?: boolean;
   };
   ActiveTrip: { rideId: string };
 };

@@ -22,6 +22,7 @@ import { BookSeatScreen } from '../screens/booking/BookSeatScreen';
 import { CancelBookingScreen } from '../screens/booking/CancelBookingScreen';
 import { PaymentResultScreen } from '../screens/booking/PaymentResultScreen';
 import { PaymentScreen } from '../screens/booking/PaymentScreen';
+import { ConfirmDriverScreen, ScanDriverScreen } from '../screens/booking/ScanDriverScreens';
 import { ActiveTripScreen } from '../screens/driver/ActiveTripScreen';
 import {
   ConfirmPassengerScreen,
@@ -188,6 +189,12 @@ export function RootNavigator() {
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <App.Screen name="CancelBooking" component={CancelBookingScreen} />
+      <App.Screen name="ScanDriver" component={ScanDriverScreen} options={{ animation: 'fade' }} />
+      <App.Screen
+        name="ConfirmDriver"
+        component={ConfirmDriverScreen}
+        options={{ gestureEnabled: false }}
+      />
       <App.Screen name="VehicleProfile" component={VehicleProfileScreen} />
       <App.Screen name="DriverReview" component={DriverReviewScreen} />
       <App.Screen name="PostRideRoute" component={PostRideRouteScreen} />

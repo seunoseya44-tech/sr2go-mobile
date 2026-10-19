@@ -28,6 +28,8 @@ export const ENDPOINTS = {
   // Bookings and payment (B2)
   bookings: '/api/rides/bookings',
   bookingsMine: '/api/rides/bookings/mine',
+  scanDriver: (bookingId: string) => `/api/rides/bookings/${bookingId}/scan-driver`,
+  passengerConfirm: (bookingId: string) => `/api/rides/bookings/${bookingId}/passenger-confirm`,
   boardingPass: (bookingId: string) => `/api/rides/bookings/${bookingId}/boarding-pass`,
   rideContacts: (rideId: string) => `/api/rides/${rideId}/contacts`,
   trackingLink: (bookingId: string) => `/api/rides/bookings/${bookingId}/tracking-link`,

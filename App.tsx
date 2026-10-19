@@ -17,6 +17,7 @@ import {
 } from '@expo-google-fonts/montserrat';
 
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import { useBoardingBackground } from './src/boarding/manager';
 import { BrandIntro } from './src/components/BrandIntro';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -49,6 +50,7 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
   const ready = fontsReady && status !== 'restoring';
   const [introDone, setIntroDone] = useState(false);
   const finishIntro = useCallback(() => setIntroDone(true), []);
+  useBoardingBackground(status === 'signedIn');
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => undefined);

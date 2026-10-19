@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useQuery } from '@tanstack/react-query';
-import { useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Brightness from 'expo-brightness';
 
 import { bookingsApi } from '../../api/bookings';
+import { packs, usePendingSync } from '../../boarding/manager';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -22,10 +24,16 @@ import { shared } from './shared';
  * Cached by React Query so it still shows with no signal once loaded.
  */
 export function BoardingPassScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const { params } = useRoute<RouteProp<AppStackParamList, 'BoardingPass'>>();
+  const pending = usePendingSync();
+  const pack = useQuery({
+    queryKey: ['passenger-pack', params.bookingId],
+    queryFn: () => packs.passenger(params.bookingId),
+    staleTime: 5 * 60_000,
+  });
   const { isInternetReachable } = useNetInfo();
   const offline = isInternetReachable === false;
-  const [note, setNote] = useState<string | null>(null);
 
   const pass = useQuery({
     queryKey: ['boarding-pass', params.bookingId],
@@ -60,8 +68,8 @@ export function BoardingPassScreen() {
 
   const p = pass.data ?? null;
   const b = booking.data ?? null;
-  const qr = p?.qrPayload ?? b?.qrCodeData ?? null;
-  const code = p?.boardingCode ?? b?.boardingCode ?? null;
+  const qr = pack.data?.myQr ?? p?.qrPayload ?? b?.qrCodeData ?? null;
+  const code = pack.data?.boardingCode ?? p?.boardingCode ?? b?.boardingCode ?? null;
   const vehicle = p?.driver.vehicle
     ? [p.driver.vehicle.colour, p.driver.vehicle.model, p.driver.vehicle.plate]
         .filter(Boolean)
@@ -77,12 +85,7 @@ export function BoardingPassScreen() {
           <Button
             title="Scan driver's QR"
             icon="qr-code-outline"
-            onPress={() =>
-              setNote(
-                'The driver check (scan your driver, then confirm the face) arrives in the next update.',
-              )
-            }
-            disabled={!qr}
+            onPress={() => navigation.navigate('ScanDriver', { bookingId: params.bookingId })}
           />
           {offline ? (
             <Text style={shared.small}>No signal - scan the QR instead.</Text>
@@ -98,10 +101,9 @@ export function BoardingPassScreen() {
       {pass.isError && !qr ? (
         <Banner tone="error" message={toApiError(pass.error).message} />
       ) : null}
-      {note ? <Banner message={note} onDismiss={() => setNote(null)} /> : null}
 
       <View style={styles.card}>
-        {pass.isPending && !qr ? (
+        {pass.isPending && pack.isPending && !qr ? (
           <ActivityIndicator color={colors.brand} />
         ) : (
           <QrBox value={qr} code={code} size={220} />
@@ -127,9 +129,11 @@ export function BoardingPassScreen() {
       <View style={styles.row}>
         <Ionicons name="phone-portrait-outline" size={16} color={colors.textMuted} />
         <Text style={shared.small}>
-          {offline
+          {pending > 0
             ? 'Saved - will send when you’re back online.'
-            : 'Stored on this phone · works without internet'}
+            : pack.data
+              ? 'Stored on this phone · works without internet'
+              : 'Open the app with signal before departure so this pass works offline.'}
         </Text>
       </View>
     </Screen>
