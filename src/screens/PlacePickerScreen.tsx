@@ -8,6 +8,7 @@ import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
 import { Subtext } from '../components/ui';
 import type { AppStackParamList } from '../navigation/types';
+import { postRide } from '../state/postRide';
 import { searchForm } from '../state/searchForm';
 import { colors, spacing, typography } from '../theme';
 
@@ -50,9 +51,9 @@ export function PlacePickerScreen() {
           return (
             <Pressable
               onPress={() => {
-                searchForm.set(
-                  params.field === 'origin' ? { origin: item } : { destination: item },
-                );
+                const patch = params.field === 'origin' ? { origin: item } : { destination: item };
+                if (params.target === 'post') postRide.set(patch);
+                else searchForm.set(patch);
                 navigation.goBack();
               }}
               accessibilityRole="button"

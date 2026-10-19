@@ -18,7 +18,12 @@ export type MainTabParamList = {
 
 export type AppStackParamList = {
   Main: NavigatorScreenParams<MainTabParamList>;
-  PlacePicker: { field: 'origin' | 'destination'; current: Place | null };
+  DriverMain: NavigatorScreenParams<DriverTabParamList>;
+  PlacePicker: {
+    field: 'origin' | 'destination';
+    current: Place | null;
+    target?: 'search' | 'post';
+  };
   SearchResults: { params: RideSearchParams };
   RideDetails: { rideId: string };
   DriverProfile: { driverId: string; name?: string | null };
@@ -36,6 +41,31 @@ export type AppStackParamList = {
   BookingConfirmation: { bookingId: string };
   BoardingPass: { bookingId: string };
   CancelBooking: { bookingId: string };
+  // B4 driver mode
+  VehicleProfile: undefined;
+  DriverReview: undefined;
+  PostRideRoute: undefined;
+  PostRidePrice: undefined;
+  PostRideDetails: undefined;
+  RideRequests: { rideId: string };
+  DriverBoarding: { rideId: string };
+  ScanPassenger: { rideId: string; bookingId?: string };
+  ConfirmPassenger: {
+    rideId: string;
+    bookingId: string;
+    name: string | null;
+    photo: string | null;
+    seats: number | null;
+    children: number;
+  };
+  ActiveTrip: { rideId: string };
+};
+
+export type DriverTabParamList = {
+  MyRides: undefined;
+  PostRide: undefined;
+  Earnings: undefined;
+  DriverProfileTab: undefined;
 };
 
 export type RootStackParamList = AuthStackParamList &

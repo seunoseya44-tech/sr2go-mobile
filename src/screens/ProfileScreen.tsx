@@ -1,15 +1,22 @@
 import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { useAuth } from '../auth/AuthContext';
 import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { Avatar, Badge, LinkText, ListRow } from '../components/ui';
 import { env } from '../config/env';
+import type { AppStackParamList } from '../navigation/types';
+import { appMode, useAppMode } from '../state/mode';
 import { colors, spacing, typography } from '../theme';
 
 /** Screen 46 (B1 subset): header, the rows that exist today, Privacy · Terms, Log out. */
 export function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const mode = useAppMode();
 
   const confirmSignOut = () => {
     const title = 'Log out of SR2Go?';
@@ -47,8 +54,19 @@ export function ProfileScreen() {
         <ListRow icon="call-outline" title="Emergency contact" subtitle="Used by the SOS button" />
         <ListRow
           icon="car-outline"
-          title="Drive with SR2Go"
-          subtitle="Add your vehicle to start posting rides"
+          title={mode === 'driver' ? 'Switch to travelling' : 'Drive with SR2Go'}
+          subtitle={
+            mode === 'driver'
+              ? 'Book seats as a passenger'
+              : 'Add your vehicle to start posting rides'
+          }
+          onPress={() => {
+            if (mode === 'driver') {
+              appMode.set('passenger');
+              navigation.navigate('Main', { screen: 'Home' });
+            } else navigation.navigate('DriverReview');
+          }}
+          testID="drive-row"
         />
         <ListRow icon="key-outline" title="Change password" />
         <ListRow icon="flag-outline" title="My reports" />

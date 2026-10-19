@@ -22,14 +22,36 @@ import { BookSeatScreen } from '../screens/booking/BookSeatScreen';
 import { CancelBookingScreen } from '../screens/booking/CancelBookingScreen';
 import { PaymentResultScreen } from '../screens/booking/PaymentResultScreen';
 import { PaymentScreen } from '../screens/booking/PaymentScreen';
+import { ActiveTripScreen } from '../screens/driver/ActiveTripScreen';
+import {
+  ConfirmPassengerScreen,
+  DriverBoardingScreen,
+  ScanPassengerScreen,
+} from '../screens/driver/BoardingScreens';
+import { EarningsScreen } from '../screens/driver/EarningsScreen';
+import { MyRidesScreen } from '../screens/driver/MyRidesScreen';
+import {
+  PostRideDetailsScreen,
+  PostRidePriceScreen,
+  PostRideRouteScreen,
+} from '../screens/driver/PostRideScreens';
+import { RideRequestsScreen } from '../screens/driver/RideRequestsScreen';
+import { DriverReviewScreen, VehicleProfileScreen } from '../screens/driver/VehicleProfileScreen';
+import { useAppMode } from '../state/mode';
 import { VerifyPhoneScreen } from '../screens/VerifyPhoneScreen';
 import { colors, fonts } from '../theme';
-import type { AppStackParamList, AuthStackParamList, MainTabParamList } from './types';
+import type {
+  AppStackParamList,
+  AuthStackParamList,
+  DriverTabParamList,
+  MainTabParamList,
+} from './types';
 
 const Auth = createNativeStackNavigator<AuthStackParamList>();
 const App = createNativeStackNavigator<AppStackParamList>();
 const Verify = createNativeStackNavigator<{ VerifyPhone: undefined }>();
 const Tabs = createBottomTabNavigator<MainTabParamList>();
+const DriverTabs = createBottomTabNavigator<DriverTabParamList>();
 
 type IconName = keyof typeof Ionicons.glyphMap;
 const TAB_ICONS: Record<keyof MainTabParamList, [IconName, IconName]> = {
@@ -38,6 +60,41 @@ const TAB_ICONS: Record<keyof MainTabParamList, [IconName, IconName]> = {
   Wallet: ['wallet', 'wallet-outline'],
   Profile: ['person', 'person-outline'],
 };
+
+const DRIVER_TAB_ICONS: Record<keyof DriverTabParamList, [IconName, IconName, string]> = {
+  MyRides: ['car', 'car-outline', 'My rides'],
+  PostRide: ['add-circle', 'add-circle-outline', 'Post ride'],
+  Earnings: ['cash', 'cash-outline', 'Earnings'],
+  DriverProfileTab: ['person', 'person-outline', 'Profile'],
+};
+
+/** Driver mode tab bar: My rides, Post ride, Earnings, Profile. */
+function DriverMainTabs() {
+  return (
+    <DriverTabs.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.brand,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabel: DRIVER_TAB_ICONS[route.name][2],
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 12 },
+        tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.surface },
+        tabBarIcon: ({ focused, color, size }) => (
+          <Ionicons
+            name={DRIVER_TAB_ICONS[route.name][focused ? 0 : 1]}
+            size={size}
+            color={color}
+          />
+        ),
+      })}
+    >
+      <DriverTabs.Screen name="MyRides" component={MyRidesScreen} />
+      <DriverTabs.Screen name="PostRide" component={PostRideRouteScreen} />
+      <DriverTabs.Screen name="Earnings" component={EarningsScreen} />
+      <DriverTabs.Screen name="DriverProfileTab" component={ProfileScreen} />
+    </DriverTabs.Navigator>
+  );
+}
 
 function MainTabs() {
   return (
@@ -72,6 +129,7 @@ function MainTabs() {
  */
 export function RootNavigator() {
   const { status, phoneVerified } = useAuth();
+  const mode = useAppMode();
 
   if (status === 'restoring') return null;
 
@@ -96,7 +154,13 @@ export function RootNavigator() {
 
   return (
     <App.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+      {mode === 'driver' ? (
+        <App.Screen name="DriverMain" component={DriverMainTabs} options={{ animation: 'fade' }} />
+      ) : null}
       <App.Screen name="Main" component={MainTabs} options={{ animation: 'fade' }} />
+      {mode !== 'driver' ? (
+        <App.Screen name="DriverMain" component={DriverMainTabs} options={{ animation: 'fade' }} />
+      ) : null}
       <App.Screen
         name="PlacePicker"
         component={PlacePickerScreen}
@@ -124,6 +188,28 @@ export function RootNavigator() {
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <App.Screen name="CancelBooking" component={CancelBookingScreen} />
+      <App.Screen name="VehicleProfile" component={VehicleProfileScreen} />
+      <App.Screen name="DriverReview" component={DriverReviewScreen} />
+      <App.Screen name="PostRideRoute" component={PostRideRouteScreen} />
+      <App.Screen name="PostRidePrice" component={PostRidePriceScreen} />
+      <App.Screen name="PostRideDetails" component={PostRideDetailsScreen} />
+      <App.Screen name="RideRequests" component={RideRequestsScreen} />
+      <App.Screen name="DriverBoarding" component={DriverBoardingScreen} />
+      <App.Screen
+        name="ScanPassenger"
+        component={ScanPassengerScreen}
+        options={{ animation: 'fade' }}
+      />
+      <App.Screen
+        name="ConfirmPassenger"
+        component={ConfirmPassengerScreen}
+        options={{ gestureEnabled: false }}
+      />
+      <App.Screen
+        name="ActiveTrip"
+        component={ActiveTripScreen}
+        options={{ gestureEnabled: false }}
+      />
     </App.Navigator>
   );
 }
