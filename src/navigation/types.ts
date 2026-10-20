@@ -46,6 +46,8 @@ export type AppStackParamList = {
   EvidenceCamera: { rideId: string; event: 'journey_start' | 'journey_complete' };
   JourneyRecord: { rideId: string; route?: string | null };
   PassengerTrip: { bookingId: string };
+  TravellingWith: { bookingId: string };
+  CompanionInvites: undefined;
   // Build 7
   TransferTicket: { bookingId: string };
   TransfersInbox: undefined;

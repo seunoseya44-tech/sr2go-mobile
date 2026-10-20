@@ -5,6 +5,7 @@
  */
 import { ENDPOINTS, http } from './client';
 import { parseRide, unwrap, unwrapList } from './parsers';
+import { ridesApi } from './rides';
 import type { Ride } from './types';
 
 type Json = Record<string, unknown>;
@@ -112,7 +113,9 @@ export function parseBooking(payload: unknown): Booking | null {
     qrCodeData: first(s, ['qr_code_data', 'qr_payload', 'my_qr']),
     reference: first(s, ['reference', 'payment_reference', 'booking_reference']),
     payAmount:
-      first(s, ['pay_amount', 'you_pay', 'total_amount', 'total']) ?? ride?.payAmount ?? null,
+      first(s, ['pay_amount', 'you_pay', 'total_price', 'total_amount', 'total']) ??
+      ride?.payAmount ??
+      null,
     usualFare: first(s, ['usual_fare']) ?? ride?.usualFare ?? null,
     savingsPct: num(s.savings_pct) ?? ride?.savingsPct ?? null,
     ride,
@@ -273,7 +276,10 @@ export function parsePolicy(payload: unknown): CancellationPolicy {
     tier: first(s, ['tier', 'policy', 'refund_tier']),
     cashRefund: first(s, ['cash_refund', 'refund_amount', 'refund']),
     creditRefund: first(s, ['credit_refund']),
-    message: first(s, ['message', 'description', 'summary']),
+    message:
+      first(s, ['message', 'description', 'summary']) ??
+      [first(s, ['policy_note']), first(s, ['service_fee_note'])].filter(Boolean).join(' ') ??
+      null,
     canCancel: s.can_cancel !== false,
   };
 }
@@ -301,7 +307,15 @@ export const bookingsApi = {
   /** GET /api/rides/bookings/mine. Grouped by the screens, never here. */
   async mine(): Promise<Booking[]> {
     const { data } = await http.get(ENDPOINTS.bookingsMine);
-    return parseBookings(data);
+    const bookings = parseBookings(data);
+    // bookings/mine carries booking fields only; the ride (route, driver, time) is fetched once per ride.
+    const rideIds = [...new Set(bookings.map((b) => b.rideId).filter((x): x is string => !!x))];
+    const rides = await Promise.all(rideIds.map((id) => ridesApi.get(id).catch(() => null)));
+    const byId = new Map(rideIds.map((id, i) => [id, rides[i]]));
+    return bookings.map((b) => {
+      const ride = b.rideId ? byId.get(b.rideId) : null;
+      return ride && !b.ride ? (parseBooking({ ...b.raw, ride: ride.raw }) ?? b) : b;
+    });
   },
 
   /** The list is the only read endpoint for a single booking. */

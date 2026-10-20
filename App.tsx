@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { NavigationContainer, DefaultTheme, type Theme } from '@react-navigation/native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  createNavigationContainerRef,
+  type Theme,
+} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -18,10 +23,36 @@ import {
 
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { useBoardingBackground } from './src/boarding/manager';
+import { usePushNotifications } from './src/push';
+import type { AppStackParamList } from './src/navigation/types';
+
 import { BrandIntro } from './src/components/BrandIntro';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme';
+
+const navigationRef = createNavigationContainerRef<AppStackParamList>();
+
+/** Where a tapped push lands, by its data.type (SR2Go push names, 16–17 Oct). */
+function openFromPush(type: string, data: Record<string, unknown>) {
+  if (!navigationRef.isReady()) return;
+  const bookingId = data.booking_id != null ? String(data.booking_id) : null;
+  const rideId = data.ride_id != null ? String(data.ride_id) : null;
+  if (type === 'transfer_offer' || type.startsWith('transfer_'))
+    navigationRef.navigate('TransfersInbox');
+  else if (type === 'handover_offer' || type.startsWith('handover_'))
+    navigationRef.navigate('HandoversInbox');
+  else if (type.startsWith('companion_')) navigationRef.navigate('CompanionInvites');
+  else if (type === 'driver_changed' && bookingId)
+    navigationRef.navigate('BookingConfirmation', { bookingId });
+  else if (type === 'boarding_pack' && bookingId)
+    navigationRef.navigate('BoardingPass', { bookingId });
+  else if (type === 'booking_transferred' && rideId)
+    navigationRef.navigate('RideRequests', { rideId });
+  else if (bookingId) navigationRef.navigate('BookingConfirmation', { bookingId });
+  else if (rideId) navigationRef.navigate('RideRequests', { rideId });
+  else navigationRef.navigate('Main', { screen: 'Trips' });
+}
 
 // Keep the native splash visible until fonts and the stored session are ready,
 // so users never see a flash of the login screen before being signed in.
@@ -51,6 +82,7 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
   const [introDone, setIntroDone] = useState(false);
   const finishIntro = useCallback(() => setIntroDone(true), []);
   useBoardingBackground(status === 'signedIn');
+  usePushNotifications(status === 'signedIn', openFromPush);
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => undefined);
@@ -60,7 +92,7 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
 
   return (
     <>
-      <NavigationContainer theme={navigationTheme}>
+      <NavigationContainer ref={navigationRef} theme={navigationTheme}>
         <RootNavigator />
       </NavigationContainer>
       {/* Animated logo over the first screen; the native splash hands off to it. */}

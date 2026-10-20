@@ -74,6 +74,10 @@ export const ENDPOINTS = {
   transfers: '/api/transfers',
   transferAction: (id: string, action: 'accept' | 'decline' | 'cancel') =>
     `/api/transfers/${id}/${action}`,
+  companionsLookup: '/api/companions/lookup',
+  companions: '/api/companions',
+  companionAction: (id: string, action: 'accept' | 'decline' | 'cancel') =>
+    `/api/companions/${id}/${action}`,
   handoversLookup: '/api/handovers/lookup',
   handovers: '/api/handovers',
   handoverAction: (id: string, action: 'accept' | 'decline' | 'cancel') =>

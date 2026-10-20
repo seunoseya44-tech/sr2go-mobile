@@ -69,6 +69,9 @@ export function BookingStatusScreen() {
           <>
             <Button title="Back to home" onPress={goHome} />
             <View style={styles.center}>
+              <LinkText onPress={() => navigation.navigate('TravellingWith', { bookingId: b.id })}>
+                Add someone travelling with you
+              </LinkText>
               <LinkText onPress={() => navigation.navigate('CancelBooking', { bookingId: b.id })}>
                 Cancel request
               </LinkText>

@@ -58,7 +58,10 @@ export function TripsScreen() {
     <Screen topBar={null} scroll={false} testID="trips-screen" contentStyle={styles.content}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>My trips</Text>
-        <LinkText onPress={() => navigation.navigate('TransfersInbox')}>Transfers</LinkText>
+        <View style={styles.links}>
+          <LinkText onPress={() => navigation.navigate('CompanionInvites')}>Invitations</LinkText>
+          <LinkText onPress={() => navigation.navigate('TransfersInbox')}>Transfers</LinkText>
+        </View>
       </View>
       <View style={styles.tabs}>
         {(['Upcoming', 'Completed', 'Cancelled'] as Tab[]).map((t) => (
@@ -204,6 +207,7 @@ function BookingCard({ booking: b, onPress }: { booking: Booking; onPress: () =>
 const styles = StyleSheet.create({
   content: { paddingBottom: 0, gap: spacing.sm, flex: 1 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  links: { flexDirection: 'row', gap: spacing.md },
   title: { ...typography.title, color: colors.text },
   tabs: { flexDirection: 'row', gap: spacing.lg },
   tab: { paddingVertical: spacing.xs, minHeight: 44, justifyContent: 'center' },

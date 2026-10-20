@@ -121,7 +121,8 @@ export function KycConsentScreen() {
         </Text>
       ) : null}
       <Checkbox checked={agreed} onChange={setAgreed} testID="consent-check">
-        I agree to the use of my selfie for identity verification as described above.
+        {config.data?.checkboxLabel ??
+          'I agree to the use of my selfie for identity verification as described above.'}
       </Checkbox>
     </Screen>
   );

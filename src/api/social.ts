@@ -127,6 +127,90 @@ export const handoversApi = {
     first(unwrap((await http.post(ENDPOINTS.handoverAction(id, 'cancel'))).data), ['message']),
 };
 
+/* ---------- travelling with (companions) ---------- */
+
+export interface CompanionInvite {
+  id: string;
+  bookingId: string | null;
+  companionBookingId: string | null;
+  status: string;
+  fromName: string | null;
+  toName: string | null;
+  toPhone: string | null;
+  routeFrom: string | null;
+  routeTo: string | null;
+  departureTime: string | null;
+  createdAt: string | null;
+  consent: string | null;
+}
+
+function parseCompanion(v: unknown): CompanionInvite | null {
+  const o = obj(v);
+  const id = first(o, ['invite_id', 'id']);
+  if (!id) return null;
+  return {
+    id,
+    bookingId: first(o, ['booking_id']),
+    companionBookingId: first(o, ['companion_booking_id']),
+    status: (first(o, ['status']) ?? 'pending').toLowerCase(),
+    fromName: first(o, ['from_name']),
+    toName: first(o, ['to_name']),
+    toPhone: first(o, ['to_phone']),
+    routeFrom: first(o, ['route_from']),
+    routeTo: first(o, ['route_to']),
+    departureTime: first(o, ['departure_time']),
+    createdAt: first(o, ['created_at']),
+    consent: first(o, ['consent']),
+  };
+}
+
+export const companionsApi = {
+  lookup: async (phone: string) =>
+    parseLookup((await http.post(ENDPOINTS.companionsLookup, { phone })).data),
+  async invite(
+    bookingId: string,
+    phone: string,
+  ): Promise<{
+    id: string | null;
+    status: string | null;
+    toName: string | null;
+    message: string | null;
+  }> {
+    const { data } = await http.post(ENDPOINTS.companions, {
+      booking_id: Number(bookingId),
+      phone,
+    });
+    const s = unwrap(data);
+    return {
+      id: first(s, ['invite_id', 'id']),
+      status: first(s, ['status']),
+      toName: first(s, ['to_name']),
+      message: first(s, ['message']),
+    };
+  },
+  async list(): Promise<{ incoming: CompanionInvite[]; outgoing: CompanionInvite[] }> {
+    const { data } = await http.get(ENDPOINTS.companions);
+    const s = unwrap(data);
+    const l = (v: unknown) =>
+      (Array.isArray(v) ? v : []).map(parseCompanion).filter((x): x is CompanionInvite => !!x);
+    return { incoming: l(s.incoming), outgoing: l(s.outgoing) };
+  },
+  async accept(
+    id: string,
+    p: { luggageKg: number | null; luggageDescription: string },
+  ): Promise<string | null> {
+    const { data } = await http.post(ENDPOINTS.companionAction(id, 'accept'), {
+      luggage_kg: p.luggageKg,
+      luggage_description: p.luggageDescription || null,
+    });
+    return first(unwrap(data), ['message']);
+  },
+  decline: async (id: string) =>
+    first(unwrap((await http.post(ENDPOINTS.companionAction(id, 'decline'))).data), ['message']),
+  cancel: async (id: string) =>
+    first(unwrap((await http.post(ENDPOINTS.companionAction(id, 'cancel'))).data), ['message']),
+};
+
 /* ---------- trip chat ---------- */
 
 export interface ChatMessage {

@@ -33,6 +33,7 @@ export interface ConsentConfig {
   version: string | null;
   regulatoryBody: string | null;
   consentType: string;
+  checkboxLabel: string | null;
 }
 
 export interface KycResult {
@@ -49,13 +50,17 @@ export const kycApi = {
   async consentConfig(): Promise<ConsentConfig> {
     const { data } = await http.get(ENDPOINTS.selfieConsentConfig, { skipSessionHandling: true });
     const s = unwrap(data);
+    const reg = obj(s.regulatory);
     return {
-      enabled:
-        s.enabled !== false && s.feature_enabled !== false && s.selfie_consent_required !== false,
-      text: first(s, ['disclaimer_text', 'disclaimer', 'text']),
-      version: first(s, ['disclaimer_version', 'version']),
-      regulatoryBody: first(s, ['regulatory_body']),
+      enabled: s.active !== false && s.enabled !== false && s.feature_enabled !== false,
+      text:
+        first(reg, ['SELFIE_DISCLAIMER_TEXT']) ??
+        first(s, ['disclaimer_text', 'disclaimer', 'text']),
+      version:
+        first(reg, ['SELFIE_DISCLAIMER_VERSION']) ?? first(s, ['disclaimer_version', 'version']),
+      regulatoryBody: first(reg, ['PRIMARY_BODY']) ?? first(s, ['regulatory_body']),
       consentType: first(s, ['consent_type']) ?? 'selfie_verification',
+      checkboxLabel: first(reg, ['SELFIE_CONSENT_CHECKBOX_LABEL']),
     };
   },
 
@@ -204,6 +209,7 @@ export interface ReferralDashboard {
 }
 
 export interface GiftRecipient {
+  id: string | null;
   name: string | null;
   phoneMasked: string | null;
   verified: boolean;
@@ -225,16 +231,33 @@ export const walletApi = {
     const { data } = await http.get(ENDPOINTS.referralDashboard);
     const s = unwrap(data);
     const stats = obj(s.stats);
-    const m = obj(s.next_milestone ?? s.milestone);
+    const ms = obj(s.milestones);
+    const m = obj(ms.next ?? s.next_milestone ?? s.milestone);
+    const toNext = num(ms.referrals_to_next);
+    const code = first(s, ['referral_code', 'code']);
+    const link = first(s, ['share_link']);
+    const nextName = first(m, ['name']);
     return {
-      code: first(s, ['referral_code', 'code']),
-      friendsJoined: num(s.friends_joined ?? s.total_referrals ?? stats.referrals ?? stats.signups),
-      travelled: num(s.friends_travelled ?? s.travelled ?? stats.travelled ?? stats.completed),
+      code,
+      friendsJoined: num(
+        stats.total_referrals ?? s.friends_joined ?? s.total_referrals ?? stats.signups,
+      ),
+      travelled: num(
+        stats.completed_referrals ?? s.friends_travelled ?? stats.travelled ?? stats.completed,
+      ),
       creditsEarned:
-        first(s, ['credits_earned', 'total_earned', 'earned']) ??
-        first(stats, ['earned', 'credits']),
-      milestone: first(m, ['text', 'description', 'label']) ?? first(s, ['milestone_text']),
-      shareMessage: first(s, ['share_message']),
+        first(stats, ['total_credit_earned', 'earned', 'credits']) ??
+        first(s, ['credits_earned', 'total_earned']),
+      milestone:
+        first(m, ['text', 'description']) ??
+        (nextName
+          ? `${nextName}${toNext != null ? ` · ${toNext} more friend${toNext === 1 ? '' : 's'}` : ''}${num(m.bonus) != null ? ` · ₦${num(m.bonus)} bonus` : ''}`
+          : first(s, ['milestone_text'])),
+      shareMessage:
+        first(s, ['share_message']) ??
+        (code
+          ? `Join me on SR2Go, the safer way to share long-distance rides in Nigeria. Use my code ${code}: ${link ?? 'https://shareride2go.com'}`
+          : null),
     };
   },
 
@@ -245,18 +268,26 @@ export const walletApi = {
 
   /** 15 Oct: look-up by phone only; no avatar. */
   async giftLookup(phone: string): Promise<GiftRecipient> {
-    const { data } = await http.post(ENDPOINTS.walletGiftLookup, { phone });
+    const { data } = await http.post(ENDPOINTS.walletGiftLookup, { query: phone });
     const s = unwrap(data);
+    const hit = obj(unwrapList(data, ['results', 'items'])[0]);
+    const r = Object.keys(hit).length ? hit : s;
+    if (!first(r, ['id', 'user_id', 'name']))
+      throw new Error('No SR2Go account with that phone number.');
     return {
-      name: first(s, ['name', 'short_name']),
-      phoneMasked: first(s, ['phone_masked', 'phone']),
-      verified: s.verified === true,
+      id: first(r, ['id', 'user_id']),
+      name: first(r, ['name', 'short_name']),
+      phoneMasked: first(r, ['phone_masked', 'phone']),
+      verified: r.verified === true || r.kyc_verified === true,
     };
   },
 
   /** 422 recipient_not_verified / invalid_amount / insufficient_balance: show the message. */
-  async gift(phone: string, amount: string): Promise<string | null> {
-    const { data } = await http.post(ENDPOINTS.walletGift, { phone, amount: Number(amount) });
+  async gift(recipientId: string, amount: string): Promise<string | null> {
+    const { data } = await http.post(ENDPOINTS.walletGift, {
+      recipient_id: Number(recipientId),
+      amount: Number(amount),
+    });
     return first(unwrap(data), ['message']);
   },
 

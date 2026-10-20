@@ -11,7 +11,7 @@ import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
-import { InfoBanner, RoadLine } from '../../components/ui';
+import { InfoBanner, LinkText, RoadLine } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { naira } from '../../utils/format';
@@ -138,6 +138,11 @@ export function PaymentScreen() {
       }
     >
       {b ? <Text style={shared.subtitle}>{tripLine(b)}</Text> : null}
+      {b && !expired ? (
+        <LinkText onPress={() => navigation.navigate('TravellingWith', { bookingId: b.id })}>
+          Add someone travelling with you
+        </LinkText>
+      ) : null}
       {error ? <Banner tone="error" message={error} /> : null}
 
       {!expired && b ? (

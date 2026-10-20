@@ -291,7 +291,7 @@ export function PostRidePriceScreen() {
     >
       <Steps active={1} />
       <View style={styles.tile}>
-        <Text style={shared.overline}>SR2Go suggested price</Text>
+        <Text style={shared.overline}>SR2Go suggested price (what you take home)</Text>
         <Text style={styles.price}>
           {suggestion.data?.suggested
             ? `${naira(suggestion.data.suggested)} per seat`

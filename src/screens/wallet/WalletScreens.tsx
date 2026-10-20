@@ -194,7 +194,7 @@ export function SendCreditScreen() {
     },
   });
   const send = useMutation({
-    mutationFn: () => walletApi.gift(e164, amount),
+    mutationFn: () => walletApi.gift(recipient!.id ?? '', amount),
     onSuccess: (m) => {
       void queryClient.invalidateQueries({ queryKey: ['wallet'] });
       setSent(
@@ -229,7 +229,7 @@ export function SendCreditScreen() {
         <Button
           title={amount ? `Send ${naira(amount)}` : 'Send'}
           onPress={() => send.mutate()}
-          disabled={!recipient || !amount || Number(amount) <= 0}
+          disabled={!recipient?.id || !amount || Number(amount) <= 0}
           loading={send.isPending}
         />
       }

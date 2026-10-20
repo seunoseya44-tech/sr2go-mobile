@@ -115,6 +115,15 @@ function readDeparture(source: Json): { date: string | null; time: string | null
   const combined = firstString(source, ['departure_time', 'departure_at', 'departs_at']);
   const dateField = firstString(source, ['departure_date']);
   if (combined && combined.includes('T')) {
+    // The server sends UTC ("...Z" or "+00:00"); show the phone's local time.
+    const parsed = new Date(combined);
+    if (!Number.isNaN(parsed.getTime()) && /Z$|[+-]\d{2}:\d{2}$/.test(combined)) {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return {
+        date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
+        time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`,
+      };
+    }
     const [date, rest] = combined.split('T');
     return { date: date ?? null, time: rest ? rest.slice(0, 5) : null };
   }
@@ -149,8 +158,13 @@ export function parseRide(payload: unknown): Ride | null {
     id,
     departureDate: date,
     departureTime: time,
-    originCity: firstString(s, ['origin_city', 'origin', 'from_city']),
-    destinationCity: firstString(s, ['destination_city', 'destination', 'to_city']),
+    originCity: firstString(s, ['origin_address', 'origin_city', 'origin', 'from_city']),
+    destinationCity: firstString(s, [
+      'destination_address',
+      'destination_city',
+      'destination',
+      'to_city',
+    ]),
     vehicleType: firstString(s, ['vehicle_type']),
     seatsLeft: numeric(s.seats_left ?? s.seats_available),
     meetingPointName: firstString(s, ['meeting_point_name']),
@@ -161,7 +175,7 @@ export function parseRide(payload: unknown): Ride | null {
     driverName: firstString(s, ['driver_name']) ?? firstString(driver, ['name', 'full_name']),
     driverRating: numeric(s.driver_rating ?? driver.rating),
     driverTripsCompleted: numeric(
-      s.driver_trips ?? s.driver_rides_completed ?? driver.rides_completed,
+      s.driver_trips ?? s.driver_rides ?? s.driver_rides_completed ?? driver.rides_completed,
     ),
     driverVerified:
       s.driver_verified === true || driver.verified === true || driver.is_verified === true,

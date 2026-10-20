@@ -112,7 +112,10 @@ export interface RouteInput {
 }
 
 export interface PriceSuggestion {
+  /** What the driver takes home per seat (driver_gets). */
   suggested: string | null;
+  passengerPays: string | null;
+  serviceFee: string | null;
   message: string | null;
 }
 
@@ -136,13 +139,28 @@ export function parsePriceCheck(payload: unknown): PriceCheck {
     ? (raw as WarningLevel)
     : 'UNKNOWN';
   const linesRaw = s.lines ?? s.breakdown_lines ?? s.price_lines;
+  const driverPrice = num(s.driver_price);
+  const suggestedGets = num(s.suggested_driver_gets);
+  const suggestedPays = num(s.suggested_price);
+  const composed: string[] = [];
+  if (driverPrice != null) {
+    composed.push(`You receive ₦${driverPrice.toLocaleString('en-NG')} per seat`);
+    if (suggestedGets != null && suggestedPays != null && driverPrice === suggestedGets) {
+      composed.push(
+        `SR2Go service fee ₦${(suggestedPays - suggestedGets).toLocaleString('en-NG')}`,
+      );
+      composed.push(`Passenger pays ₦${suggestedPays.toLocaleString('en-NG')}`);
+    }
+  }
   const lines = Array.isArray(linesRaw)
     ? linesRaw.map(str).filter((l): l is string => !!l)
-    : [
-        first(s, ['take_home_line']),
-        first(s, ['service_fee_line']),
-        first(s, ['passenger_pays_line']),
-      ].filter((l): l is string => !!l);
+    : composed.length
+      ? composed
+      : [
+          first(s, ['take_home_line']),
+          first(s, ['service_fee_line']),
+          first(s, ['passenger_pays_line']),
+        ].filter((l): l is string => !!l);
   return {
     level,
     driverMessage: first(s, ['driver_message', 'message']),
@@ -294,14 +312,20 @@ export interface Payout {
 }
 
 export function parsePayouts(payload: unknown): Payout[] {
-  return unwrapList(payload, ['payouts', 'escrows', 'items', 'results'])
+  return unwrapList(payload, ['records', 'payouts', 'escrows', 'items', 'results'])
     .map((v) => {
       const p = obj(v);
       const id = first(p, ['id', 'escrow_id']);
       if (!id) return null;
       return {
         id,
-        amount: first(p, ['driver_amount', 'amount', 'payout_amount', 'net_amount']),
+        amount: first(p, [
+          'driver_amount',
+          'driver_payout',
+          'amount',
+          'payout_amount',
+          'net_amount',
+        ]),
         status: first(p, ['status', 'payout_status']),
         route:
           (first(p, ['route']) ??
@@ -371,44 +395,53 @@ export const driverApi = {
     });
     const s = unwrap(data);
     return {
-      suggested: first(s, ['suggested_price', 'suggested_driver_price', 'price', 'driver_price']),
+      suggested: first(s, ['driver_gets', 'driver_display_price', 'suggested_driver_price']),
+      passengerPays: first(s, ['suggested_price', 'suggested_price_per_seat']),
+      serviceFee: first(s, ['sr2go_fee', 'sr2go_service_fee']),
       message: first(s, ['message']),
     };
   },
 
   async checkPrice(r: RouteInput, driverPrice: string): Promise<PriceCheck> {
-    const { data } = await http.post(ENDPOINTS.checkPrice, {
-      origin_lat: r.originLat,
-      origin_lng: r.originLng,
-      destination_lat: r.destLat,
-      destination_lng: r.destLng,
-      origin_city: r.originCity,
-      destination_city: r.destCity,
-      driver_price: Number(driverPrice),
+    // Staging contract: all check-price inputs are query parameters.
+    const { data } = await http.post(ENDPOINTS.checkPrice, null, {
+      params: {
+        origin_lat: r.originLat,
+        origin_lng: r.originLng,
+        destination_lat: r.destLat,
+        destination_lng: r.destLng,
+        origin_city: r.originCity,
+        destination_city: r.destCity,
+        driver_price: Number(driverPrice),
+      },
     });
     return parsePriceCheck(data);
   },
 
   /** POST /api/rides/. 403 driver_profile_required / driver_not_approved / driver_suspended. */
   async postRide(p: PostRidePayload): Promise<Ride | null> {
+    const local = new Date(`${p.date}T${p.time}:00`);
+    const off = -local.getTimezoneOffset();
+    const sign = off >= 0 ? '+' : '-';
+    const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
     const { data } = await http.post(ENDPOINTS.rides, {
       origin_lat: p.route.originLat,
       origin_lng: p.route.originLng,
       origin_city: p.route.originCity,
-      origin_name: p.originName,
+      origin_address: p.originName,
       destination_lat: p.route.destLat,
       destination_lng: p.route.destLng,
       destination_city: p.route.destCity,
-      destination_name: p.destName,
-      departure_time: `${p.date}T${p.time}:00`,
-      seats_available: p.seats,
+      destination_address: p.destName,
+      // Local wall time with the phone's offset, so 07:30 in Lagos stays 07:30.
+      departure_time: `${p.date}T${p.time}:00${sign}${pad(Math.floor(off / 60))}:${pad(off % 60)}`,
+      total_seats: p.seats,
       vehicle_type: p.car,
-      vehicle_description: p.car,
       meeting_point_name: p.meetingPoint.name,
       meeting_point_address: p.meetingPoint.address,
       meeting_point_lat: p.meetingPoint.lat,
       meeting_point_lng: p.meetingPoint.lng,
-      driver_price: Number(p.driverPrice),
+      // price_per_seat is what the driver takes home; the server adds the fee.
       price_per_seat: Number(p.driverPrice),
       price_override_acknowledged: p.priceAcknowledged,
       override_route_acknowledged: p.priceAcknowledged,

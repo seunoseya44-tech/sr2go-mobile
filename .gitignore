@@ -54,3 +54,6 @@ AGENTS.md
 
 # staging test accounts (local only)
 .env.staging
+
+# Firebase config (EAS secret file, never commit)
+google-services.json

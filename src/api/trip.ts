@@ -52,7 +52,7 @@ export interface JourneyRecord {
 
 function parsePoint(v: unknown): JourneyPoint | null {
   const p = obj(v);
-  if (!Object.keys(p).length) return null;
+  if (!Object.keys(p).length || p.recorded === false) return null;
   return {
     address: first(p, ['address']),
     time: first(p, ['time', 'device_time', 'recorded_at', 'created_at']),
@@ -121,8 +121,8 @@ export const tripApi = {
     const s = unwrap(data);
     return {
       allClear: s.all_clear === true,
-      departed: parsePoint(s.departed ?? s.journey_start ?? s.start),
-      arrived: parsePoint(s.arrived ?? s.journey_complete ?? s.end),
+      departed: parsePoint(s.departure ?? s.departed ?? s.journey_start ?? s.start),
+      arrived: parsePoint(s.arrival ?? s.arrived ?? s.journey_complete ?? s.end),
       flags: flagsOf(s.flags ?? s.notes),
       notes: typeof s.notes === 'string' ? s.notes : null,
     };
@@ -174,9 +174,13 @@ export const tripApi = {
       };
     });
     return {
-      count: num(s.count ?? s.strikes_count ?? s.total) ?? items.length,
+      count: num(s.total_strikes ?? s.count ?? s.strikes_count ?? s.total) ?? items.length,
       items,
-      message: first(s, ['message', 'note']),
+      message:
+        first(s, ['message', 'note']) ??
+        (s.is_suspended === true
+          ? `Suspended until ${first(s, ['suspended_until']) ?? '—'}`
+          : null),
     };
   },
 };

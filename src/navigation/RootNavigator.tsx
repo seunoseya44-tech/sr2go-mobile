@@ -61,6 +61,7 @@ import { useAccountState } from '../state/accountState';
 import { AccountStateScreen } from '../screens/AccountStateScreen';
 import { EvidenceCameraScreen } from '../screens/driver/EvidenceCameraScreen';
 import { JourneyRecordScreen, PassengerTripScreen } from '../screens/trip/TripDayScreens';
+import { CompanionInvitesScreen, TravellingWithScreen } from '../screens/social/CompanionScreens';
 import {
   ConnectionBookScreen,
   ConnectionDetailsScreen,
@@ -245,6 +246,8 @@ export function RootNavigator() {
       />
       <App.Screen name="JourneyRecord" component={JourneyRecordScreen} />
       <App.Screen name="PassengerTrip" component={PassengerTripScreen} />
+      <App.Screen name="TravellingWith" component={TravellingWithScreen} />
+      <App.Screen name="CompanionInvites" component={CompanionInvitesScreen} />
       <App.Screen name="TransferTicket" component={TransferTicketScreen} />
       <App.Screen name="TransfersInbox" component={TransfersInboxScreen} />
       <App.Screen name="HandoverRide" component={HandoverRideScreen} />
