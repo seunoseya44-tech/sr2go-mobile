@@ -3,19 +3,19 @@
     "name": "SR2Go",
     "slug": "sr2go-mobile",
     "scheme": "sr2go",
-    "version": "1.7.0",
+    "version": "1.7.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.sr2go.app",
+      "bundleIdentifier": "com.shareride2go.app",
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.sr2go.app",
+      "package": "com.shareride2go.app",
       "allowBackup": false,
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
