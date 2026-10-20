@@ -2,6 +2,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 
 import { driverApi } from '../../api/driver';
+import { tripApi } from '../../api/trip';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Screen } from '../../components/Screen';
@@ -13,10 +14,32 @@ import { shared } from '../booking/shared';
 /** Earnings tab: each payout with its status from GET /api/escrow/me. */
 export function EarningsScreen() {
   const query = useQuery({ queryKey: ['earnings'], queryFn: driverApi.earnings });
+  const strikes = useQuery({ queryKey: ['strikes'], queryFn: tripApi.strikes, retry: false });
   return (
     <Screen topBar={null} testID="earnings">
       <Text style={styles.title}>Earnings</Text>
       <InfoBanner>Payout arrives 24–48 hours after trip completion.</InfoBanner>
+      {strikes.data ? (
+        <View style={styles.card}>
+          <View style={styles.top}>
+            <Text style={styles.semi}>Strikes</Text>
+            <Chip
+              label={String(strikes.data.count ?? 0)}
+              tone={strikes.data.count ? 'amber' : 'grey'}
+            />
+          </View>
+          {strikes.data.items.map((s) => (
+            <Text key={s.id} style={shared.subtitle}>
+              {[s.reason, s.date ? shortDate(s.date) : null, s.status].filter(Boolean).join(' · ')}
+            </Text>
+          ))}
+          {strikes.data.items.length === 0 ? (
+            <Text style={shared.subtitle}>
+              {strikes.data.message ?? 'No strikes on your account.'}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
       {query.isPending ? (
         <ActivityIndicator color={colors.brand} />
       ) : query.isError ? (
@@ -53,4 +76,5 @@ const styles = StyleSheet.create({
   },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   amount: { ...typography.price, color: colors.text },
+  semi: { ...typography.bodySemibold, color: colors.text },
 });

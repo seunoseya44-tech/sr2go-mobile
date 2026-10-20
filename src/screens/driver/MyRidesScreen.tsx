@@ -92,9 +92,16 @@ export function MyRidesScreen() {
               key={r.id}
               ride={r}
               onPress={() =>
-                navigation.navigate(r.status === 'active' ? 'ActiveTrip' : 'RideRequests', {
-                  rideId: r.id,
-                })
+                navigation.navigate(
+                  r.status === 'completed'
+                    ? 'JourneyRecord'
+                    : r.status === 'active'
+                      ? 'ActiveTrip'
+                      : 'RideRequests',
+                  {
+                    rideId: r.id,
+                  },
+                )
               }
             />
           ))

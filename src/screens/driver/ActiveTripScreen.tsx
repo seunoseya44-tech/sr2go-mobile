@@ -95,7 +95,7 @@ export function ActiveTripScreen() {
     mutationFn: () => driverApi.completeRide(params.rideId),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['my-rides'] });
-      navigation.replace('RatePassengers', { rideId: params.rideId });
+      navigation.replace('EvidenceCamera', { rideId: params.rideId, event: 'journey_complete' });
     },
   });
   const sos = useMutation({

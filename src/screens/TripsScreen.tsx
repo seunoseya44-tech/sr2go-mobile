@@ -154,6 +154,7 @@ function openBooking(navigation: Nav, b: Booking) {
       revieweeId: b.ride?.driverId ?? String(b.raw.driver_id ?? ''),
       name: b.driverName,
       route: `${b.originCity ?? ''} → ${b.destinationCity ?? ''} · ${shortDate(b.departureDate)}`,
+      rideId: b.rideId,
     });
   } else if (view === 'confirmed' || view === 'boarded') {
     navigation.navigate('BookingConfirmation', { bookingId: b.id });

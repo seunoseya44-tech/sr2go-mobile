@@ -111,6 +111,15 @@ export function RateTripScreen() {
         onChangeText={setComment}
         multiline
       />
+      {params.rideId ? (
+        <LinkText
+          onPress={() =>
+            navigation.navigate('JourneyRecord', { rideId: params.rideId!, route: params.route })
+          }
+        >
+          See the journey record
+        </LinkText>
+      ) : null}
     </Screen>
   );
 }
@@ -273,6 +282,15 @@ export function ReportProblemScreen() {
       <Text style={shared.subtitle}>
         Photos can be added once SR2Go confirms the upload endpoint.
       </Text>
+      {params.rideId ? (
+        <LinkText
+          onPress={() =>
+            navigation.navigate('JourneyRecord', { rideId: params.rideId!, route: params.route })
+          }
+        >
+          See the journey record
+        </LinkText>
+      ) : null}
       <LinkText onPress={() => navigation.navigate('TundeChat')}>
         Need a quick answer? Chat with Tunde
       </LinkText>

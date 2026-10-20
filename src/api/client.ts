@@ -3,6 +3,7 @@ import { create, type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { env } from '../config/env';
 import { session } from '../auth/session';
 import { toApiError } from './errors';
+import { accountState } from '../state/accountState';
 import { parseTokens } from './parsers';
 import type { AuthTokens } from './types';
 
@@ -54,6 +55,11 @@ export const ENDPOINTS = {
   completeRide: (rideId: string) => `/api/rides/${rideId}/complete`,
   gpsPoint: (bookingId: string) => `/api/rides/bookings/${bookingId}/gps-point`,
   escrowMe: '/api/escrow/me',
+  escrowStrikes: '/api/escrow/strikes/me',
+  rideEvidence: (rideId: string) => `/api/rides/${rideId}/evidence`,
+  journeyRecord: (rideId: string) => `/api/rides/${rideId}/journey-record`,
+  track: (token: string) => `/api/rides/track/${token}`,
+  verifyVehicle: (bookingId: string) => `/api/rides/bookings/${bookingId}/verify-vehicle`,
   paymentInitiate: '/api/payments/initiate',
   paymentVerify: '/api/payments/verify',
   // Offline boarding (16 Oct 2026)
@@ -184,6 +190,17 @@ http.interceptors.response.use(
     if (isAuthFailure && handlesSession(config)) {
       await session.expire();
     }
-    return Promise.reject(toApiError(error));
+    const apiError = toApiError(error);
+    // 13 Oct: a suspended or closed account answers 403 with a code; show the full-screen state.
+    if (
+      apiError.status === 403 &&
+      (apiError.code === 'account_suspended' || apiError.code === 'account_closed')
+    ) {
+      accountState.set({
+        kind: apiError.code === 'account_suspended' ? 'suspended' : 'closed',
+        message: apiError.message,
+      });
+    }
+    return Promise.reject(apiError);
   },
 );

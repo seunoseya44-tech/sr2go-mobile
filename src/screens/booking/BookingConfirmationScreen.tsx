@@ -200,6 +200,12 @@ export function BookingConfirmationScreen() {
         </View>
       </Section>
 
+      <Button
+        title="Trip day: driver, car, position and SOS"
+        variant="secondary"
+        icon="navigate-outline"
+        onPress={() => navigation.navigate('PassengerTrip', { bookingId: b.id })}
+      />
       <View style={styles.linkRow}>
         {b.rideId ? (
           <Button
@@ -229,6 +235,7 @@ export function BookingConfirmationScreen() {
           navigation.navigate('ReportProblem', {
             bookingId: b.id,
             route: `${b.originCity} → ${b.destinationCity} · ${shortDate(b.departureDate)}`,
+            rideId: b.rideId,
           })
         }
       >

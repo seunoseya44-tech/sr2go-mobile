@@ -57,6 +57,10 @@ import {
 import { RideRequestsScreen } from '../screens/driver/RideRequestsScreen';
 import { DriverReviewScreen, VehicleProfileScreen } from '../screens/driver/VehicleProfileScreen';
 import { useAppMode } from '../state/mode';
+import { useAccountState } from '../state/accountState';
+import { AccountStateScreen } from '../screens/AccountStateScreen';
+import { EvidenceCameraScreen } from '../screens/driver/EvidenceCameraScreen';
+import { JourneyRecordScreen, PassengerTripScreen } from '../screens/trip/TripDayScreens';
 import {
   ConnectionBookScreen,
   ConnectionDetailsScreen,
@@ -167,6 +171,7 @@ function MainTabs() {
 export function RootNavigator() {
   const { status, phoneVerified } = useAuth();
   const mode = useAppMode();
+  const account = useAccountState();
 
   if (status === 'restoring') return null;
 
@@ -178,6 +183,14 @@ export function RootNavigator() {
         <Auth.Screen name="CreateAccount" component={CreateAccountScreen} />
         <Auth.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
       </Auth.Navigator>
+    );
+  }
+
+  if (account.kind !== 'ok') {
+    return (
+      <Verify.Navigator screenOptions={{ headerShown: false, animation: 'fade' }}>
+        <Verify.Screen name="VerifyPhone" component={AccountStateScreen} />
+      </Verify.Navigator>
     );
   }
 
@@ -225,6 +238,13 @@ export function RootNavigator() {
         options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
       />
       <App.Screen name="CancelBooking" component={CancelBookingScreen} />
+      <App.Screen
+        name="EvidenceCamera"
+        component={EvidenceCameraScreen}
+        options={{ gestureEnabled: false, animation: 'fade' }}
+      />
+      <App.Screen name="JourneyRecord" component={JourneyRecordScreen} />
+      <App.Screen name="PassengerTrip" component={PassengerTripScreen} />
       <App.Screen name="TransferTicket" component={TransferTicketScreen} />
       <App.Screen name="TransfersInbox" component={TransfersInboxScreen} />
       <App.Screen name="HandoverRide" component={HandoverRideScreen} />

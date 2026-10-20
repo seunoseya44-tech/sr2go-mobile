@@ -42,6 +42,10 @@ export type AppStackParamList = {
   BoardingPass: { bookingId: string };
   CancelBooking: { bookingId: string };
   ForgotPassword: undefined;
+  // Build 8: trip day and safety record
+  EvidenceCamera: { rideId: string; event: 'journey_start' | 'journey_complete' };
+  JourneyRecord: { rideId: string; route?: string | null };
+  PassengerTrip: { bookingId: string };
   // Build 7
   TransferTicket: { bookingId: string };
   TransfersInbox: undefined;
@@ -49,9 +53,15 @@ export type AppStackParamList = {
   HandoversInbox: undefined;
   TripChat: { rideId: string; title?: string | null; subtitle?: string | null };
   TundeChat: undefined;
-  RateTrip: { bookingId: string; revieweeId: string; name: string | null; route?: string | null };
+  RateTrip: {
+    bookingId: string;
+    revieweeId: string;
+    name: string | null;
+    route?: string | null;
+    rideId?: string | null;
+  };
   RatePassengers: { rideId: string };
-  ReportProblem: { bookingId: string; route?: string | null };
+  ReportProblem: { bookingId: string; route?: string | null; rideId?: string | null };
   MyReports: undefined;
   ConnectionDetails: { index: number };
   ConnectionBook: { index: number };

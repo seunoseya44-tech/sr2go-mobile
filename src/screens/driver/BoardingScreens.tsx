@@ -52,7 +52,8 @@ export function DriverBoardingScreen() {
   });
   const start = useMutation({
     mutationFn: () => driverApi.startRide(params.rideId),
-    onSuccess: () => navigation.replace('ActiveTrip', { rideId: params.rideId }),
+    onSuccess: () =>
+      navigation.replace('EvidenceCamera', { rideId: params.rideId, event: 'journey_start' }),
   });
   const paid = (bookings.data ?? []).filter((b) => b.paid);
   const packError = pack.isError ? toApiError(pack.error) : null;
@@ -109,12 +110,24 @@ export function DriverBoardingScreen() {
               {b.children ? ` · ${b.children} child${b.children === 1 ? '' : 'ren'}` : ''}
             </Text>
           </View>
-          <Chip
-            label={b.heldForReview ? 'On hold' : b.boarded ? 'Boarded' : 'Waiting'}
-            tone={b.boarded ? 'blue' : 'grey'}
-          />
+          <View style={styles.codeCol}>
+            {pack.data?.passengers.find((p) => p.bookingId === b.id)?.driverCode ? (
+              <Text style={styles.code}>
+                Code {pack.data.passengers.find((p) => p.bookingId === b.id)!.driverCode}
+              </Text>
+            ) : null}
+            <Chip
+              label={b.heldForReview ? 'On hold' : b.boarded ? 'Boarded' : 'Waiting'}
+              tone={b.boarded ? 'blue' : 'grey'}
+            />
+          </View>
         </View>
       ))}
+      {pack.data?.passengers.some((p) => p.driverCode) ? (
+        <Text style={shared.small}>
+          Code: read it to a passenger whose phone cannot scan; they type it on their side.
+        </Text>
+      ) : null}
       {!bookings.isPending && paid.length === 0 ? (
         <Text style={shared.subtitle}>No paid passengers yet.</Text>
       ) : null}
@@ -492,6 +505,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   semi: { ...typography.bodySemibold, color: colors.text },
+  codeCol: { alignItems: 'flex-end', gap: 4 },
+  code: { ...typography.bodySemibold, color: colors.navy, letterSpacing: 2 },
   light: { color: colors.textOnBrand },
   lightLink: { alignSelf: 'center' },
   center: { textAlign: 'center', alignSelf: 'center' },
