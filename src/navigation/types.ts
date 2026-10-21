@@ -65,6 +65,7 @@ export type AppStackParamList = {
   RatePassengers: { rideId: string };
   ReportProblem: { bookingId: string; route?: string | null; rideId?: string | null };
   MyReports: undefined;
+  DisputeRoom: { disputeId: string };
   ConnectionDetails: { index: number };
   ConnectionBook: { index: number };
   ConnectionStatus: { connectionId: string };

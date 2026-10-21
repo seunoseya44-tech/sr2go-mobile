@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 
 import { driverApi } from '../../api/driver';
+import { disputeRoomsApi } from '../../api/social';
 import { readEmergencyContact } from '../profile/ProfileScreens';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
@@ -38,6 +39,11 @@ export function ActiveTripScreen() {
     queryFn: () => driverApi.rideBookings(params.rideId),
   });
   const [minsAgo, setMinsAgo] = useState<number | null>(null);
+  const rooms = useQuery({
+    queryKey: ['dispute-rooms'],
+    queryFn: disputeRoomsApi.rooms,
+    retry: false,
+  });
   const lastSent = useRef<number | null>(null);
   const [gpsNote, setGpsNote] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -231,6 +237,14 @@ export function ActiveTripScreen() {
           One tap alerts SR2Go, your passengers and your emergency contact
         </Text>
       </View>
+      {rooms.data && rooms.data.length > 0 ? (
+        <Button
+          title="Disputes"
+          variant="secondary"
+          icon="chatbubbles-outline"
+          onPress={() => navigation.navigate('MyReports')}
+        />
+      ) : null}
       <Text style={shared.small}>
         Keep the app running during the trip; your position is shared every 5 minutes.
       </Text>

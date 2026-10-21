@@ -47,6 +47,10 @@ export interface RegisterPayload {
 /** A place with coordinates, as the search endpoint needs lat/lng. */
 export interface Place {
   name: string;
+  /** "Lagos, Lagos" under the name when the city differs (21 Oct place search). */
+  detail?: string;
+  /** SR2Go changeover hub. */
+  hub?: boolean;
   /** City name sent alongside coordinates (e.g. "Lagos"). */
   city: string;
   lat: number;

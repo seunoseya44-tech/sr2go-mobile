@@ -38,6 +38,7 @@ export function PaymentScreen() {
   const [quote, setQuote] = useState<PaymentInitiation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checkAgain, setCheckAgain] = useState(false);
+  const [paidByBooker, setPaidByBooker] = useState<string | null>(null);
 
   // First initiate call is a quote: it tells us the credits line and "You pay".
   const initiate = useMutation({
@@ -74,6 +75,10 @@ export function PaymentScreen() {
 
   function handleInitiateError(e: unknown) {
     const err = toApiError(e);
+    if (err.code === 'booker_pays') {
+      setPaidByBooker(err.message);
+      return;
+    }
     setError(err.message);
     if (err.code === 'already_paid' && err.extra.reference) {
       verify.mutate(err.extra.reference);
@@ -111,7 +116,12 @@ export function PaymentScreen() {
       testID="payment"
       topBar={{ title: 'Payment' }}
       footer={
-        expired ? (
+        paidByBooker ? (
+          <Button
+            title="Back to my trips"
+            onPress={() => navigation.navigate('Main', { screen: 'Trips' })}
+          />
+        ) : expired ? (
           <Button title="Find another ride" onPress={goHome} />
         ) : checkAgain ? (
           <Button
@@ -143,9 +153,10 @@ export function PaymentScreen() {
           Add someone travelling with you
         </LinkText>
       ) : null}
+      {paidByBooker ? <InfoBanner>{paidByBooker}</InfoBanner> : null}
       {error ? <Banner tone="error" message={error} /> : null}
 
-      {!expired && b ? (
+      {!expired && b && !paidByBooker ? (
         <InfoBanner>
           {b.driverName ?? 'The driver'} accepted your request. Pay now to confirm your seat.
         </InfoBanner>

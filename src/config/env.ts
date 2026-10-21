@@ -37,6 +37,8 @@ export const env = {
     30_000,
     toPositiveInt(process.env.EXPO_PUBLIC_API_TIMEOUT_MS, DEFAULT_TIMEOUT_MS),
   ),
+  /** Set by the EAS `staging` profile; shows the STAGING label. */
+  isStaging: process.env.EXPO_PUBLIC_ENV === 'staging' || configuredApiBaseUrl.includes('staging.'),
   /** Website pages opened from the app (privacy, terms, help). */
   websiteUrl: DEFAULT_API_BASE_URL,
   /**

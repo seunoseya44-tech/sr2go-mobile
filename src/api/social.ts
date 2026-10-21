@@ -142,6 +142,8 @@ export interface CompanionInvite {
   departureTime: string | null;
   createdAt: string | null;
   consent: string | null;
+  /** Outgoing accepted invites: the companion's own seat. */
+  seat: { status: string | null; paymentStatus: string | null; totalPrice: string | null } | null;
 }
 
 function parseCompanion(v: unknown): CompanionInvite | null {
@@ -161,6 +163,13 @@ function parseCompanion(v: unknown): CompanionInvite | null {
     departureTime: first(o, ['departure_time']),
     createdAt: first(o, ['created_at']),
     consent: first(o, ['consent']),
+    seat: Object.keys(obj(o.seat)).length
+      ? {
+          status: first(obj(o.seat), ['status']),
+          paymentStatus: first(obj(o.seat), ['payment_status']),
+          totalPrice: first(obj(o.seat), ['total_price']),
+        }
+      : null,
   };
 }
 
@@ -268,7 +277,7 @@ export const chatApi = {
   },
   /** POST on the same path; the WebSocket is the live channel. */
   async send(rideId: string, message: string): Promise<void> {
-    await http.post(ENDPOINTS.rideMessages(rideId), { message });
+    await http.post(ENDPOINTS.rideMessages(rideId), { content: message });
   },
   /** wss://…/ws/chat/{ride_id}?token=… */
   socketUrl(rideId: string): string {
@@ -352,14 +361,15 @@ export const disputesApi = {
     category: DisputeCategory;
     description: string;
     evidenceUrls: string[];
-  }): Promise<string | null> {
+  }): Promise<{ id: string | null; message: string | null }> {
     const { data } = await http.post(ENDPOINTS.disputes, {
       booking_id: p.bookingId,
       category: p.category,
       description: p.description,
       evidence_urls: p.evidenceUrls,
     });
-    return first(unwrap(data), ['message']);
+    const s = unwrap(data);
+    return { id: first(s, ['id', 'dispute_id']), message: first(s, ['message']) };
   },
   async mine(): Promise<Dispute[]> {
     const { data } = await http.get(ENDPOINTS.disputesMine);
@@ -384,6 +394,108 @@ export const disputesApi = {
         };
       })
       .filter((d): d is Dispute => !!d);
+  },
+};
+
+/* ---------- dispute rooms (21 Oct) ---------- */
+
+export interface DisputeRoomSummary {
+  id: string;
+  category: string | null;
+  status: string | null;
+  locked: boolean;
+  myRole: string | null;
+  openedAt: string | null;
+  messages: number | null;
+  lastMessageAt: string | null;
+}
+
+export interface DisputeRoomMessage {
+  id: string;
+  senderName: string | null;
+  senderRole: string | null;
+  mine: boolean;
+  text: string | null;
+  /** Private link valid 10 minutes; never stored. */
+  photoUrl: string | null;
+  createdAt: string | null;
+}
+
+export interface DisputeRoom {
+  id: string;
+  category: string | null;
+  description: string | null;
+  status: string | null;
+  locked: boolean;
+  myRole: string | null;
+  members: { name: string | null; role: string | null }[];
+  messages: DisputeRoomMessage[];
+}
+
+export const disputeRoomsApi = {
+  async rooms(): Promise<DisputeRoomSummary[]> {
+    const { data } = await http.get(ENDPOINTS.disputeRooms);
+    return unwrapList(data, ['rooms', 'items', 'results'])
+      .map((v) => {
+        const r = obj(v);
+        const id = first(r, ['dispute_id', 'id']);
+        if (!id) return null;
+        return {
+          id,
+          category: first(r, ['category']),
+          status: first(r, ['status']),
+          locked: r.locked === true,
+          myRole: first(r, ['my_role']),
+          openedAt: first(r, ['opened_at', 'created_at']),
+          messages: num(r.messages),
+          lastMessageAt: first(r, ['last_message_at']),
+        };
+      })
+      .filter((r): r is DisputeRoomSummary => !!r);
+  },
+  async room(id: string): Promise<DisputeRoom> {
+    const { data } = await http.get(ENDPOINTS.disputeMessages(id));
+    const s = unwrap(data);
+    return {
+      id: first(s, ['dispute_id', 'id']) ?? id,
+      category: first(s, ['category']),
+      description: first(s, ['description']),
+      status: first(s, ['status']),
+      locked: s.locked === true,
+      myRole: first(s, ['my_role']),
+      members: (Array.isArray(s.members) ? s.members : []).map((m) => ({
+        name: first(obj(m), ['name']),
+        role: first(obj(m), ['role']),
+      })),
+      messages: (Array.isArray(s.messages) ? s.messages : []).map((v, i) => {
+        const m = obj(v);
+        return {
+          id: first(m, ['id']) ?? String(i),
+          senderName: first(m, ['sender_name']),
+          senderRole: first(m, ['sender_role']),
+          mine: m.mine === true,
+          text: first(m, ['text']),
+          photoUrl: first(m, ['photo_url']),
+          createdAt: first(m, ['created_at']),
+        };
+      }),
+    };
+  },
+  async postMessage(id: string, text: string): Promise<void> {
+    await http.post(ENDPOINTS.disputeMessages(id), { text });
+  },
+  /** Multipart: `photo` (JPEG/PNG ≤ 5 MB) and `caption`. */
+  async uploadPhoto(
+    id: string,
+    file: { uri: string; name: string; type: string },
+    caption: string,
+  ): Promise<void> {
+    const form = new FormData();
+    form.append('photo', { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
+    form.append('caption', caption);
+    await http.post(ENDPOINTS.disputePhotos(id), form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
   },
 };
 

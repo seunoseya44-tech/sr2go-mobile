@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -15,7 +15,6 @@ import { TextField } from '../../components/TextField';
 import { Avatar, Chip, LinkText } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, TAP, typography } from '../../theme';
-import { shortDate } from '../../utils/format';
 import { ResultIcon, shared } from '../booking/shared';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -228,7 +227,10 @@ export function ReportProblemScreen() {
         description: description.trim(),
         evidenceUrls: [],
       }),
-    onSuccess: (m) => setDone(m ?? 'Your report has been sent. SR2Go will reply by email.'),
+    onSuccess: (r) => {
+      if (r.id) navigation.replace('DisputeRoom', { disputeId: r.id });
+      else setDone(r.message ?? 'Your report has been sent. SR2Go will reply.');
+    },
   });
 
   if (done) {
@@ -293,52 +295,6 @@ export function ReportProblemScreen() {
       ) : null}
       <LinkText onPress={() => navigation.navigate('TundeChat')}>
         Need a quick answer? Chat with Tunde
-      </LinkText>
-    </Screen>
-  );
-}
-
-/** Screen 42 · My reports. */
-export function MyReportsScreen() {
-  const query = useQuery({ queryKey: ['disputes'], queryFn: disputesApi.mine });
-  return (
-    <Screen testID="my-reports" topBar={{ title: 'My reports' }}>
-      {query.isPending ? <ActivityIndicator color={colors.brand} /> : null}
-      {query.isError ? <Banner tone="error" message={toApiError(query.error).message} /> : null}
-      {query.data?.length === 0 ? (
-        <Text style={shared.subtitle}>You have not reported a problem.</Text>
-      ) : null}
-      {query.data?.map((d) => (
-        <View key={d.id} style={styles.card}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.semi}>
-              {DISPUTE_LABELS[d.category as DisputeCategory] ?? d.category ?? 'Report'}
-            </Text>
-            {d.status ? (
-              <Chip
-                label={d.status.replace(/_/g, ' ')}
-                tone={/open|pending|review/i.test(d.status) ? 'blue' : 'grey'}
-              />
-            ) : null}
-          </View>
-          {d.route || d.date ? (
-            <Text style={shared.subtitle}>
-              {[d.route, d.date ? shortDate(d.date) : null].filter(Boolean).join(' · ')}
-            </Text>
-          ) : null}
-          {d.createdAt ? (
-            <Text style={shared.subtitle}>Reported {shortDate(d.createdAt)}</Text>
-          ) : null}
-          {d.resolution ? <Text style={shared.subtitle}>{d.resolution}</Text> : null}
-        </View>
-      ))}
-      <LinkText
-        onPress={() =>
-          Linking.openURL('mailto:support@shareride2go.com?subject=Help with a report')
-        }
-        style={styles.centerLink}
-      >
-        Need help? Contact support
       </LinkText>
     </Screen>
   );

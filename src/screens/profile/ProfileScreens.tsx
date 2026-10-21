@@ -257,13 +257,19 @@ export function DeleteAccountScreen() {
   const navigation = useNavigation<Nav>();
   const { signOut } = useAuth();
   const [agreed, setAgreed] = useState(false);
+  const [password, setPassword] = useState('');
   const [blocked, setBlocked] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const del = useMutation({
-    mutationFn: profileApi.deleteAccount,
+    mutationFn: () => profileApi.deleteAccount(password),
     onSuccess: () => setDone(true),
-    onError: (e) => setBlocked(toApiError(e).message),
+    onError: (e) => {
+      const err = toApiError(e);
+      if (err.status === 401 || err.code === 'wrong_password') setPasswordError(err.message);
+      else setBlocked(err.message);
+    },
   });
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   if (done) {
     return (
@@ -296,7 +302,7 @@ export function DeleteAccountScreen() {
               title="Delete my account"
               variant="danger"
               onPress={() => del.mutate()}
-              disabled={!agreed}
+              disabled={!agreed || password.length < 6}
               loading={del.isPending}
             />
             <Button
@@ -331,9 +337,21 @@ export function DeleteAccountScreen() {
       {blocked ? (
         <InfoBanner tone="amber">{blocked}</InfoBanner>
       ) : (
-        <Checkbox checked={agreed} onChange={setAgreed}>
-          I understand my account and data will be deleted and this can&apos;t be undone.
-        </Checkbox>
+        <>
+          <TextField
+            label="Your password"
+            secureTextEntry
+            value={password}
+            onChangeText={(t) => {
+              setPassword(t);
+              setPasswordError(null);
+            }}
+            error={passwordError ?? undefined}
+          />
+          <Checkbox checked={agreed} onChange={setAgreed}>
+            I understand my account and data will be deleted and this can&apos;t be undone.
+          </Checkbox>
+        </>
       )}
       <LinkText
         onPress={() => Linking.openURL('mailto:support@shareride2go.com?subject=Delete my account')}

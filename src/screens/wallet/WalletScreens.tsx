@@ -8,6 +8,7 @@ import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 
 import { walletApi, type GiftRecipient } from '../../api/account';
+import { FEATURES } from '../../config/features';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -25,6 +26,11 @@ type Nav = NativeStackNavigationProp<AppStackParamList>;
 export function WalletScreen() {
   const navigation = useNavigation<Nav>();
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.wallet });
+  const activity = useQuery({
+    queryKey: ['wallet-activity'],
+    queryFn: walletApi.activity,
+    retry: false,
+  });
   const w = wallet.data;
   return (
     <Screen topBar={null} testID="wallet-screen">
@@ -37,13 +43,15 @@ export function WalletScreen() {
         <Text style={styles.balanceSub}>Use them to pay for your next ride</Text>
       </View>
       <View style={styles.twoUp}>
-        <Button
-          title="Top up"
-          variant="secondary"
-          icon="add-circle-outline"
-          onPress={() => navigation.navigate('TopUp')}
-          style={styles.flex}
-        />
+        {FEATURES.topUp ? (
+          <Button
+            title="Top up"
+            variant="secondary"
+            icon="add-circle-outline"
+            onPress={() => navigation.navigate('TopUp')}
+            style={styles.flex}
+          />
+        ) : null}
         <Button
           title="Send credit"
           variant="secondary"
@@ -72,10 +80,10 @@ export function WalletScreen() {
       </Card>
       {wallet.isError ? <Banner tone="error" message={toApiError(wallet.error).message} /> : null}
       <Text style={shared.overline}>Activity</Text>
-      {w && w.activity.length === 0 ? (
+      {activity.data && activity.data.length === 0 && (w?.activity.length ?? 0) === 0 ? (
         <Text style={shared.subtitle}>No credit activity yet.</Text>
       ) : null}
-      {w?.activity.map((a) => {
+      {[...(activity.data ?? []), ...(w?.activity ?? [])].map((a) => {
         const negative =
           (a.amount ?? '').startsWith('-') ||
           /used|expired|sent|debit/i.test(`${a.type} ${a.description}`);
@@ -284,7 +292,7 @@ export function TopUpScreen() {
   const [copied, setCopied] = useState<string | null>(null);
   const account = useQuery({
     queryKey: ['topup-account'],
-    queryFn: walletApi.topUpAccount,
+    queryFn: walletApi.topUpAccounts,
     enabled: method === 'transfer',
     retry: false,
   });
@@ -369,17 +377,28 @@ export function TopUpScreen() {
           {account.isError ? (
             <Banner tone="error" message={toApiError(account.error).message} />
           ) : null}
-          {account.data
-            ? (
+          {account.data?.status === 'creating' ? (
+            <Text style={shared.subtitle}>
+              Your top-up accounts are being created. Check back in a few minutes.
+            </Text>
+          ) : null}
+          {account.data?.status === 'not_available' ? (
+            <Text style={shared.subtitle}>
+              Bank-transfer top-up is not available for your account yet.
+            </Text>
+          ) : null}
+          {account.data?.accounts.map((acc, i) => (
+            <View key={`${acc.accountNumber ?? i}`} style={styles.tile}>
+              {(
                 [
-                  ['Account number', account.data.accountNumber],
-                  ['Bank', account.data.bankName],
-                  ['Account name', account.data.accountName],
+                  ['Bank', acc.bankName],
+                  ['Account number', acc.accountNumber],
+                  ['Account name', acc.accountName],
                 ] as [string, string | null][]
               ).map(([label, value]) => (
                 <Pressable
                   key={label}
-                  onPress={() => copy(label, value)}
+                  onPress={() => copy(`${label}-${i}`, value)}
                   style={styles.copyRow}
                   accessibilityRole="button"
                 >
@@ -387,12 +406,16 @@ export function TopUpScreen() {
                     <Text style={shared.overline}>{label}</Text>
                     <Text style={styles.copyValue}>{value ?? '—'}</Text>
                   </View>
-                  <Text style={styles.copyLink}>{copied === label ? 'Copied' : 'Copy'}</Text>
+                  <Text style={styles.copyLink}>
+                    {copied === `${label}-${i}` ? 'Copied' : 'Copy'}
+                  </Text>
                 </Pressable>
-              ))
-            : null}
+              ))}
+            </View>
+          ))}
           <InfoBanner>
-            This account is yours alone and only accepts top-ups for your SR2Go wallet.
+            These accounts are yours alone and only accept top-ups for your SR2Go wallet. Your
+            wallet updates when the transfer arrives.
           </InfoBanner>
           <LinkText
             onPress={() => Linking.openURL('mailto:support@shareride2go.com?subject=Top-up')}

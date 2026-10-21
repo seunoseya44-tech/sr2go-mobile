@@ -1,3 +1,5 @@
+import { ENDPOINTS, http } from './client';
+import { unwrapList } from './parsers';
 import type { Place } from './types';
 
 /**
@@ -30,6 +32,44 @@ export const PLACES: Place[] = [
   { name: 'Jos', city: 'Jos', lat: 9.8965, lng: 8.8583 },
   { name: 'Kano', city: 'Kano', lat: 12.0022, lng: 8.5919 },
 ];
+
+/** GET /api/places?q= (21 Oct, no sign-in). Falls back to the fixed list offline. */
+export async function searchPlacesLive(query: string): Promise<Place[]> {
+  const q = query.trim();
+  if (!q) return PLACES;
+  try {
+    const { data } = await http.get(ENDPOINTS.places, {
+      params: { q, limit: 10 },
+      skipSessionHandling: true,
+    });
+    const list = unwrapList(data, ['results', 'items'])
+      .map((v) => {
+        const p = (v ?? {}) as Record<string, unknown>;
+        const name = typeof p.name === 'string' ? p.name : null;
+        const lat = typeof p.lat === 'number' ? p.lat : Number(p.lat);
+        const lng = typeof p.lng === 'number' ? p.lng : Number(p.lng);
+        if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        const city = typeof p.city === 'string' && p.city ? p.city : name;
+        const state = typeof p.state === 'string' && p.state ? p.state : null;
+        const detail = city !== name ? [city, state].filter(Boolean).join(', ') : state;
+        const place: Place = {
+          name,
+          city,
+          lat,
+          lng,
+          detail: detail ?? undefined,
+          hub: p.hub === true,
+        };
+        return place;
+      })
+      .filter((p): p is Place => p !== null);
+    return list.length ? list : searchPlaces(q);
+  } catch (e) {
+    // 429: keep what is on screen (the query keeps its previous data).
+    if ((e as { status?: number }).status === 429) throw e;
+    return searchPlaces(q);
+  }
+}
 
 export function searchPlaces(query: string): Place[] {
   const q = query.trim().toLowerCase();

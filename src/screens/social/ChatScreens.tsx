@@ -13,6 +13,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import * as Crypto from 'expo-crypto';
 
+import { refreshTokens } from '../../api/client';
 import { toApiError } from '../../api/errors';
 import { chatApi, parseChat, tundeApi, type ChatMessage, type TundeTurn } from '../../api/social';
 import { useAuth } from '../../auth/AuthContext';
@@ -103,13 +104,26 @@ export function TripChatScreen() {
     refetchInterval: 10_000,
   });
   const [live, setLive] = useState<ChatMessage[]>([]);
+  const [socketNote, setSocketNote] = useState<string | null>(null);
   const scroll = useRef<ScrollView>(null);
   const ws = useRef<WebSocket | null>(null);
+  const retried = useRef(false);
+  const [reconnect, setReconnect] = useState(0);
 
   useEffect(() => {
     let socket: WebSocket | null = null;
     try {
       socket = new WebSocket(chatApi.socketUrl(params.rideId));
+      socket.onclose = (ev) => {
+        // 4001: token expired → refresh and reconnect once. 4003: not on this ride → no retry.
+        if (ev.code === 4003) setSocketNote('Chat opens once the driver accepts your booking.');
+        else if (ev.code === 4001 && !retried.current) {
+          retried.current = true;
+          void refreshTokens()
+            .then(() => setReconnect((n) => n + 1))
+            .catch(() => undefined);
+        }
+      };
       socket.onmessage = (ev) => {
         try {
           const parsed = parseChat(JSON.parse(String(ev.data)), myId);
@@ -126,13 +140,13 @@ export function TripChatScreen() {
       socket?.close();
       ws.current = null;
     };
-  }, [params.rideId, myId]);
+  }, [params.rideId, myId, reconnect]);
 
   const send = useMutation({
     mutationFn: async (text: string) => {
       const s = ws.current;
       if (s && s.readyState === WebSocket.OPEN) {
-        s.send(JSON.stringify({ message: text }));
+        s.send(JSON.stringify({ content: text }));
         return;
       }
       await chatApi.send(params.rideId, text);
@@ -174,6 +188,7 @@ export function TripChatScreen() {
       {send.isError ? <Banner tone="error" message={toApiError(send.error).message} /> : null}
       {history.isError ? <Banner tone="error" message={toApiError(history.error).message} /> : null}
       {closed && history.data?.message ? <Banner message={history.data.message} /> : null}
+      {socketNote ? <Banner message={socketNote} /> : null}
       <ScrollView
         ref={scroll}
         style={styles.flex}

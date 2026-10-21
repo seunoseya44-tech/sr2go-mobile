@@ -12,6 +12,7 @@ import { bookingsApi } from '../../api/bookings';
 import { ENDPOINTS, http } from '../../api/client';
 import { toApiError } from '../../api/errors';
 import { tripApi } from '../../api/trip';
+import { disputeRoomsApi } from '../../api/social';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
@@ -59,6 +60,11 @@ export function PassengerTripScreen() {
     retry: false,
   });
   const [plateDone, setPlateDone] = useState<string | null>(null);
+  const rooms = useQuery({
+    queryKey: ['dispute-rooms'],
+    queryFn: disputeRoomsApi.rooms,
+    retry: false,
+  });
   const [showCamera, setShowCamera] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -298,6 +304,14 @@ export function PassengerTripScreen() {
           One tap alerts SR2Go, your driver and your emergency contact
         </Text>
       </View>
+      {rooms.data && rooms.data.length > 0 ? (
+        <Button
+          title="Disputes"
+          variant="secondary"
+          icon="chatbubbles-outline"
+          onPress={() => navigation.navigate('MyReports')}
+        />
+      ) : null}
       <LinkText onPress={() => Linking.openURL('tel:+2349053451158')} style={styles.center}>
         Something doesn&apos;t match? Call SR2Go support
       </LinkText>

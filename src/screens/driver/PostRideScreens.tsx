@@ -145,6 +145,7 @@ export function PostRideRouteScreen() {
 
       <TextField
         label="Your car"
+        maxLength={60}
         placeholder="e.g. Toyota Sienna, Toyota Corolla, shuttle bus"
         value={form.car}
         onChangeText={(car) => postRide.set({ car })}

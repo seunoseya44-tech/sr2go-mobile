@@ -5,6 +5,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { bookingsApi } from '../../api/bookings';
+import { companionsApi } from '../../api/social';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -45,6 +46,17 @@ export function BookingConfirmationScreen() {
     retry: false,
   });
 
+  const companions = useQuery({
+    queryKey: ['companions'],
+    queryFn: companionsApi.list,
+    retry: false,
+  });
+  const unpaidSeats = (companions.data?.outgoing ?? []).filter(
+    (c) =>
+      c.bookingId === params.bookingId &&
+      c.seat?.status === 'accepted' &&
+      c.seat.paymentStatus !== 'paid',
+  );
   const share = useMutation({
     mutationFn: async () => {
       const link = await bookingsApi.trackingLink(params.bookingId);
@@ -200,6 +212,18 @@ export function BookingConfirmationScreen() {
         </View>
       </Section>
 
+      {unpaidSeats.length > 0 ? (
+        <Button
+          title={`Pay for ${unpaidSeats.length} traveller${unpaidSeats.length === 1 ? '' : 's'}`}
+          onPress={() => navigation.navigate('Payment', { bookingId: b.id })}
+        />
+      ) : null}
+      <Button
+        title="Travelling with"
+        variant="secondary"
+        icon="people-outline"
+        onPress={() => navigation.navigate('TravellingWith', { bookingId: b.id })}
+      />
       <Button
         title="Trip day: driver, car, position and SOS"
         variant="secondary"

@@ -143,7 +143,13 @@ export function parsePriceCheck(payload: unknown): PriceCheck {
   const suggestedGets = num(s.suggested_driver_gets);
   const suggestedPays = num(s.suggested_price);
   const composed: string[] = [];
-  if (driverPrice != null) {
+  const bd = obj(s.breakdown);
+  if (Object.keys(bd).length) {
+    const money = (v: unknown) => (num(v) != null ? `₦${num(v)!.toLocaleString('en-NG')}` : null);
+    if (money(bd.take_home)) composed.push(`You receive ${money(bd.take_home)} per seat`);
+    if (money(bd.fees)) composed.push(`SR2Go and payment fees ${money(bd.fees)}`);
+    if (money(bd.passenger_pays)) composed.push(`Passenger pays ${money(bd.passenger_pays)}`);
+  } else if (driverPrice != null) {
     composed.push(`You receive ₦${driverPrice.toLocaleString('en-NG')} per seat`);
     if (suggestedGets != null && suggestedPays != null && driverPrice === suggestedGets) {
       composed.push(

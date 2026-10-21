@@ -148,9 +148,9 @@ export const profileApi = {
     });
   },
 
-  /** Endpoint still to be confirmed by SR2Go; the backend message is shown as given. */
-  async deleteAccount(): Promise<string | null> {
-    const { data } = await http.delete(ENDPOINTS.usersMe);
+  /** DELETE /api/users/me {password} (Thu 22 Oct): 409 active_trip / open_dispute / payout_pending, 401 wrong_password. */
+  async deleteAccount(password: string): Promise<string | null> {
+    const { data } = await http.delete(ENDPOINTS.usersMe, { data: { password } });
     return first(unwrap(data), ['message']);
   },
 };
@@ -219,6 +219,11 @@ export interface TopUpAccount {
   accountNumber: string | null;
   bankName: string | null;
   accountName: string | null;
+}
+
+export interface TopUpAccounts {
+  status: 'ready' | 'creating' | 'not_available' | null;
+  accounts: TopUpAccount[];
 }
 
 export const walletApi = {
@@ -292,15 +297,43 @@ export const walletApi = {
   },
 
   /** Top-up endpoints are SR2Go's to confirm; 404s surface as the backend message. */
-  async topUpAccount(): Promise<TopUpAccount> {
+  /** Mon 26 Oct: {status, accounts: [{bank, account_number, account_name}]} (Wema + Titan-Paystack). */
+  async topUpAccounts(): Promise<TopUpAccounts> {
     const { data } = await http.get(ENDPOINTS.walletTopUpAccount);
     const s = unwrap(data);
-    const a = obj(s.account);
+    const raw = (first(s, ['status']) ?? '') as string;
     return {
-      accountNumber: first(s, ['account_number']) ?? first(a, ['account_number', 'number']),
-      bankName: first(s, ['bank_name']) ?? first(a, ['bank_name', 'bank']),
-      accountName: first(s, ['account_name']) ?? first(a, ['account_name', 'name']),
+      status: (['ready', 'creating', 'not_available'] as const).find((x) => x === raw) ?? null,
+      accounts: unwrapList(data, ['accounts']).map((v) => {
+        const a = obj(v);
+        return {
+          accountNumber: first(a, ['account_number', 'number']),
+          bankName: first(a, ['bank', 'bank_name']),
+          accountName: first(a, ['account_name', 'name']),
+        };
+      }),
     };
+  },
+
+  /** Mon 26 Oct: GET /api/wallet/activity. Until then a 404 means an empty list. */
+  async activity(): Promise<WalletActivity[]> {
+    try {
+      const { data } = await http.get(ENDPOINTS.walletActivity, { params: { limit: 50 } });
+      return unwrapList(data, ['items']).map((v, i) => {
+        const t = obj(v);
+        return {
+          id: first(t, ['id']) ?? String(i),
+          description:
+            first(t, ['description']) ?? (first(t, ['type']) ?? 'Ride credit').replace(/_/g, ' '),
+          date: first(t, ['created_at']),
+          amount: first(t, ['amount']),
+          type: first(t, ['type']),
+        };
+      });
+    } catch (e) {
+      if ((e as { status?: number }).status === 404) return [];
+      throw e;
+    }
   },
 
   async topUpByCard(

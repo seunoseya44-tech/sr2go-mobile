@@ -68,11 +68,11 @@ import {
   ConnectionStatusScreen,
 } from '../screens/connections/ConnectionScreens';
 import {
-  MyReportsScreen,
   RatePassengersScreen,
   RateTripScreen,
   ReportProblemScreen,
 } from '../screens/social/AfterTripScreens';
+import { DisputeRoomScreen, MyReportsScreen } from '../screens/social/DisputeRoomScreens';
 import { TripChatScreen, TundeChatScreen } from '../screens/social/ChatScreens';
 import {
   HandoverRideScreen,
@@ -258,6 +258,7 @@ export function RootNavigator() {
       <App.Screen name="RatePassengers" component={RatePassengersScreen} />
       <App.Screen name="ReportProblem" component={ReportProblemScreen} />
       <App.Screen name="MyReports" component={MyReportsScreen} />
+      <App.Screen name="DisputeRoom" component={DisputeRoomScreen} />
       <App.Screen name="ConnectionDetails" component={ConnectionDetailsScreen} />
       <App.Screen name="ConnectionBook" component={ConnectionBookScreen} />
       <App.Screen name="ConnectionStatus" component={ConnectionStatusScreen} />

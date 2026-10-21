@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 
-import { searchPlaces } from '../api/places';
+import { useQuery } from '@tanstack/react-query';
+
+import { toApiError } from '../api/errors';
+import { searchPlacesLive } from '../api/places';
 import { Screen } from '../components/Screen';
 import { TextField } from '../components/TextField';
-import { Subtext } from '../components/ui';
+import { Banner } from '../components/Banner';
+import { Chip, Subtext } from '../components/ui';
 import type { AppStackParamList } from '../navigation/types';
 import { postRide } from '../state/postRide';
 import { searchForm } from '../state/searchForm';
@@ -21,7 +25,17 @@ export function PlacePickerScreen() {
   const navigation = useNavigation();
   const { params } = useRoute<RouteProp<AppStackParamList, 'PlacePicker'>>();
   const [query, setQuery] = useState('');
-  const results = searchPlaces(query);
+  const [debounced, setDebounced] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query), 250);
+    return () => clearTimeout(t);
+  }, [query]);
+  const live = useQuery({
+    queryKey: ['places', debounced],
+    queryFn: () => searchPlacesLive(debounced),
+    placeholderData: (prev) => prev,
+  });
+  const results = live.data ?? [];
 
   return (
     <Screen
@@ -41,7 +55,10 @@ export function PlacePickerScreen() {
         autoCorrect={false}
         returnKeyType="search"
       />
-      <Subtext>Cities and meeting areas SR2Go covers.</Subtext>
+      <Subtext>Type a city, town or area. SR2Go hubs are listed first.</Subtext>
+      {live.isError && toApiError(live.error).status === 429 ? (
+        <Banner message="Please wait a moment." />
+      ) : null}
       <FlatList
         data={results}
         keyExtractor={(p) => p.name}
@@ -63,8 +80,9 @@ export function PlacePickerScreen() {
               <Ionicons name="location-outline" size={20} color={colors.brand} />
               <View style={styles.rowText}>
                 <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.city}>{item.city}</Text>
+                <Text style={styles.city}>{item.detail ?? item.city}</Text>
               </View>
+              {item.hub ? <Chip label="Hub" tone="blue" /> : null}
               {selected ? <Ionicons name="checkmark" size={20} color={colors.brand} /> : null}
             </Pressable>
           );

@@ -96,6 +96,7 @@ export function HomeScreen() {
           {greeting()}, {displayName(user)}
         </Text>
         {verified ? <Badge label="Verified" icon="checkmark" /> : null}
+        {env.isStaging ? <Badge label="STAGING" /> : null}
       </View>
 
       {!verified ? (

@@ -56,6 +56,7 @@ export function usePushNotifications(enabled: boolean, navigate: PushNavigator) 
       const type = String(data.type ?? '');
       // Every booking/ride push can change a list the user is looking at.
       void queryClient.invalidateQueries();
+      if (type === 'wallet_topup') void queryClient.invalidateQueries({ queryKey: ['wallet'] });
       if (type === 'boarding_pack' || type === 'payment_received' || /cancel/.test(type)) {
         void syncPacks();
         void flushSync();

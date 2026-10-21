@@ -43,6 +43,9 @@ function openFromPush(type: string, data: Record<string, unknown>) {
   else if (type === 'handover_offer' || type.startsWith('handover_'))
     navigationRef.navigate('HandoversInbox');
   else if (type.startsWith('companion_')) navigationRef.navigate('CompanionInvites');
+  else if (type === 'dispute_message' && data.dispute_id != null)
+    navigationRef.navigate('DisputeRoom', { disputeId: String(data.dispute_id) });
+  else if (type === 'wallet_topup') navigationRef.navigate('Main', { screen: 'Wallet' });
   else if (type === 'driver_changed' && bookingId)
     navigationRef.navigate('BookingConfirmation', { bookingId });
   else if (type === 'boarding_pack' && bookingId)
