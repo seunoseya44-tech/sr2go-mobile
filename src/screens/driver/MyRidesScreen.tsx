@@ -147,7 +147,13 @@ function RideCard({ ride: r, onPress }: { ride: DriverRide; onPress: () => void 
           {r.seatsBooked ?? 0} of {r.seatsTotal} seats booked
         </Text>
       ) : null}
-      {r.takeHomePerSeat ? (
+      {r.priceLines.length ? (
+        r.priceLines.map((l) => (
+          <Text key={l} style={styles.take}>
+            {l}
+          </Text>
+        ))
+      ) : r.takeHomePerSeat ? (
         <Text style={styles.take}>You receive {naira(r.takeHomePerSeat)} per seat</Text>
       ) : null}
     </Pressable>

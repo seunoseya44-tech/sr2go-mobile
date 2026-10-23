@@ -148,9 +148,16 @@ export const profileApi = {
     });
   },
 
-  /** DELETE /api/users/me {password} (Thu 22 Oct): 409 active_trip / open_dispute / payout_pending, 401 wrong_password. */
+  /**
+   * DELETE /api/users/me {password} (release 103). 401 wrong_password is a bad password,
+   * not an expired session, so the request skips the refresh/sign-out handling.
+   * 409 open_items carries reasons[] (open_booking, open_ride, open_dispute, unpaid_payout).
+   */
   async deleteAccount(password: string): Promise<string | null> {
-    const { data } = await http.delete(ENDPOINTS.usersMe, { data: { password } });
+    const { data } = await http.delete(ENDPOINTS.usersMe, {
+      data: { password },
+      skipSessionHandling: true,
+    });
     return first(unwrap(data), ['message']);
   },
 };

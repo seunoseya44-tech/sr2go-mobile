@@ -32,6 +32,8 @@ export interface ApiErrorExtra {
   ninVerified?: boolean;
   bankVerified?: boolean;
   bankRequired?: boolean;
+  /** 409 open_items on delete account: one line per open item. */
+  reasons?: string[];
 }
 
 /**
@@ -129,6 +131,12 @@ function readDetail(data: unknown): Detail {
     extra.ninVerified = bool(d.nin_verified);
     extra.bankVerified = bool(d.bank_verified);
     extra.bankRequired = bool(d.bank_required);
+    if (Array.isArray(d.reasons)) {
+      const reasons = d.reasons
+        .map((r) => (r && typeof r === 'object' ? (r as { message?: unknown }).message : r))
+        .filter((m): m is string => typeof m === 'string' && m.length > 0);
+      if (reasons.length) extra.reasons = reasons;
+    }
     const message = typeof d.message === 'string' ? stripErrorCode(d.message) : undefined;
     return { message, fieldErrors, extra };
   }

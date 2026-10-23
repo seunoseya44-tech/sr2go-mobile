@@ -130,6 +130,16 @@ export interface PriceCheck {
   lines: string[];
 }
 
+/** "You receive / Fees / Passenger pays" from a `breakdown {take_home, fees, passenger_pays}`. */
+export function breakdownLines(bd: Record<string, unknown>): string[] {
+  const money = (v: unknown) => (num(v) != null ? `₦${num(v)!.toLocaleString('en-NG')}` : null);
+  const out: string[] = [];
+  if (money(bd.take_home)) out.push(`You receive ${money(bd.take_home)}`);
+  if (money(bd.fees)) out.push(`Fees ${money(bd.fees)}`);
+  if (money(bd.passenger_pays)) out.push(`Passenger pays ${money(bd.passenger_pays)}`);
+  return out;
+}
+
 export function parsePriceCheck(payload: unknown): PriceCheck {
   const s = unwrap(payload);
   const raw = (first(s, ['warning_level', 'level', 'status']) ?? 'UNKNOWN').toUpperCase();
@@ -145,10 +155,7 @@ export function parsePriceCheck(payload: unknown): PriceCheck {
   const composed: string[] = [];
   const bd = obj(s.breakdown);
   if (Object.keys(bd).length) {
-    const money = (v: unknown) => (num(v) != null ? `₦${num(v)!.toLocaleString('en-NG')}` : null);
-    if (money(bd.take_home)) composed.push(`You receive ${money(bd.take_home)} per seat`);
-    if (money(bd.fees)) composed.push(`SR2Go and payment fees ${money(bd.fees)}`);
-    if (money(bd.passenger_pays)) composed.push(`Passenger pays ${money(bd.passenger_pays)}`);
+    composed.push(...breakdownLines(bd));
   } else if (driverPrice != null) {
     composed.push(`You receive ₦${driverPrice.toLocaleString('en-NG')} per seat`);
     if (suggestedGets != null && suggestedPays != null && driverPrice === suggestedGets) {
@@ -209,6 +216,8 @@ export interface DriverRide extends Ride {
   seatsTotal: number | null;
   seatsBooked: number | null;
   requestsPending: number | null;
+  /** Release 103: the three price lines from `breakdown`. */
+  priceLines: string[];
 }
 
 export function parseDriverRide(payload: unknown): DriverRide | null {
@@ -227,6 +236,7 @@ export function parseDriverRide(payload: unknown): DriverRide | null {
     seatsTotal: total,
     seatsBooked: num(s.seats_booked) ?? (total != null && left != null ? total - left : null),
     requestsPending: num(s.pending_requests ?? s.requests_pending),
+    priceLines: breakdownLines(obj(s.breakdown)),
   };
 }
 
@@ -249,6 +259,8 @@ export interface RideBooking {
   boarded: boolean;
   heldForReview: boolean;
   message: string | null;
+  /** Release 103: the booker's booking id when this seat was added as "travelling with". */
+  travellingWith: string | null;
 }
 
 export function parseRideBookings(payload: unknown): RideBooking[] {
@@ -264,7 +276,7 @@ export function parseRideBookings(payload: unknown): RideBooking[] {
         passengerId: first(b, ['passenger_id', 'user_id']),
         connecting: !!first(b, ['connection_id']) || b.is_connecting === true,
         passengerName: first(b, ['passenger_name', 'name']),
-        passengerVerified: b.passenger_verified === true,
+        passengerVerified: b.passenger_verified === true || b.verified === true,
         passengerRating: num(b.passenger_rating ?? b.rating),
         passengerPhone: first(b, ['passenger_phone']),
         seats: num(b.seats_booked) ?? 1,
@@ -282,6 +294,7 @@ export function parseRideBookings(payload: unknown): RideBooking[] {
         boarded: b.boarded === true || flags.boarded === true,
         heldForReview: b.held_for_review === true || flags.held_for_review === true,
         message: first(b, ['message']),
+        travellingWith: first(b, ['travelling_with']),
       };
     })
     .filter((b): b is RideBooking => !!b);

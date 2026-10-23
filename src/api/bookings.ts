@@ -93,11 +93,17 @@ export function parseBooking(payload: unknown): Booking | null {
   const dep = readDeparture(src);
   const rawStatus = (first(s, ['status', 'booking_status']) ?? '').toLowerCase();
   const rawPay = (first(s, ['payment_status']) ?? '').toLowerCase();
-  const vehicleParts = [
-    first(src, ['vehicle_color', 'vehicle_colour']),
-    first(src, ['vehicle_make']),
-    first(src, ['vehicle_model']),
-  ].filter(Boolean);
+  // Release 103: vehicle {make, model, colour, plate, description} once the driver has accepted.
+  const veh = obj(s.vehicle);
+  const vehicleParts = (
+    Object.keys(veh).length
+      ? [first(veh, ['colour', 'color']), first(veh, ['make']), first(veh, ['model'])]
+      : [
+          first(src, ['vehicle_color', 'vehicle_colour']),
+          first(src, ['vehicle_make']),
+          first(src, ['vehicle_model']),
+        ]
+  ).filter(Boolean);
   const seats = num(s.seats_booked) ?? 1;
   return {
     id,
@@ -133,10 +139,12 @@ export function parseBooking(payload: unknown): Booking | null {
       src.driver_verified === true || driver.verified === true || ride?.driverVerified === true,
     vehicle:
       (vehicleParts.length ? vehicleParts.join(' ') : null) ??
-      first(src, ['vehicle', 'vehicle_type']) ??
+      first(veh, ['description']) ??
+      (typeof s.vehicle === 'string' ? s.vehicle : null) ??
+      first(src, ['vehicle_type']) ??
       ride?.vehicleType ??
       null,
-    plate: first(src, ['plate_number', 'plate']),
+    plate: first(veh, ['plate']) ?? first(src, ['plate_number', 'plate']),
     isAc: src.is_ac === true || ride?.isAc === true,
     pickupNote: first(s, ['pickup_note']),
     frontSeatPreferred: s.front_seat_preferred === true,
@@ -309,7 +317,15 @@ export const bookingsApi = {
     const { data } = await http.get(ENDPOINTS.bookingsMine);
     const bookings = parseBookings(data);
     // bookings/mine carries booking fields only; the ride (route, driver, time) is fetched once per ride.
-    const rideIds = [...new Set(bookings.map((b) => b.rideId).filter((x): x is string => !!x))];
+    // Release 103 adds the route to each booking; the ride call stays only for bookings without it.
+    const rideIds = [
+      ...new Set(
+        bookings
+          .filter((b) => !b.ride && (!b.originCity || !b.destinationCity || !b.departureDate))
+          .map((b) => b.rideId)
+          .filter((x): x is string => !!x),
+      ),
+    ];
     const rides = await Promise.all(rideIds.map((id) => ridesApi.get(id).catch(() => null)));
     const byId = new Map(rideIds.map((id, i) => [id, rides[i]]));
     return bookings.map((b) => {

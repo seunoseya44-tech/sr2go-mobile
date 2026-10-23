@@ -265,8 +265,13 @@ export function DeleteAccountScreen() {
     onSuccess: () => setDone(true),
     onError: (e) => {
       const err = toApiError(e);
-      if (err.status === 401 || err.code === 'wrong_password') setPasswordError(err.message);
-      else setBlocked(err.message);
+      if (err.status === 401 || err.code === 'wrong_password') {
+        setPasswordError(err.message || 'Your password is not correct');
+      } else if (err.extra.reasons?.length) {
+        setBlocked(err.extra.reasons.join('\n'));
+      } else {
+        setBlocked(err.message);
+      }
     },
   });
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -326,8 +331,9 @@ export function DeleteAccountScreen() {
         ['person-outline', 'Your profile, phone number and email'],
         ['id-card-outline', 'Your verified selfie and ID details'],
         ['card-outline', 'Your bank account details'],
-        ['car-outline', 'Your trips and bookings history'],
-        ['wallet-outline', 'Your ride credits (they are not refunded)'],
+        ['wallet-outline', 'Unused ride credit is lost'],
+        ['car-outline', 'Past trips and payments are kept, without your name'],
+        ['time-outline', 'Your personal data is removed after 90 days'],
       ].map(([icon, text]) => (
         <View key={text} style={styles.row}>
           <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={20} color={colors.navy} />
