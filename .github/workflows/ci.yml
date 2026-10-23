@@ -26,4 +26,6 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test -- --ci --coverage
+      # Advisory: expo-doctor goes red whenever Expo publishes a patch release.
       - run: npx expo-doctor
+        continue-on-error: true
