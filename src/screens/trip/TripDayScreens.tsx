@@ -16,6 +16,7 @@ import { disputeRoomsApi } from '../../api/social';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
+import { TrackingMap } from '../../components/TrackingMap';
 import { Avatar, Chip, InfoBanner, LinkText } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
@@ -190,6 +191,16 @@ export function PassengerTripScreen() {
         <Text style={shared.subtitle}>
           {b.originCity} → {b.destinationCity} · {shortDate(b.departureDate)}, {b.departureTime}
         </Text>
+      ) : null}
+      {active && track.data?.lat != null && track.data.lng != null ? (
+        <TrackingMap
+          car={{ lat: track.data.lat, lng: track.data.lng }}
+          meetingPoint={
+            b?.meetingPointLat != null && b.meetingPointLng != null
+              ? { lat: b.meetingPointLat, lng: b.meetingPointLng, name: b.meetingPointName }
+              : null
+          }
+        />
       ) : null}
       <View style={styles.map}>
         <Ionicons
@@ -490,7 +501,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   center: { alignSelf: 'center' },
   map: {
-    minHeight: 140,
+    minHeight: 96,
     borderRadius: radius.lg,
     backgroundColor: colors.brandSoft,
     alignItems: 'center',
