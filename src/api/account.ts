@@ -59,7 +59,8 @@ export const kycApi = {
       version:
         first(reg, ['SELFIE_DISCLAIMER_VERSION']) ?? first(s, ['disclaimer_version', 'version']),
       regulatoryBody: first(reg, ['PRIMARY_BODY']) ?? first(s, ['regulatory_body']),
-      consentType: first(s, ['consent_type']) ?? 'selfie_verification',
+      // Staging 27 Oct: the server only accepts SELFIE_REGULATORY and no longer sends consent_type.
+      consentType: first(s, ['consent_type']) ?? 'SELFIE_REGULATORY',
       checkboxLabel: first(reg, ['SELFIE_CONSENT_CHECKBOX_LABEL']),
     };
   },
