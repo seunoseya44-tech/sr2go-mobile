@@ -31,7 +31,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://staging.shareride2go.com",
-        "EXPO_PUBLIC_ENV": "staging"
+        "EXPO_PUBLIC_ENV": "staging",
+        "SR2GO_TEST_APK": "1"
       }
     }
   },

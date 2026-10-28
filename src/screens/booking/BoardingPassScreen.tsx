@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';

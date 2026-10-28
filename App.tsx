@@ -8,18 +8,15 @@ import {
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-} from '@expo-google-fonts/inter';
-import {
-  Montserrat_300Light,
-  Montserrat_600SemiBold,
-  Montserrat_700Bold,
-} from '@expo-google-fonts/montserrat';
+// Deep imports: the package index pulls in every weight (18 each) and bloats the APK.
+import { useFonts } from 'expo-font';
+import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
+import { Inter_500Medium } from '@expo-google-fonts/inter/500Medium';
+import { Inter_600SemiBold } from '@expo-google-fonts/inter/600SemiBold';
+import { Inter_700Bold } from '@expo-google-fonts/inter/700Bold';
+import { Montserrat_300Light } from '@expo-google-fonts/montserrat/300Light';
+import { Montserrat_600SemiBold } from '@expo-google-fonts/montserrat/600SemiBold';
+import { Montserrat_700Bold } from '@expo-google-fonts/montserrat/700Bold';
 
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { useBoardingBackground } from './src/boarding/manager';

@@ -32,7 +32,8 @@ export interface ConsentConfig {
   text: string | null;
   version: string | null;
   regulatoryBody: string | null;
-  consentType: string;
+  /** null = the config did not say; the screen shows an error instead of guessing. */
+  consentType: string | null;
   checkboxLabel: string | null;
 }
 
@@ -59,13 +60,14 @@ export const kycApi = {
       version:
         first(reg, ['SELFIE_DISCLAIMER_VERSION']) ?? first(s, ['disclaimer_version', 'version']),
       regulatoryBody: first(reg, ['PRIMARY_BODY']) ?? first(s, ['regulatory_body']),
-      // Staging 27 Oct: the server only accepts SELFIE_REGULATORY and no longer sends consent_type.
-      consentType: first(s, ['consent_type']) ?? 'SELFIE_REGULATORY',
+      // Release 105: consent_type at the top level and in regulatory.SELFIE_CONSENT_TYPE.
+      consentType: first(s, ['consent_type']) ?? first(reg, ['SELFIE_CONSENT_TYPE']),
       checkboxLabel: first(reg, ['SELFIE_CONSENT_CHECKBOX_LABEL']),
     };
   },
 
   async giveConsent(c: ConsentConfig, deviceId: string): Promise<void> {
+    if (!c.consentType) throw new Error('consent_type missing from the consent config');
     await http.post(ENDPOINTS.selfieConsent, {
       consent_type: c.consentType,
       disclaimer_version: c.version,

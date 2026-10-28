@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -64,6 +64,8 @@ export function KycConsentScreen() {
   const next: Next = params?.next;
   const config = useQuery({ queryKey: ['consent-config'], queryFn: kycApi.consentConfig });
   const [agreed, setAgreed] = useState(false);
+  // Release 105: the consent type comes from the config; never guess it.
+  const missingType = !!config.data && config.data.enabled && !config.data.consentType;
   const consent = useMutation({
     mutationFn: async (c: ConsentConfig) => kycApi.giveConsent(c, await deviceId()),
     onSuccess: () => navigation.navigate('KycSelfie', { next }),
@@ -81,7 +83,7 @@ export function KycConsentScreen() {
         <Button
           title="Continue to selfie"
           onPress={() => config.data && consent.mutate(config.data)}
-          disabled={!agreed || !config.data}
+          disabled={!agreed || !config.data || missingType}
           loading={consent.isPending}
         />
       }
@@ -104,6 +106,12 @@ export function KycConsentScreen() {
       ))}
       <Text style={shared.overline}>Consent</Text>
       {consent.isError ? <Banner tone="error" message={toApiError(consent.error).message} /> : null}
+      {missingType ? (
+        <Banner
+          tone="error"
+          message="We can't load the consent details right now. Please try again later or contact SR2Go support."
+        />
+      ) : null}
       <ScrollView style={styles.consentBox} nestedScrollEnabled>
         {config.isPending ? (
           <ActivityIndicator color={colors.brand} />

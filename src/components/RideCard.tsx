@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import type { Ride } from '../api/types';
 import { colors, spacing, typography } from '../theme';
