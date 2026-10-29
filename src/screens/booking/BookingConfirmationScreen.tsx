@@ -91,6 +91,7 @@ export function BookingConfirmationScreen() {
     : b.vehicle;
   const plate = driver?.vehicle?.plate ?? b.plate;
   const contact = contacts.data?.contacts[0] ?? null;
+  const paid = b.paymentStatus === 'paid';
 
   return (
     <Screen
@@ -117,8 +118,15 @@ export function BookingConfirmationScreen() {
       }
     >
       <View style={styles.header}>
-        <Ionicons name="checkmark-circle" size={32} color={colors.textOnBrand} />
-        <Text style={styles.headerTitle}>You&apos;re booked!</Text>
+        {/* Item 10: "booked" only once the seat is paid. */}
+        <Ionicons
+          name={paid ? 'checkmark-circle' : 'time-outline'}
+          size={32}
+          color={colors.textOnBrand}
+        />
+        <Text style={styles.headerTitle}>
+          {paid ? "You're booked!" : 'Seat reserved \u2013 pay to confirm'}
+        </Text>
         <Text style={styles.headerLine}>
           {b.originCity} → {b.destinationCity} · {shortDate(b.departureDate)}, {b.departureTime}
         </Text>

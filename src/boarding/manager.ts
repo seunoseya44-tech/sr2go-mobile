@@ -149,10 +149,16 @@ async function saveDriverPack(rideId: string): Promise<DriverPack | null> {
 }
 
 let syncing: Promise<void> | null = null;
+/** Item 11: only drivers have rides of their own; passengers never call my-rides (403). */
+let driverAccount = false;
+let lastSync = 0;
 
 /** Downloads/refreshes every pack inside the 24 h window; quiet on failure. */
-export function syncPacks(): Promise<void> {
+export function syncPacks(force = false): Promise<void> {
   if (syncing) return syncing;
+  // Item 11: app open, foreground and network-back fire together; one run is enough.
+  if (!force && Date.now() - lastSync < 30_000) return Promise.resolve();
+  lastSync = Date.now();
   syncing = (async () => {
     try {
       await packStore.cleanupExpired();
@@ -163,7 +169,7 @@ export function syncPacks(): Promise<void> {
           await savePassengerPack(b.id).catch(() => undefined);
         }
       }
-      const rides = await driverApi.myRides().catch(() => []);
+      const rides = driverAccount ? await driverApi.myRides().catch(() => []) : [];
       for (const r of rides) {
         const dep = r.departureDate ? `${r.departureDate}T${r.departureTime ?? '00:00'}:00` : null;
         if ((r.status === 'scheduled' || r.status === 'active') && withinWindow(dep)) {
@@ -188,7 +194,10 @@ export const packs = {
  * Mount once while signed in: flushes the queue and refreshes packs on app
  * open, on return to the foreground and when the connection comes back.
  */
-export function useBoardingBackground(enabled: boolean) {
+export function useBoardingBackground(enabled: boolean, isDriver = false) {
+  useEffect(() => {
+    driverAccount = isDriver;
+  }, [isDriver]);
   useEffect(() => {
     if (!enabled) return;
     const run = () => {

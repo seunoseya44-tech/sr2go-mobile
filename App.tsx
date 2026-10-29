@@ -77,11 +77,11 @@ const navigationTheme: Theme = {
 };
 
 function AppContent({ fontsReady }: { fontsReady: boolean }) {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const ready = fontsReady && status !== 'restoring';
   const [introDone, setIntroDone] = useState(false);
   const finishIntro = useCallback(() => setIntroDone(true), []);
-  useBoardingBackground(status === 'signedIn');
+  useBoardingBackground(status === 'signedIn', user?.role === 'driver');
   usePushNotifications(status === 'signedIn', openFromPush);
 
   useEffect(() => {

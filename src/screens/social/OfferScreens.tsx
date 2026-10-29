@@ -17,6 +17,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { shortDate } from '../../utils/format';
 import { ResultIcon, shared, tripLine } from '../booking/shared';
+import { lagosDateTime } from '../../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 const e164 = (phone: string) => `+234${phone.replace(/\D/g, '').replace(/^0/, '')}`;
@@ -279,7 +280,7 @@ function Inbox({ kind }: { kind: 'transfers' | 'handovers' }) {
       <Text style={shared.subtitle}>
         {[o.routeFrom, o.routeTo].filter(Boolean).join(' → ')}
         {o.departureTime
-          ? ` · ${shortDate(o.departureTime)}${/T\d{2}:\d{2}/.test(o.departureTime) ? `, ${o.departureTime.slice(11, 16)}` : ''}`
+          ? ` · ${shortDate(o.departureTime)}${/T\d{2}:\d{2}/.test(o.departureTime) ? `, ${lagosDateTime(o.departureTime).time ?? ''}` : ''}`
           : ''}
       </Text>
       {kind === 'transfers' && incoming ? (

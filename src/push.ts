@@ -58,7 +58,7 @@ export function usePushNotifications(enabled: boolean, navigate: PushNavigator) 
       void queryClient.invalidateQueries();
       if (type === 'wallet_topup') void queryClient.invalidateQueries({ queryKey: ['wallet'] });
       if (type === 'boarding_pack' || type === 'payment_received' || /cancel/.test(type)) {
-        void syncPacks();
+        void syncPacks(true);
         void flushSync();
       }
     };

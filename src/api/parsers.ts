@@ -1,5 +1,6 @@
 import { ApiError } from './errors';
 import type { AuthTokens, DriverPublicProfile, Preference, Ride, TickerRoute, User } from './types';
+import { lagosDateTime } from '../utils/time';
 
 type Json = Record<string, unknown>;
 
@@ -115,15 +116,9 @@ function readDeparture(source: Json): { date: string | null; time: string | null
   const combined = firstString(source, ['departure_time', 'departure_at', 'departs_at']);
   const dateField = firstString(source, ['departure_date']);
   if (combined && combined.includes('T')) {
-    // The server sends UTC ("...Z" or "+00:00"); show the phone's local time.
-    const parsed = new Date(combined);
-    if (!Number.isNaN(parsed.getTime()) && /Z$|[+-]\d{2}:\d{2}$/.test(combined)) {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return {
-        date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
-        time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`,
-      };
-    }
+    // Item 9: the server sends UTC; show Nigerian time (UTC+1) whatever the phone's zone.
+    const lagos = lagosDateTime(combined);
+    if (lagos.time) return lagos;
     const [date, rest] = combined.split('T');
     return { date: date ?? null, time: rest ? rest.slice(0, 5) : null };
   }

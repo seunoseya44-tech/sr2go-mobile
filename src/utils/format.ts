@@ -1,3 +1,4 @@
+import { lagosDateTime } from './time';
 import type { User } from '../api/types';
 
 export function greeting(date = new Date()): string {
@@ -53,7 +54,9 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 /** "2026-10-03" -> "Fri 3 Oct". Invalid input is returned as-is. */
 export function shortDate(iso: string | null | undefined): string {
   if (!iso) return '';
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  // Item 9: a full UTC timestamp is read in Nigerian time, so the day is right after 23:00 UTC.
+  const day = /T\d{2}:\d{2}/.test(iso) ? (lagosDateTime(iso).date ?? iso) : iso;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(day);
   if (!m) return iso;
   const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   if (Number.isNaN(d.getTime())) return iso;

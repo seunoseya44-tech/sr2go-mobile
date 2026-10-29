@@ -15,6 +15,7 @@ import { env } from '../config/env';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { shortDate, vehicleLabel } from '../utils/format';
+import { RouteMap } from '../components/RouteMap';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -65,25 +66,48 @@ export function RideDetailsScreen() {
   }
 
   const ride = query.data;
+  // Item 8: pickup (meeting point, else origin) and drop-off on a real map.
+  const rawNum = (k: string) => {
+    const v = ride.raw[k];
+    const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+    return Number.isFinite(n) ? n : null;
+  };
+  const pLat = ride.meetingPointLat ?? rawNum('origin_lat');
+  const pLng = ride.meetingPointLng ?? rawNum('origin_lng');
+  const dLat = rawNum('destination_lat');
+  const dLng = rawNum('destination_lng');
+  const mapPickup =
+    pLat != null && pLng != null
+      ? { lat: pLat, lng: pLng, title: ride.meetingPointName ?? ride.originCity ?? 'Pickup' }
+      : null;
+  const mapDropoff =
+    dLat != null && dLng != null
+      ? { lat: dLat, lng: dLng, title: ride.destinationCity ?? 'Drop-off' }
+      : null;
   return (
     <Screen
       testID="ride-details"
       topBar={{ title: 'Ride details' }}
       footer={<BottomBar ride={ride} />}
     >
-      <View style={styles.map} accessibilityLabel="Route map">
-        <Ionicons name="map-outline" size={28} color={colors.navy} />
-        <Text style={styles.mapText}>
-          {ride.originCity ?? 'Origin'} → {ride.destinationCity ?? 'Destination'}
-        </Text>
-      </View>
+      {mapPickup || mapDropoff ? (
+        <RouteMap pickup={mapPickup} dropoff={mapDropoff} />
+      ) : (
+        <View style={styles.map} accessibilityLabel="Route map">
+          <Ionicons name="map-outline" size={28} color={colors.navy} />
+          <Text style={styles.mapText}>
+            {ride.originCity ?? 'Origin'} → {ride.destinationCity ?? 'Destination'}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.summary}>
         <Text style={styles.when}>
           {shortDate(ride.departureDate)} · {ride.departureTime ?? ''}
         </Text>
         <Text style={styles.meta}>
-          {ride.originCity} → {ride.destinationCity} · {vehicleLabel(ride.vehicleType)}
+          {ride.meetingPointName ?? ride.originCity} → {ride.destinationCity} ·{' '}
+          {vehicleLabel(ride.vehicleType)}
         </Text>
         <View style={styles.row}>
           {ride.seatsLeft != null ? (

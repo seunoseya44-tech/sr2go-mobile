@@ -24,6 +24,7 @@ import { shortDate } from '../../utils/format';
 import { openDirections } from '../RideDetailsScreen';
 import { readEmergencyContact } from '../profile/ProfileScreens';
 import { shared } from '../booking/shared';
+import { lagosDateTime } from '../../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -482,10 +483,8 @@ export function JourneyRecordScreen() {
 }
 
 function fmtTime(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  // Item 9: Nigerian time, not the phone's zone.
+  return lagosDateTime(iso).time ?? iso;
 }
 
 function Row({ k, v }: { k: string; v: string }) {

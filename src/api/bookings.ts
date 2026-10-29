@@ -7,6 +7,7 @@ import { ENDPOINTS, http } from './client';
 import { parseRide, unwrap, unwrapList } from './parsers';
 import { ridesApi } from './rides';
 import type { Ride } from './types';
+import { lagosDateTime } from '../utils/time';
 
 type Json = Record<string, unknown>;
 const obj = (v: unknown): Json =>
@@ -77,9 +78,20 @@ function readDeparture(s: Json): { date: string | null; time: string | null } {
   const dt = first(s, ['departure_time', 'departure_datetime', 'departure_at']);
   const date = first(s, ['departure_date']);
   if (dt && /^\d{4}-\d{2}-\d{2}T/.test(dt)) {
-    return { date: dt.slice(0, 10), time: dt.slice(11, 16) };
+    // Item 9: UTC from the server, shown in Nigerian time.
+    return lagosDateTime(dt);
   }
   return { date, time: dt && /^\d{2}:\d{2}/.test(dt) ? dt.slice(0, 5) : null };
+}
+
+/** Item 11: screens and the boarding sync ask for the same rides together; one call per ride per 30 s. */
+const rideCache = new Map<string, { at: number; p: ReturnType<typeof ridesApi.get> }>();
+function rideOnce(id: string) {
+  const hit = rideCache.get(id);
+  if (hit && Date.now() - hit.at < 30_000) return hit.p.catch(() => null);
+  const p = ridesApi.get(id);
+  rideCache.set(id, { at: Date.now(), p });
+  return p.catch(() => null);
 }
 
 export function parseBooking(payload: unknown): Booking | null {
@@ -326,7 +338,7 @@ export const bookingsApi = {
           .filter((x): x is string => !!x),
       ),
     ];
-    const rides = await Promise.all(rideIds.map((id) => ridesApi.get(id).catch(() => null)));
+    const rides = await Promise.all(rideIds.map((id) => rideOnce(id)));
     const byId = new Map(rideIds.map((id, i) => [id, rides[i]]));
     return bookings.map((b) => {
       const ride = b.rideId ? byId.get(b.rideId) : null;
