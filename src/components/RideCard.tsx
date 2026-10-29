@@ -30,11 +30,13 @@ export function RideCard({ ride, onPress }: { ride: Ride; onPress: () => void })
         ) : null}
       </View>
 
-      {ride.meetingPointName ? (
+      {/* Joint test fix 7: pickup point → drop-off, not only the pickup. */}
+      {ride.meetingPointName || ride.originCity || ride.destinationCity ? (
         <View style={styles.row}>
           <Ionicons name="location-outline" size={16} color={colors.brand} />
-          <Text style={styles.meeting} numberOfLines={1}>
-            {ride.meetingPointName}
+          <Text style={styles.meeting} numberOfLines={2}>
+            {ride.meetingPointName ?? ride.originCity ?? 'Pickup'}
+            {ride.destinationCity ? ` → ${ride.destinationCity}` : ''}
           </Text>
         </View>
       ) : null}

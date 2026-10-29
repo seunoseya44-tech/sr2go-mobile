@@ -35,6 +35,8 @@ export interface DriverProfile {
   plate: string | null;
   seats: number | null;
   message: string | null;
+  /** Make and model only ("Toyota Camry"), used to fill "Your car" when posting. */
+  makeModel: string | null;
   raw: Json;
 }
 
@@ -56,6 +58,8 @@ export function parseDriverProfileMe(payload: unknown): DriverProfile {
     plate: first(s, ['plate_number', 'plate']),
     seats: num(s.seats_available),
     message: first(s, ['message']),
+    makeModel:
+      [first(s, ['vehicle_make']), first(s, ['vehicle_model'])].filter(Boolean).join(' ') || null,
     raw: s,
   };
 }

@@ -54,6 +54,7 @@ export function PostRideRouteScreen() {
   const form = usePostRide();
   const route = routeOf(form);
   const [picker, setPicker] = useState<'date' | 'time' | null>(null);
+  const profile = useQuery({ queryKey: ['driver-profile'], queryFn: driverApi.profile });
   const points = useQuery({
     queryKey: ['meeting-points', route],
     queryFn: () => driverApi.meetingPoints(route!),
@@ -66,6 +67,12 @@ export function PostRideRouteScreen() {
       postRide.set({ meetingPoint: list[0] ?? null });
     }
   }, [points.data, form.meetingPoint, form.ownMeetingPoint]);
+
+  // Joint test fix 8: start from the registered car so a place name never ends up as the car.
+  const registeredCar = profile.data?.makeModel ?? null;
+  useEffect(() => {
+    if (registeredCar && !form.car.trim()) postRide.set({ car: registeredCar });
+  }, [registeredCar, form.car]);
 
   const canNext =
     !!route && !!form.car.trim() && (!!form.meetingPoint || !!form.ownMeetingPoint.trim());
@@ -147,6 +154,11 @@ export function PostRideRouteScreen() {
         label="Your car"
         maxLength={60}
         placeholder="e.g. Toyota Sienna, Toyota Corolla, shuttle bus"
+        helper={
+          registeredCar
+            ? `From your registered car. Change it only if you drive a different car.`
+            : 'The make and model passengers will look for, not a place.'
+        }
         value={form.car}
         onChangeText={(car) => postRide.set({ car })}
       />
