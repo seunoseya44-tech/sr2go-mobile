@@ -59,6 +59,7 @@ export async function searchPlacesLive(query: string): Promise<Place[]> {
           lng,
           detail: detail ?? undefined,
           hub: p.hub === true,
+          source: p.source === 'map' ? 'map' : p.source === 'sr2go' ? 'sr2go' : undefined,
         };
         return place;
       })

@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Image,
   Linking,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -28,6 +29,8 @@ import { Badge, Checkbox, LinkText, Segmented } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { secureStorage } from '../../storage/secureStorage';
 import { colors, radius, spacing, typography } from '../../theme';
+import { clearSelfie, loadSelfie, saveSelfie } from '../../kyc/selfieStore';
+import { formatDobInput, parseDob } from '../../utils/dob';
 import { ResultIcon, shared } from '../booking/shared';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -68,7 +71,12 @@ export function KycConsentScreen() {
   const missingType = !!config.data && config.data.enabled && !config.data.consentType;
   const consent = useMutation({
     mutationFn: async (c: ConsentConfig) => kycApi.giveConsent(c, await deviceId()),
-    onSuccess: () => navigation.navigate('KycSelfie', { next }),
+    onSuccess: async () => {
+      // Fix 2: a selfie from the last hour is re-used; selfie checks cost money.
+      const stored = await loadSelfie();
+      if (stored) navigation.navigate('KycId', { next });
+      else navigation.navigate('KycSelfie', { next });
+    },
   });
 
   useEffect(() => {
@@ -149,6 +157,18 @@ export function KycSelfieScreen() {
     if (permission && !permission.granted && permission.canAskAgain) void requestPermission();
   }, [permission, requestPermission]);
 
+  // Fix 2: going back from the ID step shows the selfie already taken (kept 1 hour).
+  useEffect(() => {
+    let live = true;
+    void loadSelfie().then((s) => {
+      if (live && s)
+        setShot((cur) => cur ?? { uri: `data:image/jpeg;base64,${s.base64}`, base64: s.base64 });
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
+
   const take = async () => {
     if (!camera.current || busy) return;
     setBusy(true);
@@ -176,11 +196,19 @@ export function KycSelfieScreen() {
           <>
             <Button
               title="Use this photo"
-              onPress={() =>
-                navigation.navigate('KycId', { selfieBase64: shot.base64, next: params?.next })
-              }
+              onPress={() => {
+                void saveSelfie(shot.base64).catch(() => undefined);
+                navigation.navigate('KycId', { selfieBase64: shot.base64, next: params?.next });
+              }}
             />
-            <Button title="Retake" variant="secondary" onPress={() => setShot(null)} />
+            <Button
+              title="Retake"
+              variant="secondary"
+              onPress={() => {
+                void clearSelfie();
+                setShot(null);
+              }}
+            />
           </>
         ) : (
           <View style={styles.shutterRow}>
@@ -235,6 +263,21 @@ export function KycIdScreen() {
   const [type, setType] = useState<'nin' | 'bvn'>('nin');
   const [id, setId] = useState('');
   const [dob, setDob] = useState('');
+  const [stored, setStored] = useState<string | null>(null);
+  const [selfieMissing, setSelfieMissing] = useState(false);
+  useEffect(() => {
+    if (params?.selfieBase64) return;
+    let live = true;
+    void loadSelfie().then((s) => {
+      if (!live) return;
+      if (s) setStored(s.base64);
+      else setSelfieMissing(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [params?.selfieBase64]);
+  const selfieBase64 = params?.selfieBase64 ?? stored;
   const [state, setState] = useState<
     | { kind: 'idle' }
     | { kind: 'error'; message: string; code?: string }
@@ -243,10 +286,7 @@ export function KycIdScreen() {
     | { kind: 'retry'; message: string }
   >({ kind: 'idle' });
 
-  const dobIso = (() => {
-    const m = /^(\d{2})\s*\/\s*(\d{2})\s*\/\s*(\d{4})$/.exec(dob.trim());
-    return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
-  })();
+  const dobIso = parseDob(dob);
   const digits = id.replace(/\D/g, '');
 
   const verify = useMutation({
@@ -255,9 +295,10 @@ export function KycIdScreen() {
         type,
         idNumber: digits,
         dateOfBirth: dobIso!,
-        selfieBase64: params.selfieBase64,
+        selfieBase64: selfieBase64!,
       }),
     onSuccess: async (r) => {
+      await clearSelfie();
       await refreshProfile().catch(() => undefined);
       if (r.verified || true) {
         const driver = user?.role === 'driver';
@@ -325,7 +366,7 @@ export function KycIdScreen() {
               setState({ kind: 'idle' });
               verify.mutate();
             }}
-            disabled={digits.length !== 11 || !dobIso || tooMany}
+            disabled={digits.length !== 11 || !dobIso || tooMany || !selfieBase64}
             loading={verify.isPending}
             loadingTitle="Checking…"
           />
@@ -374,22 +415,27 @@ export function KycIdScreen() {
       />
       <TextField
         label="Date of birth"
-        placeholder="DD / MM / YYYY"
-        keyboardType="number-pad"
+        placeholder="DD/MM/YYYY"
+        // Fix 1: a keyboard with "/" (Android number keypads have none); digits alone still auto-format.
+        keyboardType={Platform.OS === 'ios' ? 'numbers-and-punctuation' : 'default'}
+        autoCapitalize="none"
+        autoCorrect={false}
+        maxLength={10}
         value={dob}
-        onChangeText={(t) => {
-          const d = t.replace(/\D/g, '').slice(0, 8);
-          setDob(
-            d.length > 4
-              ? `${d.slice(0, 2)} / ${d.slice(2, 4)} / ${d.slice(4)}`
-              : d.length > 2
-                ? `${d.slice(0, 2)} / ${d.slice(2)}`
-                : d,
-          );
-        }}
-        helper="Must match your record. You must be 18 or older."
+        onChangeText={(t) => setDob(formatDobInput(t))}
+        helper="Type as DD/MM/YYYY, e.g. 14/01/1990. Must match your record. You must be 18 or older."
         error={state.kind === 'error' && /birth/i.test(state.message) ? state.message : undefined}
       />
+      {selfieMissing && !selfieBase64 ? (
+        <>
+          <Banner tone="error" message="Your selfie has expired. Please take a new one." />
+          <Button
+            title="Take selfie"
+            variant="secondary"
+            onPress={() => navigation.replace('KycSelfie', { next: params?.next })}
+          />
+        </>
+      ) : null}
       {state.kind === 'retry' ? (
         <View style={styles.tile}>
           <Text style={styles.body}>{state.message}</Text>

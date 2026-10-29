@@ -72,7 +72,8 @@ export type AppStackParamList = {
   // B6 account and wallet
   KycConsent: { next?: 'book' | 'post' } | undefined;
   KycSelfie: { next?: 'book' | 'post' } | undefined;
-  KycId: { selfieBase64: string; next?: 'book' | 'post' };
+  /** selfieBase64 absent = use the selfie stored in the last hour (fix 2). */
+  KycId: { selfieBase64?: string; next?: 'book' | 'post' };
   KycBank: { next?: 'book' | 'post' } | undefined;
   KycDone: { next?: 'book' | 'post' } | undefined;
   PersonalDetails: undefined;

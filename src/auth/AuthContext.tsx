@@ -16,6 +16,7 @@ import type { AuthTokens, LoginCredentials, RegisterPayload, User } from '../api
 import { secureStorage } from '../storage/secureStorage';
 import { decodeJwt, isExpired } from './jwt';
 import { session } from './session';
+import { clearSelfie } from '../kyc/selfieStore';
 
 const USER_CACHE_KEY = 'sr2go.auth.user.v1';
 
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       session.clear(),
       secureStorage.remove(USER_CACHE_KEY),
       packStore.wipe().catch(() => undefined),
+      clearSelfie(),
     ]);
     dispatch({ type: 'SIGNED_OUT', notice });
   }, []);

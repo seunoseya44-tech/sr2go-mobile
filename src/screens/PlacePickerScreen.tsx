@@ -83,6 +83,7 @@ export function PlacePickerScreen() {
                 <Text style={styles.city}>{item.detail ?? item.city}</Text>
               </View>
               {item.hub ? <Chip label="Hub" tone="blue" /> : null}
+              {item.source === 'map' ? <Chip label="Map place" tone="grey" /> : null}
               {selected ? <Ionicons name="checkmark" size={20} color={colors.brand} /> : null}
             </Pressable>
           );

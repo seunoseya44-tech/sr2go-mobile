@@ -51,6 +51,8 @@ export interface Place {
   detail?: string;
   /** SR2Go changeover hub. */
   hub?: boolean;
+  /** `map` = a map place (streets, junctions, villages) rather than an SR2Go town or hub. */
+  source?: 'sr2go' | 'map';
   /** City name sent alongside coordinates (e.g. "Lagos"). */
   city: string;
   lat: number;

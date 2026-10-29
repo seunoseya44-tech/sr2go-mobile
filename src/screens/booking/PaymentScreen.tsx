@@ -79,7 +79,12 @@ export function PaymentScreen() {
       setPaidByBooker(err.message);
       return;
     }
-    setError(err.message);
+    // Fix 6: a payment-provider setup error (e.g. Paystack "Invalid key") is not for users.
+    setError(
+      /invalid key|secret key|api key|authorization key/i.test(err.message)
+        ? 'Payment is not available right now. Please try again shortly.'
+        : err.message,
+    );
     if (err.code === 'already_paid' && err.extra.reference) {
       verify.mutate(err.extra.reference);
     } else if (err.code === 'payment_in_progress') {

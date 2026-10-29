@@ -548,8 +548,9 @@ function PrefRow({
   onChange: (v: Preference) => void;
 }) {
   return (
-    <View style={styles.row}>
-      <Text style={[styles.label, styles.flex]}>{label}</Text>
+    // Fix 5: name above the buttons; side by side the buttons squeezed the name out of sight.
+    <View style={styles.prefRow}>
+      <Text style={styles.label}>{label}</Text>
       <Segmented options={PREF} value={value ?? 'ask'} onChange={onChange} />
     </View>
   );
@@ -557,6 +558,7 @@ function PrefRow({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  prefRow: { gap: spacing.xs },
   steps: { flexDirection: 'row', alignItems: 'center' },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs },
   stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.border },
