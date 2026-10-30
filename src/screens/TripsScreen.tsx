@@ -24,6 +24,7 @@ import type { AppStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { shortDate, vehicleLabel } from '../utils/format';
 import { bookingView, mmss, useCountdown, VIEW_TEXT, type BookingView } from './booking/shared';
+import { ENDPOINTS } from '../api/client';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 type Tab = 'Upcoming' | 'Completed' | 'Cancelled';
@@ -116,6 +117,15 @@ export function TripsScreen() {
               key={b.id}
               booking={b}
               onPress={() => openBooking(navigation, b)}
+              onReceipt={() =>
+                navigation.navigate('Document', {
+                  title: 'Receipt',
+                  path: ENDPOINTS.receipt(b.id),
+                  pdfPath: ENDPOINTS.receiptPdf(b.id),
+                  pdfName: `SR2Go-receipt-${b.reference ?? b.id}`,
+                  emailPath: ENDPOINTS.receiptEmail(b.id),
+                })
+              }
               onReport={() =>
                 navigation.navigate('ReportProblem', {
                   bookingId: b.id,
@@ -179,11 +189,14 @@ function BookingCard({
   booking: b,
   onPress,
   onReport,
+  onReceipt,
 }: {
   booking: Booking;
   onPress: () => void;
   /** Item 13: completed trips offer Report a problem next to Rate this trip. */
   onReport?: () => void;
+  /** Item 18: completed trips open the receipt. */
+  onReceipt?: () => void;
 }) {
   const view = bookingView(b);
   const text = VIEW_TEXT[view];
@@ -216,6 +229,11 @@ function BookingCard({
       {view === 'completed' ? (
         <View style={styles.actions}>
           <Text style={styles.action}>Rate this trip ›</Text>
+          {onReceipt ? (
+            <Pressable onPress={onReceipt} accessibilityRole="button" hitSlop={8}>
+              <Text style={styles.action}>Receipt ›</Text>
+            </Pressable>
+          ) : null}
           {onReport ? (
             <Pressable onPress={onReport} accessibilityRole="button" hitSlop={8}>
               <Text style={[styles.action, styles.report]}>Report a problem ›</Text>

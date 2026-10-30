@@ -17,6 +17,7 @@ import { colors, fonts, radius, spacing, typography } from '../../theme';
 import { shortDate } from '../../utils/format';
 import { openDirections } from '../RideDetailsScreen';
 import { shared } from './shared';
+import { ENDPOINTS } from '../../api/client';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -262,6 +263,19 @@ export function BookingConfirmationScreen() {
           style={styles.flex}
         />
       </View>
+      {paid ? (
+        <Button
+          title="Journey card"
+          variant="secondary"
+          icon="document-text-outline"
+          onPress={() =>
+            navigation.navigate('Document', {
+              title: 'Journey card',
+              path: ENDPOINTS.journeyCard(b.id),
+            })
+          }
+        />
+      ) : null}
       <Button
         title="Report a problem"
         variant="secondary"

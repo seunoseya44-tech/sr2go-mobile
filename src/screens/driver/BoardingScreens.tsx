@@ -185,7 +185,14 @@ export function ScanPassengerScreen() {
           const p = pack.passengers.find((x) => x.bookingId === res.payload.b)!;
           if (p.heldForReview)
             throw new Error('This booking is on hold. Do not board. SR2Go will contact you.');
-          const photo = await packStore.photoUri('driver', params.rideId, p.bookingId);
+          let photo = await packStore.photoUri('driver', params.rideId, p.bookingId);
+          // Item 16: no stored photo yet -> fetch a fresh signed link while there is signal.
+          if (!photo) {
+            photo = await driverApi
+              .scanQr(p.bookingId, input.qr)
+              .then((r) => r.passengerPhoto)
+              .catch(() => null);
+          }
           return {
             bookingId: p.bookingId,
             passengerName: p.name,

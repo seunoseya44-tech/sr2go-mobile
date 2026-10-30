@@ -8,8 +8,10 @@
 import * as FS from 'expo-file-system/legacy';
 
 import { decrypt, encrypt, utf8 } from '../boarding/crypto';
+import { appConfig } from '../config/appConfig';
 
-export const SELFIE_TTL_MS = 60 * 60 * 1000;
+/** The server's free retry window (selfie_retry_minutes, release 109: 60). */
+const ttlMs = () => appConfig().selfieRetryMinutes * 60_000;
 
 const FILE = `${FS.documentDirectory ?? ''}kyc-selfie.enc`;
 
@@ -33,7 +35,7 @@ export async function loadSelfie(now = Date.now()): Promise<Stored | null> {
     const s = JSON.parse(
       utf8.decode(await decrypt(await FS.readAsStringAsync(FILE, { encoding: 'utf8' }))),
     ) as Stored;
-    if (typeof s.base64 !== 'string' || typeof s.at !== 'number' || now - s.at > SELFIE_TTL_MS) {
+    if (typeof s.base64 !== 'string' || typeof s.at !== 'number' || now - s.at > ttlMs()) {
       await clearSelfie();
       return null;
     }

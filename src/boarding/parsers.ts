@@ -70,7 +70,8 @@ export function parsePassengerPack(payload: unknown, clockOffsetSeconds = 0): Pa
       userId: str(d.user_id) ?? '',
       name: str(d.name),
       verified: d.verified === true,
-      photo: str(d.photo),
+      // Item 16: the server sends driver_photo (signed private link).
+      photo: str(d.photo) ?? str(d.driver_photo) ?? str(s.driver_photo) ?? str(d.photo_url),
       vehicle: parseVehicle(d.vehicle),
     },
     boarding: parseFlags(s.boarding),
@@ -86,7 +87,8 @@ function parseDriverPackPassenger(v: unknown): DriverPackPassenger {
     passengerId: str(p.passenger_id) ?? '',
     name: str(p.passenger_name),
     verified: p.passenger_verified === true,
-    photo: str(p.passenger_photo),
+    // Item 16: the server sends photo (signed private link).
+    photo: str(p.photo) ?? str(p.passenger_photo) ?? str(p.photo_url),
     seatsBooked: num(p.seats_booked),
     children: num(p.children) ?? 0,
     driverCode: str(p.driver_code),

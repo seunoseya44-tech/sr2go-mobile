@@ -4,7 +4,10 @@
  * daylight saving), so the app converts explicitly instead of relying on the
  * phone's own time zone. A time without a zone is taken as already local.
  */
-const LAGOS_OFFSET_MIN = 60;
+import { appConfig } from '../config/appConfig';
+
+/** Martin, 30 Oct: the offset comes from GET /api/app/config (utc_offset_minutes), not the app. */
+const offsetMinutes = () => appConfig().utcOffsetMinutes;
 
 export function lagosDateTime(value: string | null | undefined): {
   date: string | null;
@@ -15,7 +18,7 @@ export function lagosDateTime(value: string | null | undefined): {
   if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s) && /(Z|[+-]\d{2}:?\d{2})$/i.test(s)) {
     const ms = Date.parse(s);
     if (!Number.isNaN(ms)) {
-      const d = new Date(ms + LAGOS_OFFSET_MIN * 60_000);
+      const d = new Date(ms + offsetMinutes() * 60_000);
       const pad = (n: number) => String(n).padStart(2, '0');
       return {
         date: `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`,

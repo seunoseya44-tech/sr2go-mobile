@@ -397,7 +397,7 @@ export const bookingsApi = {
     return {
       name: first(d, ['name']) ?? first(s, ['driver_name', 'name']),
       verified: d.verified === true || s.driver_verified === true,
-      photo: first(d, ['photo']) ?? first(s, ['driver_photo', 'photo']),
+      photo: first(d, ['photo', 'driver_photo']) ?? first(s, ['driver_photo', 'photo']),
       vehicle: [car, plate].filter(Boolean).join(' · ') || null,
     };
   },
@@ -455,7 +455,7 @@ export function parseBoardingPass(payload: unknown): BoardingPass {
     driver: {
       name: first(d, ['name']),
       verified: d.verified === true,
-      photo: first(d, ['photo']),
+      photo: first(d, ['photo', 'driver_photo']) ?? first(s, ['driver_photo']),
       vehicle: Object.keys(v).length
         ? {
             make: first(v, ['make']),

@@ -88,6 +88,7 @@ import type {
   DriverTabParamList,
   MainTabParamList,
 } from './types';
+import { DocumentScreen } from '../screens/DocumentScreen';
 
 const Auth = createNativeStackNavigator<AuthStackParamList>();
 const App = createNativeStackNavigator<AppStackParamList>();
@@ -245,6 +246,7 @@ export function RootNavigator() {
         options={{ gestureEnabled: false, animation: 'fade' }}
       />
       <App.Screen name="JourneyRecord" component={JourneyRecordScreen} />
+      <App.Screen name="Document" component={DocumentScreen} />
       <App.Screen name="PassengerTrip" component={PassengerTripScreen} />
       <App.Screen name="TravellingWith" component={TravellingWithScreen} />
       <App.Screen name="CompanionInvites" component={CompanionInvitesScreen} />

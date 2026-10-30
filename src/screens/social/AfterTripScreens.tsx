@@ -16,6 +16,7 @@ import { Avatar, Chip, LinkText } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, TAP, typography } from '../../theme';
 import { ResultIcon, shared } from '../booking/shared';
+import { ENDPOINTS } from '../../api/client';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -123,6 +124,21 @@ export function RateTripScreen() {
           See the journey record
         </LinkText>
       ) : null}
+      {/* Item 18: the receipt for this trip. */}
+      <Button
+        title="Receipt"
+        variant="secondary"
+        icon="receipt-outline"
+        onPress={() =>
+          navigation.navigate('Document', {
+            title: 'Receipt',
+            path: ENDPOINTS.receipt(params.bookingId),
+            pdfPath: ENDPOINTS.receiptPdf(params.bookingId),
+            pdfName: `SR2Go-receipt-${params.bookingId}`,
+            emailPath: ENDPOINTS.receiptEmail(params.bookingId),
+          })
+        }
+      />
       {/* Item 13: reporting is its own clear action, never mixed up with the comment. */}
       <Button
         title="Report a problem"

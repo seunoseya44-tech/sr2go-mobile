@@ -61,7 +61,14 @@ export function ScanDriverScreen() {
           Math.floor(Date.now() / 1000) + p.clockOffsetSeconds,
         );
         if (!res.ok) throw new Error(QR_FAILURE_MESSAGE);
-        const photo = await packStore.photoUri('passenger', params.bookingId, 'driver');
+        let photo = await packStore.photoUri('passenger', params.bookingId, 'driver');
+        // Item 16: no stored photo yet -> fetch a fresh signed link while there is signal.
+        if (!photo) {
+          photo = await bookingsApi
+            .scanDriver(params.bookingId, input.qr)
+            .then((r) => r.photo)
+            .catch(() => null);
+        }
         return {
           scanned: input.qr,
           name: p.driver.name,

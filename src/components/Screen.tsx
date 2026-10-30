@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -98,7 +97,9 @@ export function Screen({
       {topBar ? <TopBar {...topBar} /> : null}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        // Item 17: Android draws edge to edge, so the window no longer resizes for the
+        // keyboard; pad on both platforms so the focused box stays visible.
+        behavior="padding"
       >
         {scroll ? (
           <ScrollView

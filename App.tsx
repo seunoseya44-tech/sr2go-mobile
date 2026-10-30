@@ -27,6 +27,7 @@ import { BrandIntro } from './src/components/BrandIntro';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme';
+import { loadAppConfig } from './src/config/appConfig';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
@@ -40,6 +41,7 @@ function openFromPush(type: string, data: Record<string, unknown>) {
   else if (type === 'handover_offer' || type.startsWith('handover_'))
     navigationRef.navigate('HandoversInbox');
   else if (type.startsWith('companion_')) navigationRef.navigate('CompanionInvites');
+  else if (type === 'chat_message' && rideId) navigationRef.navigate('TripChat', { rideId });
   else if (type === 'dispute_message' && data.dispute_id != null)
     navigationRef.navigate('DisputeRoom', { disputeId: String(data.dispute_id) });
   else if (type === 'wallet_topup') navigationRef.navigate('Main', { screen: 'Wallet' });
@@ -87,6 +89,11 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => undefined);
   }, [ready]);
+
+  // Release 109: time zone, support contacts and the selfie window come from the server.
+  useEffect(() => {
+    void loadAppConfig();
+  }, []);
 
   if (!ready) return null;
 

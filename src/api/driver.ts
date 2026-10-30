@@ -317,7 +317,7 @@ export function parseBoardingCheck(payload: unknown): BoardingCheck {
   const s = unwrap(payload);
   return {
     passengerName: first(s, ['passenger_name', 'name']),
-    passengerPhoto: first(s, ['passenger_photo', 'photo']),
+    passengerPhoto: first(s, ['photo', 'passenger_photo', 'photo_url']),
     seats: num(s.seats_booked),
     children: num(s.children) ?? 0,
     bookingId: first(s, ['booking_id']),

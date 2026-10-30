@@ -65,6 +65,14 @@ export type AppStackParamList = {
   RatePassengers: { rideId: string };
   ReportProblem: { bookingId: string; route?: string | null; rideId?: string | null };
   MyReports: undefined;
+  /** Journey card / receipt page fetched with the user's token (release 108, Step C). */
+  Document: {
+    title: string;
+    path: string;
+    pdfPath?: string;
+    pdfName?: string;
+    emailPath?: string;
+  };
   DisputeRoom: { disputeId: string };
   ConnectionDetails: { index: number };
   ConnectionBook: { index: number };

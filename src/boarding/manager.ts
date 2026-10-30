@@ -18,6 +18,8 @@ import { toApiError } from '../api/errors';
 import { SyncQueue } from './queue';
 import { FileQueueStorage, packStore } from './store';
 import type { DriverPack, PassengerPack } from './types';
+import * as FS from 'expo-file-system/legacy';
+import { fromB64 } from './crypto';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -71,13 +73,17 @@ export async function recordCheck(e: Parameters<SyncQueue['add']>[0]): Promise<v
 
 /* ---------- packs ---------- */
 
+/** Item 16: download through the file system (reliable for signed links), then read the bytes. */
 async function fetchBytes(url: string): Promise<Uint8Array | null> {
+  const tmp = `${FS.cacheDirectory ?? ''}boarding-photo-${Date.now()}.jpg`;
   try {
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    return new Uint8Array(await res.arrayBuffer());
+    const res = await FS.downloadAsync(url, tmp);
+    if (res.status !== 200) return null;
+    return fromB64(await FS.readAsStringAsync(tmp, { encoding: FS.EncodingType.Base64 }));
   } catch {
     return null;
+  } finally {
+    await FS.deleteAsync(tmp, { idempotent: true }).catch(() => undefined);
   }
 }
 
