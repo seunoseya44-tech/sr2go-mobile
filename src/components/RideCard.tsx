@@ -49,15 +49,16 @@ export function RideCard({ ride, onPress }: { ride: Ride; onPress: () => void })
         ) : null}
       </View>
 
+      {/* Item 25: badges on their own line so a long label never breaks mid-word. */}
+      <View style={styles.badges}>
+        <Chip
+          label={ride.autoApprove ? 'Instant booking' : 'Driver approves requests'}
+          tone="blue"
+          icon={ride.autoApprove ? 'flash-outline' : undefined}
+        />
+        {ride.isAc ? <Chip label="AC" tone="blue" /> : null}
+      </View>
       <View style={styles.bottom}>
-        <View style={styles.badges}>
-          <Chip
-            label={ride.autoApprove ? 'Instant booking' : 'Driver approves requests'}
-            tone="blue"
-            icon={ride.autoApprove ? 'flash-outline' : undefined}
-          />
-          {ride.isAc ? <Chip label="AC" tone="blue" /> : null}
-        </View>
         <PriceBlock
           payAmount={ride.payAmount}
           usualFare={ride.usualFare}
@@ -77,6 +78,6 @@ const styles = StyleSheet.create({
   meeting: { ...typography.secondary, color: colors.textMuted, flex: 1 },
   driver: { ...typography.body, color: colors.text },
   rating: { ...typography.secondary, color: colors.textMuted },
-  bottom: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm },
-  badges: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
+  bottom: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'flex-end' },
+  badges: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
 });

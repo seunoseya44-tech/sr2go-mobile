@@ -272,6 +272,7 @@ const styles = StyleSheet.create({
   prefText: { ...typography.secondary, color: colors.text },
   body: { ...typography.body, color: colors.text, flex: 1 },
   note: { ...typography.body, color: colors.textMuted, fontStyle: 'italic' },
-  bottomBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  bookButton: { flex: 1 },
+  // Item 27: the button keeps one line; on narrow phones it goes under the price.
+  bottomBar: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.md },
+  bookButton: { flexGrow: 1, minWidth: 180 },
 });

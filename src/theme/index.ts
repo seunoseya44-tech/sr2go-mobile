@@ -65,17 +65,18 @@ export const fonts = {
 export const typography = {
   display: { fontFamily: fonts.displayBold, fontSize: 34, lineHeight: 40, letterSpacing: -0.5 },
   softTitle: { fontFamily: fonts.displayLight, fontSize: 30, lineHeight: 38 },
-  title: { fontFamily: fonts.display, fontSize: 24, lineHeight: 32 },
-  heading: { fontFamily: fonts.display, fontSize: 18, lineHeight: 26 },
+  // Item 23 (30 Oct): whole scale raised one step for readability.
+  title: { fontFamily: fonts.display, fontSize: 26, lineHeight: 34 },
+  heading: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28 },
   price: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30 },
-  priceSmall: { fontFamily: fonts.displayBold, fontSize: 18, lineHeight: 24 },
-  body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 23 },
-  bodyMedium: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 23 },
-  bodySemibold: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 23 },
-  secondary: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
-  label: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16 },
-  overline: { fontFamily: fonts.medium, fontSize: 12, lineHeight: 16, letterSpacing: 0.8 },
-  button: { fontFamily: fonts.display, fontSize: 16, lineHeight: 20 },
+  priceSmall: { fontFamily: fonts.displayBold, fontSize: 20, lineHeight: 26 },
+  body: { fontFamily: fonts.regular, fontSize: 17, lineHeight: 25 },
+  bodyMedium: { fontFamily: fonts.medium, fontSize: 17, lineHeight: 25 },
+  bodySemibold: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 25 },
+  secondary: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 22 },
+  label: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19 },
+  overline: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, letterSpacing: 0.8 },
+  button: { fontFamily: fonts.display, fontSize: 17, lineHeight: 22 },
 } as const;
 
 export const shadow = {

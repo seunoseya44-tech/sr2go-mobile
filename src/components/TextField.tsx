@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: fonts.regular,
-    fontSize: 16,
+    fontSize: 17,
     color: colors.text,
     paddingVertical: spacing.sm,
     minHeight: 48,

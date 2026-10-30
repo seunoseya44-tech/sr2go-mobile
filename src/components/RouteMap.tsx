@@ -28,6 +28,15 @@ export function RouteMap({
   const first = points[0];
   if (!first) return null;
   const coords = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
+  // Item 26: start already zoomed to fit both ends (Abuja was cut off at the edge).
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const region = {
+    latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
+    longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2,
+    latitudeDelta: Math.max((Math.max(...lats) - Math.min(...lats)) * 1.6, 0.05),
+    longitudeDelta: Math.max((Math.max(...lngs) - Math.min(...lngs)) * 1.6, 0.05),
+  };
 
   return (
     <View style={[styles.wrap, { height }]} accessibilityLabel="Route map">
@@ -35,18 +44,15 @@ export function RouteMap({
         ref={ref}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={{
-          latitude: first.lat,
-          longitude: first.lng,
-          latitudeDelta: 0.5,
-          longitudeDelta: 0.5,
-        }}
+        initialRegion={region}
         onMapReady={() => {
           if (coords.length > 1) {
-            ref.current?.fitToCoordinates(coords, {
-              edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
-              animated: false,
-            });
+            setTimeout(() => {
+              ref.current?.fitToCoordinates(coords, {
+                edgePadding: { top: 48, right: 48, bottom: 48, left: 48 },
+                animated: false,
+              });
+            }, 250);
           }
         }}
         toolbarEnabled={false}

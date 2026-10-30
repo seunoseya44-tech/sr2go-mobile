@@ -120,7 +120,7 @@ function DriverMainTabs() {
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabel: DRIVER_TAB_ICONS[route.name][2],
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 12 },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13 },
         tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.surface },
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons
@@ -146,7 +146,7 @@ function MainTabs() {
         headerShown: false,
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 12 },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13 },
         tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.surface },
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons name={TAB_ICONS[route.name][focused ? 0 : 1]} size={size} color={color} />

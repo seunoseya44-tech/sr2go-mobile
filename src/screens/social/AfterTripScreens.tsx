@@ -315,7 +315,7 @@ export function ReportProblemScreen() {
         multiline
       />
       <Text style={shared.subtitle}>
-        Photos can be added once SR2Go confirms the upload endpoint.
+        After you send this, you can add photos in the dispute room.
       </Text>
       {params.rideId ? (
         <LinkText

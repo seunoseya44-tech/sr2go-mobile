@@ -73,7 +73,9 @@ export function Chip({
   const inner = (
     <View style={[styles.chip, { backgroundColor: t.bg }]}>
       {icon ? <Ionicons name={icon} size={14} color={t.fg} /> : null}
-      <Text style={[styles.chipText, { color: t.fg }]}>{label}</Text>
+      <Text style={[styles.chipText, { color: t.fg }]} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   );
   if (!onPress) return inner;
@@ -439,7 +441,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignSelf: 'flex-start',
   },
-  chipText: { ...typography.label, fontSize: 13, lineHeight: 18 },
+  chipText: { ...typography.label, fontSize: 14, lineHeight: 19 },
 
   badge: {
     flexDirection: 'row',

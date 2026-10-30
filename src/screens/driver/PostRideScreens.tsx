@@ -68,10 +68,10 @@ export function PostRideRouteScreen() {
     }
   }, [points.data, form.meetingPoint, form.ownMeetingPoint]);
 
-  // Joint test fix 8: start from the registered car so a place name never ends up as the car.
+  // Item 22: the car comes only from the registered vehicle; no free-text box.
   const registeredCar = profile.data?.makeModel ?? null;
   useEffect(() => {
-    if (registeredCar && !form.car.trim()) postRide.set({ car: registeredCar });
+    if (registeredCar && form.car !== registeredCar) postRide.set({ car: registeredCar });
   }, [registeredCar, form.car]);
 
   const canNext =
@@ -150,18 +150,32 @@ export function PostRideRouteScreen() {
         />
       </View>
 
-      <TextField
-        label="Your car"
-        maxLength={60}
-        placeholder="e.g. Toyota Sienna, Toyota Corolla, shuttle bus"
-        helper={
-          registeredCar
-            ? `From your registered car. Change it only if you drive a different car.`
-            : 'The make and model passengers will look for, not a place.'
-        }
-        value={form.car}
-        onChangeText={(car) => postRide.set({ car })}
-      />
+      <Text style={styles.h}>Your car</Text>
+      {profile.isPending ? (
+        <Text style={shared.subtitle}>Loading your car…</Text>
+      ) : registeredCar ? (
+        <View style={styles.carRow}>
+          <Ionicons name="car-outline" size={22} color={colors.navy} />
+          <View style={styles.flex}>
+            <Text style={styles.carName}>{profile.data?.vehicle ?? registeredCar}</Text>
+            {profile.data?.plate ? <Text style={shared.subtitle}>{profile.data.plate}</Text> : null}
+          </View>
+          <Pressable
+            onPress={() => navigation.navigate('VehicleProfile')}
+            accessibilityRole="button"
+            hitSlop={8}
+          >
+            <Text style={styles.carChange}>Change car</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Button
+          title="Register my car"
+          variant="secondary"
+          icon="car-outline"
+          onPress={() => navigation.navigate('VehicleProfile')}
+        />
+      )}
 
       <Text style={styles.h}>Meeting point</Text>
       <Text style={shared.subtitle}>Places near where you&apos;re leaving from.</Text>
@@ -571,6 +585,17 @@ function PrefRow({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   prefRow: { gap: spacing.xs },
+  carRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  carName: { ...typography.bodySemibold, color: colors.text },
+  carChange: { ...typography.bodyMedium, color: colors.navy },
   steps: { flexDirection: 'row', alignItems: 'center' },
   step: { flexDirection: 'row', alignItems: 'center', gap: spacing.xxs },
   stepDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.border },
