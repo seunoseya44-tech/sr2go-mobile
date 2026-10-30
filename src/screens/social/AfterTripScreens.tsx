@@ -113,12 +113,29 @@ export function RateTripScreen() {
       {params.rideId ? (
         <LinkText
           onPress={() =>
-            navigation.navigate('JourneyRecord', { rideId: params.rideId!, route: params.route })
+            navigation.navigate('JourneyRecord', {
+              rideId: params.rideId!,
+              route: params.route,
+              bookingId: params.bookingId,
+            })
           }
         >
           See the journey record
         </LinkText>
       ) : null}
+      {/* Item 13: reporting is its own clear action, never mixed up with the comment. */}
+      <Button
+        title="Report a problem"
+        variant="secondary"
+        icon="alert-circle-outline"
+        onPress={() =>
+          navigation.navigate('ReportProblem', {
+            bookingId: params.bookingId,
+            route: params.route,
+            rideId: params.rideId,
+          })
+        }
+      />
     </Screen>
   );
 }

@@ -262,7 +262,10 @@ export function BookingConfirmationScreen() {
           style={styles.flex}
         />
       </View>
-      <LinkText
+      <Button
+        title="Report a problem"
+        variant="secondary"
+        icon="alert-circle-outline"
         onPress={() =>
           navigation.navigate('ReportProblem', {
             bookingId: b.id,
@@ -270,9 +273,7 @@ export function BookingConfirmationScreen() {
             rideId: b.rideId,
           })
         }
-      >
-        Report a problem
-      </LinkText>
+      />
 
       <InfoBanner tone="amber" icon="shield-checkmark-outline">
         Safety tip: At the car, scan or type the code on your driver&apos;s phone, then check their

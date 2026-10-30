@@ -112,7 +112,18 @@ export function TripsScreen() {
           </View>
         ) : (
           list.map((b) => (
-            <BookingCard key={b.id} booking={b} onPress={() => openBooking(navigation, b)} />
+            <BookingCard
+              key={b.id}
+              booking={b}
+              onPress={() => openBooking(navigation, b)}
+              onReport={() =>
+                navigation.navigate('ReportProblem', {
+                  bookingId: b.id,
+                  route: `${b.originCity ?? ''} → ${b.destinationCity ?? ''} · ${shortDate(b.departureDate)}`,
+                  rideId: b.rideId,
+                })
+              }
+            />
           ))
         )}
         {tab === 'Upcoming'
@@ -164,7 +175,16 @@ function openBooking(navigation: Nav, b: Booking) {
   } else navigation.navigate('BookingStatus', { bookingId: b.id });
 }
 
-function BookingCard({ booking: b, onPress }: { booking: Booking; onPress: () => void }) {
+function BookingCard({
+  booking: b,
+  onPress,
+  onReport,
+}: {
+  booking: Booking;
+  onPress: () => void;
+  /** Item 13: completed trips offer Report a problem next to Rate this trip. */
+  onReport?: () => void;
+}) {
   const view = bookingView(b);
   const text = VIEW_TEXT[view];
   const left = useCountdown(view === 'payNow' ? b.payBy : null);
@@ -194,7 +214,14 @@ function BookingCard({ booking: b, onPress }: { booking: Booking; onPress: () =>
         {b.vehicle ? ` · ${vehicleLabel(b.vehicle)}` : ''}
       </Text>
       {view === 'completed' ? (
-        <Text style={styles.action}>Rate this trip ›</Text>
+        <View style={styles.actions}>
+          <Text style={styles.action}>Rate this trip ›</Text>
+          {onReport ? (
+            <Pressable onPress={onReport} accessibilityRole="button" hitSlop={8}>
+              <Text style={[styles.action, styles.report]}>Report a problem ›</Text>
+            </Pressable>
+          ) : null}
+        </View>
       ) : view === 'payNow' ? (
         <Text style={styles.action}>Pay to keep your seat ›</Text>
       ) : line ? (
@@ -233,4 +260,6 @@ const styles = StyleSheet.create({
   when: { ...typography.bodySemibold, color: colors.text },
   meta: { ...typography.secondary, color: colors.textMuted },
   action: { ...typography.bodyMedium, color: colors.navy, marginTop: spacing.xxs },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.lg },
+  report: { color: colors.danger },
 });

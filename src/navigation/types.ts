@@ -44,7 +44,7 @@ export type AppStackParamList = {
   ForgotPassword: undefined;
   // Build 8: trip day and safety record
   EvidenceCamera: { rideId: string; event: 'journey_start' | 'journey_complete' };
-  JourneyRecord: { rideId: string; route?: string | null };
+  JourneyRecord: { rideId: string; route?: string | null; bookingId?: string | null };
   PassengerTrip: { bookingId: string };
   TravellingWith: { bookingId: string };
   CompanionInvites: undefined;

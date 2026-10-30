@@ -2,7 +2,7 @@ import { forwardRef, useState, type ReactNode } from 'react';
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-import { colors, fonts, spacing, typography } from '../theme';
+import { colors, fonts, spacing, typography, radius } from '../theme';
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -40,6 +40,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   const [focused, setFocused] = useState(false);
 
   const borderColor = error ? colors.danger : focused ? colors.borderFocus : colors.border;
+  // Item 14: a multi-line field is a visible box, not a single underline.
+  const boxed = !!inputProps.multiline;
 
   return (
     <View style={styles.wrapper}>
@@ -47,7 +49,9 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
       <View
         style={[
           styles.field,
-          { borderBottomColor: borderColor, borderBottomWidth: focused || error ? 2 : 1 },
+          boxed
+            ? [styles.box, { borderColor, borderWidth: focused || error ? 2 : 1 }]
+            : { borderBottomColor: borderColor, borderBottomWidth: focused || error ? 2 : 1 },
           !editable && styles.fieldDisabled,
         ]}
       >
@@ -62,7 +66,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         {prefix ? <Text style={styles.prefix}>{prefix}</Text> : null}
         <TextInput
           ref={ref}
-          style={styles.input}
+          style={[styles.input, boxed && styles.inputBox]}
           placeholderTextColor={colors.textSubtle}
           selectionColor={colors.brand}
           editable={editable}
@@ -105,6 +109,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 48,
     backgroundColor: colors.surface,
+  },
+  box: {
+    alignItems: 'flex-start',
+    minHeight: 104,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.surface,
+  },
+  inputBox: {
+    minHeight: 96,
+    textAlignVertical: 'top',
   },
   fieldDisabled: {
     opacity: 0.6,

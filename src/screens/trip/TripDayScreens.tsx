@@ -403,6 +403,7 @@ function PlateCamera({
 
 /** S3 · Journey record for the driver and the passenger. Never a photo. */
 export function JourneyRecordScreen() {
+  const navigation = useNavigation<Nav>();
   const { params } = useRoute<RouteProp<AppStackParamList, 'JourneyRecord'>>();
   const query = useQuery({
     queryKey: ['journey-record', params.rideId],
@@ -477,6 +478,20 @@ export function JourneyRecordScreen() {
           ) : null}
           <Text style={styles.credit}>Addresses: © OpenStreetMap contributors</Text>
         </>
+      ) : null}
+      {params.bookingId ? (
+        <Button
+          title="Report a problem"
+          variant="secondary"
+          icon="alert-circle-outline"
+          onPress={() =>
+            navigation.navigate('ReportProblem', {
+              bookingId: params.bookingId!,
+              route: params.route,
+              rideId: params.rideId,
+            })
+          }
+        />
       ) : null}
     </Screen>
   );
