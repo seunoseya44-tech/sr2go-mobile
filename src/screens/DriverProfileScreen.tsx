@@ -1,11 +1,13 @@
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQuery } from '@tanstack/react-query';
-import { useRoute, type RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { toApiError } from '../api/errors';
 import { ridesApi } from '../api/rides';
 import { Banner } from '../components/Banner';
+import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { Avatar, Card, Chip, Overline } from '../components/ui';
 import type { AppStackParamList } from '../navigation/types';
@@ -21,6 +23,7 @@ function memberSince(value: string | null): string | null {
 /** Screen 10: Driver public profile. Shows only what the endpoint returns. */
 export function DriverProfileScreen() {
   const { params } = useRoute<RouteProp<AppStackParamList, 'DriverProfile'>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const query = useQuery({
     queryKey: ['driver', params.driverId],
     queryFn: () => ridesApi.driverProfile(params.driverId),
@@ -76,6 +79,18 @@ export function DriverProfileScreen() {
               </View>
             ) : null}
           </View>
+
+          <Button
+            title="Public reviews"
+            variant="secondary"
+            icon="chatbox-ellipses-outline"
+            onPress={() =>
+              navigation.navigate('PublicReviews', {
+                userId: params.driverId,
+                name: p?.name ?? params.name ?? null,
+              })
+            }
+          />
 
           {p?.vehicle ? (
             <View style={styles.section}>

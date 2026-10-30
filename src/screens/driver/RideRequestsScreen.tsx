@@ -116,6 +116,24 @@ export function RideRequestsScreen() {
           style={styles.flex}
         />
       </View>
+      <View style={styles.twoUp}>
+        <Button
+          title="Boarding list"
+          variant="secondary"
+          icon="people-outline"
+          onPress={() => navigation.navigate('DriverBoardingList', { rideId: params.rideId })}
+          style={styles.flex}
+        />
+        <Button
+          title="Meeting point"
+          variant="secondary"
+          icon="location-outline"
+          onPress={() =>
+            navigation.navigate('MeetingPointProposals', { rideId: params.rideId, isDriver: true })
+          }
+          style={styles.flex}
+        />
+      </View>
       <LinkText onPress={() => navigation.navigate('HandoversInbox')}>My handovers</LinkText>
       {bookings.isPending ? (
         <ActivityIndicator color={colors.brand} />

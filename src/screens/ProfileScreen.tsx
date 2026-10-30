@@ -11,6 +11,7 @@ import { env } from '../config/env';
 import type { AppStackParamList } from '../navigation/types';
 import { appMode, useAppMode } from '../state/mode';
 import { colors, spacing, typography } from '../theme';
+import { companyIdOf } from '../api/features';
 
 /** Screen 46 (B1 subset): header, the rows that exist today, Privacy · Terms, Log out. */
 export function ProfileScreen() {
@@ -94,6 +95,27 @@ export function ProfileScreen() {
           icon="key-outline"
           title="Change password"
           onPress={() => navigation.navigate('ChangePassword')}
+        />
+        <ListRow
+          icon="notifications-outline"
+          title="Ride alerts"
+          subtitle="Get told when a ride is posted on your route"
+          onPress={() => navigation.navigate('RideAlerts')}
+        />
+        {user?.id ? (
+          <ListRow
+            icon="chatbox-ellipses-outline"
+            title="My public reviews"
+            onPress={() => navigation.navigate('PublicReviews', { userId: user.id!, name: 'You' })}
+          />
+        ) : null}
+        <ListRow
+          icon="business-outline"
+          title={companyIdOf(user?.raw) ? 'My company' : 'Join your company'}
+          subtitle={
+            companyIdOf(user?.raw) ? 'Business trips' : 'Have an invite from your employer?'
+          }
+          onPress={() => navigation.navigate(companyIdOf(user?.raw) ? 'MyCompany' : 'JoinCompany')}
         />
         <ListRow
           icon="flag-outline"

@@ -18,6 +18,9 @@ import { shortDate } from '../../utils/format';
 import { openDirections } from '../RideDetailsScreen';
 import { shared } from './shared';
 import { ENDPOINTS } from '../../api/client';
+import { companyIdOf } from '../../api/features';
+import { BusinessTripSwitch } from '../features/FeatureScreens';
+import { useAuth } from '../../auth/AuthContext';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -27,6 +30,7 @@ type Nav = NativeStackNavigationProp<AppStackParamList>;
  * phone at the car.
  */
 export function BookingConfirmationScreen() {
+  const { user } = useAuth();
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<RouteProp<AppStackParamList, 'BookingConfirmation'>>();
   const booking = useQuery({
@@ -274,6 +278,23 @@ export function BookingConfirmationScreen() {
               path: ENDPOINTS.journeyCard(b.id),
             })
           }
+        />
+      ) : null}
+      {b.rideId ? (
+        <Button
+          title="Meeting point changes"
+          variant="secondary"
+          icon="location-outline"
+          onPress={() =>
+            navigation.navigate('MeetingPointProposals', { rideId: b.rideId!, isDriver: false })
+          }
+        />
+      ) : null}
+      {companyIdOf(user?.raw) && b.status !== 'completed' ? (
+        <BusinessTripSwitch
+          bookingId={b.id}
+          initial={b.raw.business_trip === true}
+          companyName={typeof b.raw.company_name === 'string' ? b.raw.company_name : null}
         />
       ) : null}
       <Button

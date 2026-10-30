@@ -89,6 +89,15 @@ import type {
   MainTabParamList,
 } from './types';
 import { DocumentScreen } from '../screens/DocumentScreen';
+import {
+  DriverBoardingListScreen,
+  JoinCompanyScreen,
+  MeetingPointProposalsScreen,
+  MyCompanyScreen,
+  PublicReviewsScreen,
+  RideAlertsScreen,
+  WriteReviewScreen,
+} from '../screens/features/FeatureScreens';
 
 const Auth = createNativeStackNavigator<AuthStackParamList>();
 const App = createNativeStackNavigator<AppStackParamList>();
@@ -247,6 +256,13 @@ export function RootNavigator() {
       />
       <App.Screen name="JourneyRecord" component={JourneyRecordScreen} />
       <App.Screen name="Document" component={DocumentScreen} />
+      <App.Screen name="DriverBoardingList" component={DriverBoardingListScreen} />
+      <App.Screen name="RideAlerts" component={RideAlertsScreen} />
+      <App.Screen name="PublicReviews" component={PublicReviewsScreen} />
+      <App.Screen name="WriteReview" component={WriteReviewScreen} />
+      <App.Screen name="MeetingPointProposals" component={MeetingPointProposalsScreen} />
+      <App.Screen name="JoinCompany" component={JoinCompanyScreen} />
+      <App.Screen name="MyCompany" component={MyCompanyScreen} />
       <App.Screen name="PassengerTrip" component={PassengerTripScreen} />
       <App.Screen name="TravellingWith" component={TravellingWithScreen} />
       <App.Screen name="CompanionInvites" component={CompanionInvitesScreen} />

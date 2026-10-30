@@ -124,6 +124,20 @@ export function RateTripScreen() {
           See the journey record
         </LinkText>
       ) : null}
+      {params.revieweeId ? (
+        <Button
+          title="Write a public review"
+          variant="secondary"
+          icon="chatbox-ellipses-outline"
+          onPress={() =>
+            navigation.navigate('WriteReview', {
+              subjectId: params.revieweeId,
+              bookingId: params.bookingId,
+              name: params.name,
+            })
+          }
+        />
+      ) : null}
       {/* Item 18: the receipt for this trip. */}
       <Button
         title="Receipt"

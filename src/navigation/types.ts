@@ -65,6 +65,14 @@ export type AppStackParamList = {
   RatePassengers: { rideId: string };
   ReportProblem: { bookingId: string; route?: string | null; rideId?: string | null };
   MyReports: undefined;
+  /** 30 Oct server features. */
+  DriverBoardingList: { rideId: string };
+  RideAlerts: undefined;
+  PublicReviews: { userId: string; name?: string | null };
+  WriteReview: { subjectId: string; bookingId: string; name?: string | null };
+  MeetingPointProposals: { rideId: string; isDriver: boolean };
+  JoinCompany: { token?: string } | undefined;
+  MyCompany: undefined;
   /** Journey card / receipt page fetched with the user's token (release 108, Step C). */
   Document: {
     title: string;

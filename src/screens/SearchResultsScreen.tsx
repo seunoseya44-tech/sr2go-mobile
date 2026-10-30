@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
@@ -17,6 +18,7 @@ import type { AppStackParamList } from '../navigation/types';
 import { searchForm } from '../state/searchForm';
 import { colors, spacing, typography } from '../theme';
 import { addDays, shortDate } from '../utils/format';
+import { featuresApi } from '../api/features';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -48,6 +50,22 @@ export function SearchResultsScreen() {
   });
   const options = connections.data ?? [];
 
+  const [alertNote, setAlertNote] = useState<string | null>(null);
+  const alert = useMutation({
+    mutationFn: () =>
+      featuresApi.createAlert({
+        originLat: search.origin.lat,
+        originLng: search.origin.lng,
+        originAddress: search.origin.name,
+        destinationLat: search.destination.lat,
+        destinationLng: search.destination.lng,
+        destinationAddress: search.destination.name,
+        travelDate: search.date,
+        seatsNeeded: search.seats,
+      }),
+    onSuccess: setAlertNote,
+    onError: (e) => setAlertNote(toApiError(e).message),
+  });
   const seatsLabel = `${search.seats} seat${search.seats === 1 ? '' : 's'}`;
 
   const changeDate = (days: number) => {
@@ -87,7 +105,19 @@ export function SearchResultsScreen() {
           </View>
           <Text style={styles.emptyTitle}>No rides yet for this route and date</Text>
           <Text style={styles.emptyBody}>Drivers post new rides every day. Try another date.</Text>
-          <Button title="Change date" onPress={() => changeDate(1)} testID="change-date" />
+          <Button
+            title="Alert me when a ride is posted"
+            icon="notifications-outline"
+            onPress={() => alert.mutate()}
+            loading={alert.isPending}
+          />
+          {alertNote ? <Banner tone="info" message={alertNote} /> : null}
+          <Button
+            title="Change date"
+            variant="secondary"
+            onPress={() => changeDate(1)}
+            testID="change-date"
+          />
           <Button
             title="Change route"
             variant="secondary"
