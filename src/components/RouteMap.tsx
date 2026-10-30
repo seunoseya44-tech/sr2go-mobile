@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { colors, radius } from '../theme';
 
@@ -17,20 +17,23 @@ export interface MapPoint {
 export function RouteMap({
   pickup,
   dropoff,
+  line,
   height = 180,
 }: {
   pickup: MapPoint | null;
   dropoff: MapPoint | null;
+  /** Road line from GET /api/rides/{id}/route; drawn as given. */
+  line?: { latitude: number; longitude: number }[] | null;
   height?: number;
 }) {
   const ref = useRef<MapView | null>(null);
   const points = [pickup, dropoff].filter((p): p is MapPoint => !!p);
   const first = points[0];
   if (!first) return null;
-  const coords = points.map((p) => ({ latitude: p.lat, longitude: p.lng }));
+  const coords = [...points.map((p) => ({ latitude: p.lat, longitude: p.lng })), ...(line ?? [])];
   // Item 26: start already zoomed to fit both ends (Abuja was cut off at the edge).
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
+  const lats = coords.map((p) => p.latitude);
+  const lngs = coords.map((p) => p.longitude);
   const region = {
     latitude: (Math.min(...lats) + Math.max(...lats)) / 2,
     longitude: (Math.min(...lngs) + Math.max(...lngs)) / 2,
@@ -59,6 +62,9 @@ export function RouteMap({
         pitchEnabled={false}
         rotateEnabled={false}
       >
+        {line && line.length > 1 ? (
+          <Polyline coordinates={line} strokeColor={colors.brand} strokeWidth={4} />
+        ) : null}
         {pickup ? (
           <Marker
             coordinate={{ latitude: pickup.lat, longitude: pickup.lng }}

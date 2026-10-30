@@ -24,6 +24,7 @@ export const ENDPOINTS = {
   // Rides
   ridesSearch: '/api/rides/search',
   ride: (rideId: string) => `/api/rides/${rideId}`,
+  rideRoute: (rideId: string) => `/api/rides/${rideId}/route`,
   driverPublic: (driverId: string) => `/api/drivers/${driverId}/public`,
   pricingTicker: '/api/v1/pricing/ticker',
   // Bookings and payment (B2)

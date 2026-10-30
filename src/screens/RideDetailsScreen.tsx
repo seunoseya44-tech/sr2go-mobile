@@ -16,6 +16,7 @@ import type { AppStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { shortDate, vehicleLabel } from '../utils/format';
 import { RouteMap } from '../components/RouteMap';
+import { routeApi, routeSummary } from '../api/route';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 type IconName = keyof typeof Ionicons.glyphMap;
@@ -43,6 +44,13 @@ export function RideDetailsScreen() {
     queryKey: ['ride', params.rideId],
     queryFn: () => ridesApi.get(params.rideId),
   });
+  // Build 16: the road route as the server computes it (never in the app).
+  const route = useQuery({
+    queryKey: ['ride-route', params.rideId],
+    queryFn: () => routeApi.get(params.rideId),
+    retry: false,
+  });
+  const summary = routeSummary(route.data);
 
   if (query.isPending) {
     return (
@@ -91,7 +99,7 @@ export function RideDetailsScreen() {
       footer={<BottomBar ride={ride} />}
     >
       {mapPickup || mapDropoff ? (
-        <RouteMap pickup={mapPickup} dropoff={mapDropoff} />
+        <RouteMap pickup={mapPickup} dropoff={mapDropoff} line={route.data?.line ?? null} />
       ) : (
         <View style={styles.map} accessibilityLabel="Route map">
           <Ionicons name="map-outline" size={28} color={colors.navy} />
@@ -109,6 +117,7 @@ export function RideDetailsScreen() {
           {ride.meetingPointName ?? ride.originCity} → {ride.destinationCity} ·{' '}
           {vehicleLabel(ride.vehicleType)}
         </Text>
+        {summary ? <Text style={styles.meta}>{summary}</Text> : null}
         <View style={styles.row}>
           {ride.seatsLeft != null ? (
             <Chip label={`${ride.seatsLeft} seats left`} tone="blue" />

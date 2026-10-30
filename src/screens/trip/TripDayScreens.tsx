@@ -25,6 +25,7 @@ import { openDirections } from '../RideDetailsScreen';
 import { readEmergencyContact } from '../profile/ProfileScreens';
 import { shared } from '../booking/shared';
 import { lagosDateTime } from '../../utils/time';
+import { routeApi } from '../../api/route';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -54,6 +55,12 @@ export function PassengerTripScreen() {
     retry: false,
   });
   const token = link.data?.trackingUrl?.split('/').filter(Boolean).pop() ?? null;
+  const rideRoute = useQuery({
+    queryKey: ['ride-route', b?.rideId],
+    queryFn: () => routeApi.get(b!.rideId!),
+    enabled: !!b?.rideId,
+    retry: false,
+  });
   const track = useQuery({
     queryKey: ['track', token],
     queryFn: () => tripApi.track(token!),
@@ -195,6 +202,7 @@ export function PassengerTripScreen() {
       ) : null}
       {active && track.data?.lat != null && track.data.lng != null ? (
         <TrackingMap
+          line={rideRoute.data?.line ?? null}
           car={{ lat: track.data.lat, lng: track.data.lng }}
           meetingPoint={
             b?.meetingPointLat != null && b.meetingPointLng != null
