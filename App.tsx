@@ -42,6 +42,9 @@ function openFromPush(type: string, data: Record<string, unknown>) {
     navigationRef.navigate('HandoversInbox');
   else if (type.startsWith('companion_')) navigationRef.navigate('CompanionInvites');
   else if (type === 'chat_message' && rideId) navigationRef.navigate('TripChat', { rideId });
+  else if (type === 'breakdown' && data.breakdown_id != null)
+    navigationRef.navigate('BreakdownOpen', { breakdownId: String(data.breakdown_id) });
+  else if (type === 'rescue_request') navigationRef.navigate('DriverMain', { screen: 'MyRides' });
   else if (type === 'dispute_message' && data.dispute_id != null)
     navigationRef.navigate('DisputeRoom', { disputeId: String(data.dispute_id) });
   else if (type === 'wallet_topup') navigationRef.navigate('Main', { screen: 'Wallet' });

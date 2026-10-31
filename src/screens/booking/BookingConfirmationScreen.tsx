@@ -280,6 +280,23 @@ export function BookingConfirmationScreen() {
           }
         />
       ) : null}
+      {b.raw.rescue_request_id != null ? (
+        <Button
+          title="Your driver broke down: choose a rescue ride"
+          icon="warning-outline"
+          onPress={() =>
+            navigation.navigate('Rescue', { rescueId: String(b.raw.rescue_request_id) })
+          }
+        />
+      ) : b.raw.breakdown_id != null ? (
+        <Button
+          title="Your driver broke down: see rescue"
+          icon="warning-outline"
+          onPress={() =>
+            navigation.navigate('BreakdownOpen', { breakdownId: String(b.raw.breakdown_id) })
+          }
+        />
+      ) : null}
       {b.rideId ? (
         <Button
           title="Meeting point changes"

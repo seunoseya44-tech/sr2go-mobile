@@ -73,6 +73,10 @@ export type AppStackParamList = {
   MeetingPointProposals: { rideId: string; isDriver: boolean };
   JoinCompany: { token?: string } | undefined;
   MyCompany: undefined;
+  /** Breakdown and rescue (build sheet, 2 Oct). */
+  BreakdownStatus: { breakdownId: string; message?: string | null };
+  BreakdownOpen: { breakdownId: string };
+  Rescue: { rescueId: string };
   /** Journey card / receipt page fetched with the user's token (release 108, Step C). */
   Document: {
     title: string;

@@ -3,7 +3,7 @@
  * alerts, public reviews, meeting-point change and company booking. Every
  * figure and rule comes from the server; the app only shows the answer.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -44,6 +44,8 @@ export function DriverBoardingListScreen() {
     queryFn: () => featuresApi.boardingList(params.rideId),
     refetchInterval: 30_000,
   });
+  // Guide: refresh the list after each check.
+  useEffect(() => navigation.addListener('focus', () => void list.refetch()), [navigation, list]);
   return (
     <Screen
       testID="driver-boarding-list"
@@ -82,7 +84,7 @@ export function DriverBoardingListScreen() {
             <Chip
               label={
                 p.held
-                  ? 'On hold'
+                  ? 'Held for SR2Go review'
                   : p.boarded
                     ? 'Boarded'
                     : p.driverCheckedPassenger
@@ -94,11 +96,25 @@ export function DriverBoardingListScreen() {
           </View>
           <View style={styles.checks}>
             <Check ok={p.driverCheckedPassenger} label="You checked their code" />
+            <Check ok={p.driverConfirmedFace} label="You confirmed their face" />
             <Check ok={p.passengerCheckedDriver} label="They checked your code" />
+            <Check ok={p.passengerConfirmedFace} label="They confirmed your face" />
           </View>
           {p.held ? (
             <InfoBanner tone="amber">Do not board. SR2Go will contact you.</InfoBanner>
-          ) : open === p.bookingId ? (
+          ) : !p.boarded ? (
+            <Button
+              title={`Check ${p.name ?? 'passenger'}`}
+              icon="scan-outline"
+              onPress={() =>
+                navigation.navigate('ScanPassenger', {
+                  rideId: params.rideId,
+                  bookingId: p.bookingId,
+                })
+              }
+            />
+          ) : null}
+          {p.held ? null : open === p.bookingId ? (
             <View style={styles.qr}>
               <QrBox value={p.driverQrPayload} code={p.driverCode} size={200} />
               <Text style={shared.overline}>Your code for {p.name ?? 'this passenger'}</Text>

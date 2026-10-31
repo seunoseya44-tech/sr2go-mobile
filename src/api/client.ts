@@ -39,6 +39,12 @@ export const ENDPOINTS = {
   corporateInviteAccept: '/api/corporates/invites/accept',
   corporate: (id: string) => `/api/corporates/${id}`,
   businessTrip: (bookingId: string) => `/api/rides/bookings/${bookingId}/business-trip`,
+  breakdownFile: '/api/breakdown/file',
+  breakdown: (id: string) => `/api/breakdown/${id}`,
+  rescue: (id: string) => `/api/breakdown/rescue/${id}`,
+  rescueBook: (id: string, rideId: string) => `/api/breakdown/rescue/${id}/book/${rideId}`,
+  rescueAbandon: (id: string) => `/api/breakdown/rescue/${id}/abandon`,
+  rescueComplete: (id: string) => `/api/breakdown/rescue/${id}/complete`,
   driverPublic: (driverId: string) => `/api/drivers/${driverId}/public`,
   pricingTicker: '/api/v1/pricing/ticker',
   // Bookings and payment (B2)

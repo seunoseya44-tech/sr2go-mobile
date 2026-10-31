@@ -17,6 +17,7 @@ import { Avatar, Chip, InfoBanner } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { shared } from '../booking/shared';
+import { breakdownApi } from '../../api/breakdown';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 const GPS_EVERY_MS = 5 * 60_000;
@@ -122,6 +123,37 @@ export function ActiveTripScreen() {
     },
   });
 
+  // Breakdown and rescue, row 1: file a breakdown with the phone's position.
+  const breakdown = useMutation({
+    mutationFn: async () => {
+      const pos = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      }).catch(() => null);
+      if (!pos) throw new Error('Turn on location so SR2Go can find rescue rides near you.');
+      return breakdownApi.file({
+        rideId: params.rideId,
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      });
+    },
+    onSuccess: (b) =>
+      navigation.navigate('BreakdownStatus', {
+        breakdownId: b.id,
+        message: `SR2Go is finding rescue rides for your passengers${
+          b.strandedCount != null ? ` (${b.strandedCount})` : ''
+        }.`,
+      }),
+  });
+  const askBreakdown = () =>
+    Alert.alert(
+      'Report a breakdown?',
+      'SR2Go will find rescue rides for your passengers. Your position is sent with the report.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Report breakdown', style: 'destructive', onPress: () => breakdown.mutate() },
+      ],
+    );
+
   const askComplete = () =>
     Alert.alert(
       'Complete this ride?',
@@ -133,6 +165,9 @@ export function ActiveTripScreen() {
     );
 
   const r = ride.data;
+  const rawBreakdown = r?.raw?.breakdown_id;
+  const existingBreakdown =
+    rawBreakdown != null && rawBreakdown !== '' ? String(rawBreakdown) : null;
 
   if (sos.isSuccess) {
     return (
@@ -182,9 +217,30 @@ export function ActiveTripScreen() {
       footer={
         <>
           <Button title="Complete ride" onPress={askComplete} loading={complete.isPending} />
+          {existingBreakdown ? (
+            <Button
+              title="Breakdown status"
+              variant="secondary"
+              icon="warning-outline"
+              onPress={() =>
+                navigation.navigate('BreakdownStatus', { breakdownId: existingBreakdown })
+              }
+            />
+          ) : (
+            <Button
+              title="Report a breakdown"
+              variant="secondary"
+              icon="warning-outline"
+              onPress={askBreakdown}
+              loading={breakdown.isPending}
+            />
+          )}
         </>
       }
     >
+      {breakdown.isError ? (
+        <Banner tone="error" message={toApiError(breakdown.error).message} />
+      ) : null}
       {complete.isError ? (
         <Banner tone="error" message={toApiError(complete.error).message} />
       ) : null}

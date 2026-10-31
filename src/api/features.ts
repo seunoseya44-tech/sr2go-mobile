@@ -41,6 +41,8 @@ export interface BoardingListPassenger {
   driverQrPayload: string | null;
   driverCheckedPassenger: boolean;
   passengerCheckedDriver: boolean;
+  driverConfirmedFace: boolean;
+  passengerConfirmedFace: boolean;
   boarded: boolean;
   held: boolean;
 }
@@ -58,11 +60,14 @@ export function parseBoardingList(payload: unknown): BoardingListPassenger[] {
         verified: bool(p, ['passenger_verified', 'verified']),
         photo: first(p, ['photo', 'passenger_photo', 'photo_url']),
         seats: num(p.seats_booked) ?? 1,
-        children: num(p.children) ?? 0,
+        // Guide: children = seats beyond the first, when the server sends no children field.
+        children: num(p.children) ?? Math.max(0, (num(p.seats_booked) ?? 1) - 1),
         driverCode: first(p, ['driver_code']),
         driverQrPayload: first(p, ['driver_qr_payload', 'driver_qr']),
         driverCheckedPassenger: bool(f, ['driver_checked_passenger_code']),
         passengerCheckedDriver: bool(f, ['passenger_checked_driver_code']),
+        driverConfirmedFace: bool(f, ['driver_confirmed_face']),
+        passengerConfirmedFace: bool(f, ['passenger_confirmed_face']),
         boarded: bool(f, ['boarded']),
         held: bool(f, ['held_for_review']),
       };
