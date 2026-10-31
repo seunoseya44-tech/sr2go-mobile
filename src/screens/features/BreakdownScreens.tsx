@@ -11,7 +11,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 
-import { breakdownApi, rescueStarted } from '../../api/breakdown';
+import { breakdownApi, isRescueBooked, isRescueFinished, rescueStarted } from '../../api/breakdown';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -146,16 +146,18 @@ export function RescueScreen() {
   });
 
   const r = q.data;
-  const booked =
-    !!r?.bookedRideId || (!!r?.status && /booked|started|in_progress|completed/i.test(r.status));
+  // Server statuses (release 113): searching, matched, completed, abandoned.
+  // "matched" = a rescue ride is booked, so "I have arrived" shows and the list goes.
+  const booked = !!r?.bookedRideId || isRescueBooked(r?.status ?? null);
   const started = rescueStarted(r?.status ?? null);
+  const finished = isRescueFinished(r?.status ?? null);
 
   return (
     <Screen
       testID="rescue"
       topBar={{ title: 'Rescue ride' }}
       footer={
-        closed ? (
+        closed || finished ? (
           <Button
             title="Back to my trips"
             onPress={() => navigation.navigate('Main', { screen: 'Trips' })}
@@ -185,7 +187,17 @@ export function RescueScreen() {
       {error ? <Banner tone="error" message={error} onDismiss={() => setError(null)} /> : null}
       {q.isPending ? <ActivityIndicator color={colors.brand} /> : null}
       {q.isError ? <Banner tone="error" message={toApiError(q.error).message} /> : null}
-      {r && !closed ? (
+      {r && finished && !closed ? (
+        <Banner
+          tone="info"
+          message={
+            /abandon/i.test(r.status ?? '')
+              ? 'This rescue is closed. The unearned part of your fare is refunded.'
+              : 'Rescue completed.'
+          }
+        />
+      ) : null}
+      {r && !closed && !finished ? (
         <>
           <Card tone="tile">
             <View style={styles.row}>

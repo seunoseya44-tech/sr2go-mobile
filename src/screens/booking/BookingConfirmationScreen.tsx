@@ -21,6 +21,7 @@ import { ENDPOINTS } from '../../api/client';
 import { companyIdOf } from '../../api/features';
 import { BusinessTripSwitch } from '../features/FeatureScreens';
 import { useAuth } from '../../auth/AuthContext';
+import { isRescueFinished } from '../../api/breakdown';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -280,7 +281,8 @@ export function BookingConfirmationScreen() {
           }
         />
       ) : null}
-      {b.raw.rescue_request_id != null ? (
+      {b.raw.rescue_request_id != null &&
+      !isRescueFinished(typeof b.raw.rescue_status === 'string' ? b.raw.rescue_status : null) ? (
         <Button
           title="Your driver broke down: choose a rescue ride"
           icon="warning-outline"
@@ -288,7 +290,7 @@ export function BookingConfirmationScreen() {
             navigation.navigate('Rescue', { rescueId: String(b.raw.rescue_request_id) })
           }
         />
-      ) : b.raw.breakdown_id != null ? (
+      ) : b.raw.breakdown_id != null && b.raw.rescue_request_id == null ? (
         <Button
           title="Your driver broke down: see rescue"
           icon="warning-outline"

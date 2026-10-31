@@ -1,4 +1,10 @@
-import { parseBreakdown, parseRescue, rescueStarted } from '../api/breakdown';
+import {
+  isRescueBooked,
+  isRescueFinished,
+  parseBreakdown,
+  parseRescue,
+  rescueStarted,
+} from '../api/breakdown';
 
 describe('breakdown and rescue', () => {
   it('reads the breakdown with each passenger rescue request', () => {
@@ -44,5 +50,14 @@ describe('breakdown and rescue', () => {
   it('hides "make my own way" once the rescue ride has started', () => {
     expect(rescueStarted('rescue_started')).toBe(true);
     expect(rescueStarted('pending')).toBe(false);
+  });
+
+  it('treats "matched" as booked (release 113 statuses)', () => {
+    expect(isRescueBooked('matched')).toBe(true);
+    expect(isRescueBooked('searching')).toBe(false);
+    expect(isRescueFinished('completed')).toBe(true);
+    expect(isRescueFinished('abandoned')).toBe(true);
+    expect(isRescueFinished('matched')).toBe(false);
+    expect(rescueStarted('matched')).toBe(false);
   });
 });

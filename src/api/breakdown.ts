@@ -179,7 +179,16 @@ export const breakdownApi = {
   },
 };
 
-/** The ride has started (or finished): no more "I'll make my own way". */
+/** Release 113 statuses: searching, matched, completed, abandoned. */
+export function isRescueBooked(status: string | null): boolean {
+  return !!status && /^(matched|completed|booked|started|in_progress)$/i.test(status);
+}
+
+export function isRescueFinished(status: string | null): boolean {
+  return !!status && /^(completed|abandoned)$/i.test(status);
+}
+
+/** The rescue ride has started (or finished): no more "I'll make my own way". The server refuses it anyway. */
 export function rescueStarted(status: string | null): boolean {
   return !!status && /(started|in_progress|on_the_way|active|completed|arrived)/i.test(status);
 }
