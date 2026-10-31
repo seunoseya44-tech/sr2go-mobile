@@ -186,7 +186,7 @@ export function EvidenceCameraScreen() {
 
 const styles = StyleSheet.create({
   content: { flex: 1, gap: spacing.sm },
-  title: { ...typography.heading, fontSize: 22, lineHeight: 28, color: colors.textOnBrand },
+  title: { ...typography.screenTitle, color: colors.textOnBrand },
   sub: { ...typography.secondary, color: '#B8C4D4' },
   preview: {
     flex: 1,

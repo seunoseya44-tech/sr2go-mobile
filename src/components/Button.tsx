@@ -32,6 +32,7 @@ export function Button({
 }: ButtonProps) {
   const inactive = disabled || loading;
   const palette = PALETTES[variant];
+  const textColor = disabled && !loading ? colors.disabledText : palette.text;
 
   return (
     <Pressable
@@ -47,7 +48,10 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         { backgroundColor: pressed ? palette.pressed : palette.background },
-        palette.border ? { borderWidth: 1.5, borderColor: palette.border } : null,
+        palette.border
+          ? { borderWidth: palette.borderWidth ?? 1.5, borderColor: palette.border }
+          : null,
+        // Build 19 review: disabled = solid light grey, not faded.
         inactive && !loading && styles.disabled,
         pressed && styles.pressed,
         style,
@@ -57,13 +61,28 @@ export function Button({
         <View style={styles.content}>
           <ActivityIndicator color={palette.text} />
           {loadingTitle ? (
-            <Text style={[styles.title, { color: palette.text }]}>{loadingTitle}</Text>
+            <Text
+              style={[styles.title, { color: palette.text }]}
+              numberOfLines={2}
+              textBreakStrategy="simple"
+              android_hyphenationFrequency="none"
+            >
+              {loadingTitle}
+            </Text>
           ) : null}
         </View>
       ) : (
         <View style={styles.content}>
-          {icon ? <Ionicons name={icon} size={18} color={palette.text} /> : null}
-          <Text style={[styles.title, { color: palette.text }]}>{title}</Text>
+          {icon ? <Ionicons name={icon} size={18} color={textColor} /> : null}
+          {/* Build 19 review: up to two lines, centred, breaking only between words. */}
+          <Text
+            style={[styles.title, { color: textColor }]}
+            numberOfLines={2}
+            textBreakStrategy="simple"
+            android_hyphenationFrequency="none"
+          >
+            {title}
+          </Text>
         </View>
       )}
     </Pressable>
@@ -72,10 +91,17 @@ export function Button({
 
 const PALETTES: Record<
   Variant,
-  { background: string; pressed: string; text: string; border?: string }
+  { background: string; pressed: string; text: string; border?: string; borderWidth?: number }
 > = {
   primary: { background: colors.brand, pressed: colors.brandPressed, text: colors.textOnBrand },
-  secondary: { background: colors.tile, pressed: colors.border, text: colors.midnight },
+  // Build 19 review: white with a 2 px brand border and brand text.
+  secondary: {
+    background: colors.surface,
+    pressed: colors.brandSoft,
+    text: colors.brand,
+    border: colors.brand,
+    borderWidth: 2,
+  },
   ghost: { background: 'transparent', pressed: colors.brandSoft, text: colors.navy },
   // On the blue splash: white outline, white text.
   outlineLight: {
@@ -95,18 +121,23 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.lg,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
+    maxWidth: '100%',
   },
   title: {
     ...typography.button,
+    textAlign: 'center',
+    flexShrink: 1,
   },
   disabled: {
-    opacity: 0.5,
+    backgroundColor: colors.disabledFill,
+    borderColor: colors.disabledFill,
   },
   pressed: {
     transform: [{ scale: 0.985 }],

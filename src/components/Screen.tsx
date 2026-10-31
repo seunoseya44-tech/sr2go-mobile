@@ -141,9 +141,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   topTitle: {
-    ...typography.heading,
-    fontSize: 22,
-    lineHeight: 28,
+    ...typography.screenTitle,
     color: colors.text,
     flex: 1,
     textAlign: 'center',

@@ -282,7 +282,7 @@ function PlaceField({
 const styles = StyleSheet.create({
   content: { gap: spacing.md },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { fontFamily: typography.heading.fontFamily, fontSize: 22, color: colors.midnight },
+  brand: { ...typography.screenTitle, color: colors.midnight },
   brandAccent: { color: colors.brand },
   avatarPress: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
   greetingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },

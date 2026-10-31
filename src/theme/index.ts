@@ -14,6 +14,9 @@ export const colors = {
 
   background: '#FFFFFF',
   surface: '#FFFFFF',
+  /** Disabled buttons (Martin, build 19 review): solid fill, not faded. */
+  disabledFill: '#E5E7EB',
+  disabledText: '#6B7280',
   tile: '#F1F4F9',
   border: '#E3E9F2',
   borderFocus: '#0099F9',
@@ -67,6 +70,8 @@ export const typography = {
   softTitle: { fontFamily: fonts.displayLight, fontSize: 30, lineHeight: 38 },
   // Item 23 (30 Oct): whole scale raised one step for readability.
   title: { fontFamily: fonts.display, fontSize: 26, lineHeight: 34 },
+  /** One token for the 22 px titles that were typed by hand (build 19 review). */
+  screenTitle: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28 },
   heading: { fontFamily: fonts.display, fontSize: 20, lineHeight: 28 },
   price: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 30 },
   priceSmall: { fontFamily: fonts.displayBold, fontSize: 20, lineHeight: 26 },

@@ -180,9 +180,7 @@ const styles = StyleSheet.create({
   },
   emptyArt: { paddingVertical: spacing.lg },
   emptyTitle: {
-    ...typography.title,
-    fontSize: 22,
-    lineHeight: 28,
+    ...typography.screenTitle,
     color: colors.text,
     textAlign: 'center',
   },
