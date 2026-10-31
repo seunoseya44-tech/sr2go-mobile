@@ -73,6 +73,8 @@ export type AppStackParamList = {
   MeetingPointProposals: { rideId: string; isDriver: boolean };
   JoinCompany: { token?: string } | undefined;
   MyCompany: undefined;
+  /** Profile → Payments (item 7, 31 Oct). */
+  PaymentChoices: undefined;
   /** Breakdown and rescue (build sheet, 2 Oct). */
   BreakdownStatus: { breakdownId: string; message?: string | null };
   BreakdownOpen: { breakdownId: string };

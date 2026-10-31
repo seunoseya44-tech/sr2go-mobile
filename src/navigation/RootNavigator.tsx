@@ -103,6 +103,7 @@ import {
   BreakdownStatusScreen,
   RescueScreen,
 } from '../screens/features/BreakdownScreens';
+import { PaymentChoicesScreen } from '../screens/wallet/PaymentChoicesScreen';
 
 const Auth = createNativeStackNavigator<AuthStackParamList>();
 const App = createNativeStackNavigator<AppStackParamList>();
@@ -268,6 +269,7 @@ export function RootNavigator() {
       <App.Screen name="MeetingPointProposals" component={MeetingPointProposalsScreen} />
       <App.Screen name="JoinCompany" component={JoinCompanyScreen} />
       <App.Screen name="MyCompany" component={MyCompanyScreen} />
+      <App.Screen name="PaymentChoices" component={PaymentChoicesScreen} />
       <App.Screen name="BreakdownStatus" component={BreakdownStatusScreen} />
       <App.Screen name="BreakdownOpen" component={BreakdownOpenScreen} />
       <App.Screen name="Rescue" component={RescueScreen} />

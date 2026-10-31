@@ -334,7 +334,10 @@ export const walletApi = {
         return {
           id: first(t, ['id']) ?? String(i),
           description:
-            first(t, ['description']) ?? (first(t, ['type']) ?? 'Ride credit').replace(/_/g, ' '),
+            first(t, ['description']) ??
+            (first(t, ['type']) === 'driver_earnings'
+              ? 'Trip earnings'
+              : (first(t, ['type']) ?? 'Ride credit').replace(/_/g, ' ')),
           date: first(t, ['created_at']),
           amount: first(t, ['amount']),
           type: first(t, ['type']),

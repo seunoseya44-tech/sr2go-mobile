@@ -118,6 +118,7 @@ export const ENDPOINTS = {
   disputePhotos: (id: string) => `/api/disputes/${id}/photos`,
   places: '/api/places',
   walletActivity: '/api/wallet/activity',
+  walletPreferences: '/api/wallet/preferences',
   connectionsSearch: '/api/connections/search',
   connections: '/api/connections',
   connection: (id: string) => `/api/connections/${id}`,

@@ -70,6 +70,16 @@ export function ProfileScreen() {
           />
         ) : null}
         <ListRow
+          icon="wallet-outline"
+          title="Payments"
+          subtitle={
+            user?.role === 'driver'
+              ? 'Where your trip earnings and refunds go'
+              : 'Where your refunds go'
+          }
+          onPress={() => navigation.navigate('PaymentChoices')}
+        />
+        <ListRow
           icon="call-outline"
           title="Emergency contact"
           subtitle="Used by the SOS button"
