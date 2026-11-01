@@ -213,7 +213,7 @@ export function ActiveTripScreen() {
       testID="active-trip"
       topBar={{
         leading: 'none',
-        title: r ? `On the road to ${r.destinationCity ?? ''}` : 'On the road',
+        title: r ? `On the road to ${(r.destinationCity ?? '').split(',')[0]}` : 'On the road',
       }}
       footer={
         <>

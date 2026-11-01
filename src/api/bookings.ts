@@ -298,7 +298,11 @@ export function parsePolicy(payload: unknown): CancellationPolicy {
     creditRefund: first(s, ['credit_refund']),
     message:
       first(s, ['message', 'description', 'summary']) ??
-      [first(s, ['policy_note']), first(s, ['service_fee_note'])].filter(Boolean).join(' ') ??
+      // Gallery 1 Nov: policy_note already says the fee is non-refundable - add service_fee_note only if not
+      [first(s, ['policy_note']), first(s, ['service_fee_note'])]
+        .filter(Boolean)
+        .filter((t, i, all) => i === 0 || !/service fee/i.test(all[0] ?? ''))
+        .join(' ') ??
       null,
     canCancel: s.can_cancel !== false,
   };

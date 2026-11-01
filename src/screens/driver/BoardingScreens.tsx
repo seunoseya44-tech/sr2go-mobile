@@ -515,7 +515,8 @@ const styles = StyleSheet.create({
   codeCol: { alignItems: 'flex-end', gap: 4 },
   code: { ...typography.bodySemibold, color: colors.navy, letterSpacing: 2 },
   light: { color: colors.textOnBrand },
-  lightLink: { alignSelf: 'center' },
+  // Gallery 1 Nov: the navy link was unreadable on the dark camera screen
+  lightLink: { alignSelf: 'center', color: colors.textOnBrand, textDecorationLine: 'underline' },
   center: { textAlign: 'center', alignSelf: 'center' },
   cameraWrap: {
     flex: 1,

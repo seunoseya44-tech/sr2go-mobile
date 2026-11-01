@@ -119,14 +119,14 @@ export function ScanDriverScreen() {
             {offline ? (
               <Text style={[shared.small, styles.light]}>No signal - scan the QR instead.</Text>
             ) : null}
-            <LinkText onPress={() => setTyping(false)} style={styles.center}>
+            <LinkText onPress={() => setTyping(false)} style={[styles.center, styles.lightLink]}>
               Scan the QR instead
             </LinkText>
           </>
         ) : offline ? (
           <Text style={[shared.small, styles.light]}>No signal - scan the QR instead.</Text>
         ) : (
-          <LinkText onPress={() => setTyping(true)} style={styles.center}>
+          <LinkText onPress={() => setTyping(true)} style={[styles.center, styles.lightLink]}>
             Type the driver code instead
           </LinkText>
         )
@@ -343,6 +343,8 @@ export function ConfirmDriverScreen() {
 
 const styles = StyleSheet.create({
   light: { color: colors.textOnBrand },
+  // Gallery 1 Nov: the navy link was unreadable on the dark camera screen
+  lightLink: { color: colors.textOnBrand, textDecorationLine: 'underline' },
   center: { alignSelf: 'center' },
   centerText: { textAlign: 'center' },
   cameraWrap: {

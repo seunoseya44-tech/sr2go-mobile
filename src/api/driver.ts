@@ -6,6 +6,7 @@
 import { ENDPOINTS, http } from './client';
 import { parseRide, parseRides, unwrap, unwrapList } from './parsers';
 import type { Preference, Ride } from './types';
+import { naira } from '../utils/format';
 
 type Json = Record<string, unknown>;
 const obj = (v: unknown): Json =>
@@ -136,7 +137,8 @@ export interface PriceCheck {
 
 /** "You receive / Fees / Passenger pays" from a `breakdown {take_home, fees, passenger_pays}`. */
 export function breakdownLines(bd: Record<string, unknown>): string[] {
-  const money = (v: unknown) => (num(v) != null ? `₦${num(v)!.toLocaleString('en-NG')}` : null);
+  // Gallery 1 Nov: was its own formatter ('₦3,982.3', fixed ₦); now the app's one money format.
+  const money = (v: unknown) => (num(v) != null ? naira(num(v)!) : null);
   const out: string[] = [];
   if (money(bd.take_home)) out.push(`You receive ${money(bd.take_home)}`);
   if (money(bd.fees)) out.push(`Fees ${money(bd.fees)}`);

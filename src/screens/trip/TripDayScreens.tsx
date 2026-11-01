@@ -181,7 +181,7 @@ export function PassengerTripScreen() {
       testID="passenger-trip"
       topBar={{
         leading: 'close',
-        title: active ? `On the road to ${b?.destinationCity ?? ''}` : 'Your trip',
+        title: active ? `On the road to ${(b?.destinationCity ?? '').split(',')[0]}` : 'Your trip',
       }}
       footer={
         <Button

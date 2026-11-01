@@ -64,8 +64,8 @@ export function CancelBookingScreen() {
           <ResultIcon icon="checkmark" tone="blue" />
           <Text style={shared.heading}>{paid ? 'Booking cancelled' : 'Request cancelled'}</Text>
           {done.message ? <Text style={shared.body}>{done.message}</Text> : null}
-          {done.cash ? <Row k="Back to your card" v={naira(done.cash)} /> : null}
-          {done.credit ? <Row k="Back to your SR2Go wallet" v={naira(done.credit)} /> : null}
+          {done.cash ? <Row k="Into your SR2Go wallet" v={naira(done.cash)} /> : null}
+          {done.credit ? <Row k="Back as ride credit" v={naira(done.credit)} /> : null}
           {!paid ? <Text style={shared.body}>You were not charged.</Text> : null}
         </View>
       </Screen>
@@ -107,10 +107,10 @@ export function CancelBookingScreen() {
               <View style={styles.tile}>
                 <Text style={shared.overline}>If you cancel now</Text>
                 {policy.data?.cashRefund ? (
-                  <Row k="Back to your card" v={naira(policy.data.cashRefund)} />
+                  <Row k="Into your SR2Go wallet" v={naira(policy.data.cashRefund)} />
                 ) : null}
                 {policy.data?.creditRefund ? (
-                  <Row k="Back to your SR2Go wallet" v={naira(policy.data.creditRefund)} />
+                  <Row k="Back as ride credit" v={naira(policy.data.creditRefund)} />
                 ) : null}
                 {policy.data?.message ? (
                   <Text style={styles.body}>{policy.data.message}</Text>

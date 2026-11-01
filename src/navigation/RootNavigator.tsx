@@ -104,6 +104,7 @@ import {
   RescueScreen,
 } from '../screens/features/BreakdownScreens';
 import { PaymentChoicesScreen } from '../screens/wallet/PaymentChoicesScreen';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Auth = createNativeStackNavigator<AuthStackParamList>();
 const App = createNativeStackNavigator<AppStackParamList>();
@@ -126,8 +127,18 @@ const DRIVER_TAB_ICONS: Record<keyof DriverTabParamList, [IconName, IconName, st
   DriverProfileTab: ['person', 'person-outline', 'Profile'],
 };
 
+/** Gallery 1 Nov: with no bottom inset (Android with buttons) the 13 px labels were cut off - fixed room. */
+const tabBarStyle = (bottom: number) => ({
+  borderTopColor: colors.border,
+  backgroundColor: colors.surface,
+  height: 60 + bottom,
+  paddingTop: 6,
+  paddingBottom: 6 + bottom,
+});
+
 /** Driver mode tab bar: My rides, Post ride, Earnings, Profile. */
 function DriverMainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <DriverTabs.Navigator
       screenOptions={({ route }) => ({
@@ -136,7 +147,7 @@ function DriverMainTabs() {
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabel: DRIVER_TAB_ICONS[route.name][2],
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13 },
-        tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.surface },
+        tabBarStyle: tabBarStyle(insets.bottom),
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons
             name={DRIVER_TAB_ICONS[route.name][focused ? 0 : 1]}
@@ -155,6 +166,7 @@ function DriverMainTabs() {
 }
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
@@ -162,7 +174,7 @@ function MainTabs() {
         tabBarActiveTintColor: colors.brand,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 13 },
-        tabBarStyle: { borderTopColor: colors.border, backgroundColor: colors.surface },
+        tabBarStyle: tabBarStyle(insets.bottom),
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons name={TAB_ICONS[route.name][focused ? 0 : 1]} size={size} color={color} />
         ),

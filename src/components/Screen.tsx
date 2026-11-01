@@ -104,9 +104,11 @@ export function Screen({
   contentStyle,
   background = colors.background,
   statusBar = 'dark',
-  brand = true,
+  brand: brandProp,
   testID,
 }: ScreenProps) {
+  // Gallery 1 Nov: the black-and-blue logo disappears on the dark camera screens - no logo row there.
+  const brand = brandProp ?? statusBar !== 'light';
   const insets = useSafeAreaInsets();
   const body = <View style={[styles.content, contentStyle]}>{children}</View>;
 
