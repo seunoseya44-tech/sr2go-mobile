@@ -131,9 +131,9 @@ const DRIVER_TAB_ICONS: Record<keyof DriverTabParamList, [IconName, IconName, st
 const tabBarStyle = (bottom: number) => ({
   borderTopColor: colors.border,
   backgroundColor: colors.surface,
-  height: 60 + bottom,
+  height: 68 + bottom,
   paddingTop: 6,
-  paddingBottom: 6 + bottom,
+  paddingBottom: 8 + bottom,
 });
 
 /** Driver mode tab bar: My rides, Post ride, Earnings, Profile. */
