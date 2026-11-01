@@ -15,47 +15,65 @@ import { useNavigation } from '@react-navigation/native';
 
 import { colors, spacing, TAP, typography } from '../theme';
 import { OfflineNotice } from './OfflineNotice';
+import { BrandLogo } from './BrandLogo';
+
+const BRAND_ROW_LOGO_WIDTH = 112; // chrome logo on every page (Martin, 1 Nov)
 
 interface TopBarProps {
   /** Centred title; omit for a bare chevron. */
   title?: string;
+  /** Martin, 1 Nov: the chrome 3D logo on every page, in a slim row above the title. false hides it. */
+  brand?: boolean;
   /** 'back' shows a chevron, 'close' an X, 'none' nothing. */
   leading?: 'back' | 'close' | 'none';
   onLeadingPress?: () => void;
   trailing?: ReactNode;
 }
 
-export function TopBar({ title, leading = 'back', onLeadingPress, trailing }: TopBarProps) {
+export function TopBar({
+  title,
+  leading = 'back',
+  onLeadingPress,
+  trailing,
+  brand = true,
+}: TopBarProps) {
   const navigation = useNavigation();
   const goBack = onLeadingPress ?? (() => navigation.goBack());
   return (
-    <View style={styles.topBar}>
-      <View style={styles.topSide}>
-        {leading !== 'none' ? (
-          <Pressable
-            onPress={goBack}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel={leading === 'close' ? 'Close' : 'Back'}
-            style={styles.topButton}
-            testID="top-bar-leading"
-          >
-            <Ionicons
-              name={leading === 'close' ? 'close' : 'chevron-back'}
-              size={26}
-              color={colors.text}
-            />
-          </Pressable>
-        ) : null}
+    <View>
+      {brand ? (
+        <View style={styles.brandRow}>
+          <BrandLogo width={BRAND_ROW_LOGO_WIDTH} />
+        </View>
+      ) : null}
+      <View style={styles.topBar}>
+        <View style={styles.topSide}>
+          {leading !== 'none' ? (
+            <Pressable
+              onPress={goBack}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={leading === 'close' ? 'Close' : 'Back'}
+              style={styles.topButton}
+              testID="top-bar-leading"
+            >
+              <Ionicons
+                name={leading === 'close' ? 'close' : 'chevron-back'}
+                size={26}
+                color={colors.text}
+              />
+            </Pressable>
+          ) : null}
+        </View>
+        {title ? (
+          <Text style={styles.topTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        ) : (
+          <View style={styles.flex} />
+        )}
+        <View style={[styles.topSide, styles.topSideEnd]}>{trailing}</View>
       </View>
-      {title ? (
-        <Text style={styles.topTitle} numberOfLines={1}>
-          {title}
-        </Text>
-      ) : (
-        <View style={styles.flex} />
-      )}
-      <View style={[styles.topSide, styles.topSideEnd]}>{trailing}</View>
     </View>
   );
 }
@@ -69,6 +87,8 @@ interface ScreenProps {
   contentStyle?: ViewStyle;
   background?: string;
   statusBar?: 'light' | 'dark';
+  /** The chrome logo row on pages without a top bar too (Martin, 1 Nov: every page). Home has its own. */
+  brand?: boolean;
   testID?: string;
 }
 
@@ -84,6 +104,7 @@ export function Screen({
   contentStyle,
   background = colors.background,
   statusBar = 'dark',
+  brand = true,
   testID,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
@@ -94,7 +115,13 @@ export function Screen({
       <StatusBar style={statusBar} />
       <View style={{ height: insets.top }} />
       <OfflineNotice />
-      {topBar ? <TopBar {...topBar} /> : null}
+      {topBar ? (
+        <TopBar brand={brand} {...topBar} />
+      ) : brand ? (
+        <View style={styles.brandRow}>
+          <BrandLogo width={BRAND_ROW_LOGO_WIDTH} />
+        </View>
+      ) : null}
       <KeyboardAvoidingView
         style={styles.flex}
         // Item 17: Android draws edge to edge, so the window no longer resizes for the
@@ -126,6 +153,7 @@ export function Screen({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   flex: { flex: 1 },
+  brandRow: { alignItems: 'center', paddingTop: spacing.xxs },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',

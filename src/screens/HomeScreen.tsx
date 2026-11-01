@@ -77,7 +77,7 @@ export function HomeScreen() {
   };
 
   return (
-    <Screen testID="home-screen" topBar={null} contentStyle={styles.content}>
+    <Screen testID="home-screen" topBar={null} brand={false} contentStyle={styles.content}>
       <View style={styles.topRow}>
         <BrandLogo width={150} style={styles.brandLogo} />
         <Pressable
