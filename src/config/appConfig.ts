@@ -19,6 +19,12 @@ export interface AppConfig {
   otpExpiryMinutes: number;
   withdrawCodeMinutes: number;
   cardHoldDays: number;
+  /** Release 118: wallet top-up switch and limits (the app had its own switch, FEATURES.topUp). */
+  walletTopUpEnabled: boolean;
+  walletTopUpMin: number;
+  walletTopUpMax: number;
+  withdrawMin: number;
+  refundToCardDays: number;
 }
 
 const DEFAULTS: AppConfig = {
@@ -33,6 +39,11 @@ const DEFAULTS: AppConfig = {
   otpExpiryMinutes: 10,
   withdrawCodeMinutes: 10,
   cardHoldDays: 7,
+  walletTopUpEnabled: false,
+  walletTopUpMin: 500,
+  walletTopUpMax: 200000,
+  withdrawMin: 1000,
+  refundToCardDays: 30,
 };
 
 let current: AppConfig = { ...DEFAULTS };
@@ -43,6 +54,7 @@ export function appConfig(): AppConfig {
 
 const num = (v: unknown, fallback: number) =>
   typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+const bool = (v: unknown, fallback: boolean) => (typeof v === 'boolean' ? v : fallback);
 const str = (v: unknown, fallback: string) => (typeof v === 'string' && v ? v : fallback);
 
 /** Reads /api/app/config once at start; failures keep the last known values. */
@@ -62,6 +74,11 @@ export async function loadAppConfig(): Promise<AppConfig> {
       otpExpiryMinutes: num(s.otp_expiry_minutes, current.otpExpiryMinutes),
       withdrawCodeMinutes: num(s.withdraw_code_minutes, current.withdrawCodeMinutes),
       cardHoldDays: num(s.card_hold_days, current.cardHoldDays),
+      walletTopUpEnabled: bool(s.wallet_topup_enabled, current.walletTopUpEnabled),
+      walletTopUpMin: num(s.wallet_topup_min, current.walletTopUpMin),
+      walletTopUpMax: num(s.wallet_topup_max, current.walletTopUpMax),
+      withdrawMin: num(s.withdraw_min, current.withdrawMin),
+      refundToCardDays: num(s.refund_to_card_days, current.refundToCardDays),
     };
   } catch {
     // keep defaults / last values

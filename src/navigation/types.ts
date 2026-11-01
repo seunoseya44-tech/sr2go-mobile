@@ -105,6 +105,7 @@ export type AppStackParamList = {
   Invite: undefined;
   SendCredit: undefined;
   TopUp: undefined;
+  Withdraw: undefined;
   // B5 offline boarding
   ScanDriver: { bookingId: string };
   ConfirmDriver: {

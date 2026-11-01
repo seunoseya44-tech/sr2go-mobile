@@ -34,6 +34,10 @@ export interface ApiErrorExtra {
   bankRequired?: boolean;
   /** 409 open_items on delete account: one line per open item. */
   reasons?: string[];
+  /** The same open items' codes (open_booking, wallet_money, ...), in the same order. */
+  reasonCodes?: string[];
+  /** Wallet withdrawal code: tries left after a wrong code (release 116). */
+  triesLeft?: number;
 }
 
 /**
@@ -136,7 +140,12 @@ function readDetail(data: unknown): Detail {
         .map((r) => (r && typeof r === 'object' ? (r as { message?: unknown }).message : r))
         .filter((m): m is string => typeof m === 'string' && m.length > 0);
       if (reasons.length) extra.reasons = reasons;
+      const codes = d.reasons
+        .map((r) => (r && typeof r === 'object' ? (r as { code?: unknown }).code : null))
+        .filter((c): c is string => typeof c === 'string' && c.length > 0);
+      if (codes.length) extra.reasonCodes = codes;
     }
+    extra.triesLeft = num(d.tries_left);
     const message = typeof d.message === 'string' ? stripErrorCode(d.message) : undefined;
     return { message, fieldErrors, extra };
   }

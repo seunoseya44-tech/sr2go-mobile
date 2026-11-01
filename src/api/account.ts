@@ -173,12 +173,18 @@ export interface WalletActivity {
   date: string | null;
   amount: string | null;
   type: string | null;
+  /** wallet = his own money, credit = ride credit (GET /api/wallet/activity). */
+  money?: 'wallet' | 'credit' | null;
 }
 
 export interface Wallet {
+  /** Ride credit. */
   balance: string | null;
   activity: WalletActivity[];
   expiryNote: string | null;
+  /** Release 114: his own money (top-ups, refunds, earnings he chose to keep). */
+  walletMoney: string | null;
+  walletMoneyNote: string | null;
 }
 
 export function parseWallet(payload: unknown): Wallet {
@@ -193,6 +199,8 @@ export function parseWallet(payload: unknown): Wallet {
       'ride_credits',
     ]),
     expiryNote: first(s, ['expiry_note', 'note']),
+    walletMoney: first(s, ['wallet_money']),
+    walletMoneyNote: first(s, ['wallet_money_note']),
     activity: list
       .map((v, i) => {
         const t = obj(v);
@@ -232,8 +240,10 @@ export interface TopUpAccount {
 }
 
 export interface TopUpAccounts {
-  status: 'ready' | 'creating' | 'not_available' | null;
+  /** not_created: he has not agreed yet; the app asks first (release 114). */
+  status: 'ready' | 'creating' | 'not_available' | 'not_created' | null;
   accounts: TopUpAccount[];
+  note: string | null;
 }
 
 export const walletApi = {
@@ -313,7 +323,10 @@ export const walletApi = {
     const s = unwrap(data);
     const raw = (first(s, ['status']) ?? '') as string;
     return {
-      status: (['ready', 'creating', 'not_available'] as const).find((x) => x === raw) ?? null,
+      status:
+        (['ready', 'creating', 'not_available', 'not_created'] as const).find((x) => x === raw) ??
+        null,
+      note: first(s, ['note']),
       accounts: unwrapList(data, ['accounts']).map((v) => {
         const a = obj(v);
         return {
@@ -325,8 +338,11 @@ export const walletApi = {
     };
   },
 
-  /** Mon 26 Oct: GET /api/wallet/activity. Until then a 404 means an empty list. */
-  async activity(): Promise<WalletActivity[]> {
+  /**
+   * GET /api/wallet/activity: wallet money AND ride credit, newest first.
+   * null = an older server without it (the ride-credit list from /referral/wallet is used then).
+   */
+  async activity(): Promise<WalletActivity[] | null> {
     try {
       const { data } = await http.get(ENDPOINTS.walletActivity, { params: { limit: 50 } });
       return unwrapList(data, ['items']).map((v, i) => {
@@ -341,10 +357,11 @@ export const walletApi = {
           date: first(t, ['created_at']),
           amount: first(t, ['amount']),
           type: first(t, ['type']),
+          money: t.money === 'wallet' || t.money === 'credit' ? t.money : null,
         };
       });
     } catch (e) {
-      if ((e as { status?: number }).status === 404) return [];
+      if ((e as { status?: number }).status === 404) return null;
       throw e;
     }
   },

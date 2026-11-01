@@ -259,6 +259,8 @@ export function DeleteAccountScreen() {
   const [agreed, setAgreed] = useState(false);
   const [password, setPassword] = useState('');
   const [blocked, setBlocked] = useState<string | null>(null);
+  // Release 114: his own money in the wallet blocks deletion until it is withdrawn.
+  const [moneyLeft, setMoneyLeft] = useState(false);
   const [done, setDone] = useState(false);
   const del = useMutation({
     mutationFn: () => profileApi.deleteAccount(password),
@@ -269,6 +271,7 @@ export function DeleteAccountScreen() {
         setPasswordError(err.message || 'Your password is not correct');
       } else if (err.extra.reasons?.length) {
         setBlocked(err.extra.reasons.join('\n'));
+        setMoneyLeft(!!err.extra.reasonCodes?.includes('wallet_money'));
       } else {
         setBlocked(err.message);
       }
@@ -300,7 +303,16 @@ export function DeleteAccountScreen() {
       topBar={{ title: 'Delete account' }}
       footer={
         blocked ? (
-          <Button title="Back to profile" onPress={() => navigation.goBack()} />
+          <>
+            {moneyLeft ? (
+              <Button title="Withdraw my money" onPress={() => navigation.navigate('Withdraw')} />
+            ) : null}
+            <Button
+              title="Back to profile"
+              variant={moneyLeft ? 'secondary' : 'primary'}
+              onPress={() => navigation.goBack()}
+            />
+          </>
         ) : (
           <>
             <Button
@@ -332,6 +344,7 @@ export function DeleteAccountScreen() {
         ['id-card-outline', 'Your verified selfie and ID details'],
         ['card-outline', 'Your bank account details'],
         ['wallet-outline', 'Unused ride credit is lost'],
+        ['cash-outline', 'Your own money in the wallet must be withdrawn first'],
         ['car-outline', 'Past trips and payments are kept, without your name'],
         ['time-outline', 'Your personal data is removed after 90 days'],
       ].map(([icon, text]) => (

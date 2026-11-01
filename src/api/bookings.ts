@@ -192,6 +192,9 @@ export interface PaymentInitiation {
   payBy: string | null;
   /** Wallet credit the passenger could use, when the API says. */
   creditsAvailable: string | null;
+  /** Release 114: paid at once from wallet money (use_wallet), no card page. */
+  paidFromWallet: boolean;
+  walletUsed: string | null;
 }
 
 export function parseInitiation(payload: unknown): PaymentInitiation {
@@ -203,7 +206,9 @@ export function parseInitiation(payload: unknown): PaymentInitiation {
     creditsApplied: first(s, ['credits_applied']),
     youPay: first(s, ['you_pay', 'amount_due']),
     payBy: first(s, ['pay_by']),
-    creditsAvailable: first(s, ['credits_available', 'wallet_balance', 'available_credits']),
+    creditsAvailable: first(s, ['credits_available', 'available_credits']),
+    paidFromWallet: s.paid === true && s.paid_from === 'wallet',
+    walletUsed: first(s, ['wallet_used']),
   };
 }
 
@@ -475,15 +480,21 @@ export function parseBoardingPass(payload: unknown): BoardingPass {
 }
 
 export const paymentsApi = {
-  /** POST /api/payments/initiate {booking_id, use_credits}. */
+  /**
+   * POST /api/payments/initiate {booking_id, use_credits, use_wallet}.
+   * use_wallet (release 114) PAYS at once from wallet money: only on the Pay
+   * tap, never for the quote. 409 wallet_short = not enough, nothing taken.
+   */
   async initiate(
     bookingId: string,
     useCredits: boolean,
     connectionId?: string,
+    useWallet = false,
   ): Promise<PaymentInitiation> {
     const { data } = await http.post(ENDPOINTS.paymentInitiate, {
       ...(connectionId ? { connection_id: connectionId } : { booking_id: bookingId }),
       use_credits: useCredits,
+      ...(useWallet ? { use_wallet: true } : {}),
     });
     return parseInitiation(data);
   },

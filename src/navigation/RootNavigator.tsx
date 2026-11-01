@@ -104,6 +104,7 @@ import {
   RescueScreen,
 } from '../screens/features/BreakdownScreens';
 import { PaymentChoicesScreen } from '../screens/wallet/PaymentChoicesScreen';
+import { WithdrawScreen } from '../screens/wallet/WithdrawScreen';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Auth = createNativeStackNavigator<AuthStackParamList>();
@@ -315,6 +316,7 @@ export function RootNavigator() {
       <App.Screen name="Invite" component={InviteScreen} />
       <App.Screen name="SendCredit" component={SendCreditScreen} />
       <App.Screen name="TopUp" component={TopUpScreen} />
+      <App.Screen name="Withdraw" component={WithdrawScreen} />
       <App.Screen name="ScanDriver" component={ScanDriverScreen} options={{ animation: 'fade' }} />
       <App.Screen
         name="ConfirmDriver"

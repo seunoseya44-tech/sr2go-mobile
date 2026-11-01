@@ -140,6 +140,12 @@ export const ENDPOINTS = {
   walletGift: '/api/wallet/gift',
   walletTopUpAccount: '/api/wallet/topup/account',
   walletTopUpInitiate: '/api/wallet/topup/initiate',
+  // wallet money (server releases 114-116, built 1 Nov)
+  walletTopUpVerify: '/api/wallet/topup/verify',
+  walletWithdraw: '/api/wallet/withdraw',
+  walletWithdrawStart: '/api/wallet/withdraw/start',
+  walletWithdrawConfirm: '/api/wallet/withdraw/confirm',
+  walletRefundToCard: (entryId: string) => `/api/wallet/refunds/${entryId}/to-card`,
   health: '/api/health',
 } as const;
 

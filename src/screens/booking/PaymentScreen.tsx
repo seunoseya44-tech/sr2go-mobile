@@ -6,6 +6,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as WebBrowser from 'expo-web-browser';
 
+import { walletApi } from '../../api/account';
 import { bookingsApi, paymentsApi, type PaymentInitiation } from '../../api/bookings';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
@@ -15,6 +16,7 @@ import { InfoBanner, LinkText, RoadLine } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { naira } from '../../utils/format';
+import { appConfig } from '../../config/appConfig';
 import { bookingView, mmss, shared, tripLine, useCountdown } from './shared';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -23,6 +25,9 @@ type Nav = NativeStackNavigationProp<AppStackParamList>;
  * Screen 13 · Payment. The amounts (total, credits_applied, you_pay) come
  * only from POST /api/payments/initiate; the app never calculates them.
  * Paystack opens in the system browser sheet; verify runs when it closes.
+ * Release 114 (built 1 Nov): with money in the wallet the passenger can pay
+ * from it instead: the Pay tap sends use_wallet and the seat is paid at once
+ * (the quote never sends use_wallet, because that would pay).
  */
 export function PaymentScreen() {
   const navigation = useNavigation<Nav>();
@@ -39,6 +44,9 @@ export function PaymentScreen() {
   const [error, setError] = useState<string | null>(null);
   const [checkAgain, setCheckAgain] = useState(false);
   const [paidByBooker, setPaidByBooker] = useState<string | null>(null);
+  const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.wallet });
+  const walletMoney = Number(wallet.data?.walletMoney ?? 0);
+  const [fromWallet, setFromWallet] = useState<boolean | null>(null);
 
   // First initiate call is a quote: it tells us the credits line and "You pay".
   const initiate = useMutation({
@@ -106,6 +114,26 @@ export function PaymentScreen() {
     onError: (e) => handleInitiateError(e),
   });
 
+  const payFromWallet = useMutation({
+    mutationFn: () => paymentsApi.initiate(params.bookingId, useCredits, params.connectionId, true),
+    onSuccess: (q) => {
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet-activity'] });
+      navigation.replace('PaymentResult', {
+        bookingId: params.bookingId,
+        status: q.paidFromWallet ? 'paid' : 'pending',
+        message: q.paidFromWallet ? 'Paid from your SR2Go wallet.' : null,
+        youPaid: q.walletUsed ?? q.youPay,
+        reference: q.reference,
+      });
+    },
+    onError: (e) => {
+      setError(toApiError(e).message);
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+    },
+  });
+
   const toggleCredits = (next: boolean) => {
     setUseCredits(next);
     setError(null);
@@ -113,7 +141,10 @@ export function PaymentScreen() {
   };
 
   const youPay = quote?.youPay ?? quote?.total ?? b?.payAmount ?? null;
-  const busy = pay.isPending || verify.isPending;
+  const walletCovers = walletMoney > 0 && youPay != null && walletMoney + 0.005 >= Number(youPay);
+  // Default: pay from the wallet when it has enough; the passenger can switch it off.
+  const useWallet = walletMoney > 0 && (fromWallet ?? walletCovers);
+  const busy = pay.isPending || verify.isPending || payFromWallet.isPending;
   const goHome = () => navigation.navigate('Main', { screen: 'Home' });
 
   return (
@@ -139,14 +170,21 @@ export function PaymentScreen() {
           />
         ) : (
           <Button
-            title={youPay ? `Pay ${naira(youPay)}` : 'Pay'}
+            title={youPay ? `Pay ${naira(youPay)}${useWallet ? ' from wallet' : ''}` : 'Pay'}
             onPress={() => {
               setError(null);
-              pay.mutate();
+              if (useWallet) payFromWallet.mutate();
+              else pay.mutate();
             }}
             loading={busy}
-            loadingTitle={verify.isPending ? 'Confirming your payment…' : 'Opening Paystack…'}
-            disabled={!b || !youPay}
+            loadingTitle={
+              payFromWallet.isPending
+                ? 'Paying from your wallet…'
+                : verify.isPending
+                  ? 'Confirming your payment…'
+                  : 'Opening Paystack…'
+            }
+            disabled={!b || !youPay || (useWallet && !walletCovers)}
             testID="pay-button"
           />
         )
@@ -217,13 +255,49 @@ export function PaymentScreen() {
           <Text style={styles.bodySemi}>You pay</Text>
           <Text style={styles.price}>{youPay ? naira(youPay) : '—'}</Text>
         </View>
+
+        {walletMoney > 0 && !expired ? (
+          <View style={styles.toggleRow} testID="pay-from-wallet">
+            <View style={styles.flex}>
+              <Text style={styles.body}>Pay from my wallet</Text>
+              <Text style={styles.helper}>
+                {walletCovers
+                  ? `${naira(walletMoney)} of your money in the wallet`
+                  : `Your wallet has ${naira(walletMoney)}: not enough for this seat`}
+              </Text>
+            </View>
+            <Switch
+              value={useWallet}
+              onValueChange={(v) => {
+                setFromWallet(v);
+                setError(null);
+              }}
+              trackColor={{ true: colors.brand, false: colors.border }}
+              thumbColor={colors.surface}
+              disabled={busy}
+            />
+          </View>
+        ) : null}
       </View>
+
+      {useWallet && !walletCovers && !expired ? (
+        appConfig().walletTopUpEnabled ? (
+          <LinkText onPress={() => navigation.navigate('TopUp')}>
+            Top up your wallet, or switch off to pay by card
+          </LinkText>
+        ) : (
+          <Text style={styles.helper}>
+            Switch off &quot;Pay from my wallet&quot; to pay by card.
+          </Text>
+        )
+      ) : null}
 
       <View style={styles.lockRow}>
         <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
         <Text style={styles.helperFlex}>
-          We never store your card or bank details. Payments are handled by Paystack. Pay by card,
-          bank transfer or USSD.
+          {useWallet
+            ? 'Paid at once from your SR2Go wallet. No card needed.'
+            : 'We never store your card or bank details. Payments are handled by Paystack. Pay by card, bank transfer or USSD.'}
         </Text>
       </View>
     </Screen>

@@ -7,14 +7,14 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 
-import { walletApi, type GiftRecipient } from '../../api/account';
-import { FEATURES } from '../../config/features';
+import { walletApi, type GiftRecipient, type WalletActivity } from '../../api/account';
+import { canSendRefundToCard, cashEntryId, walletMoneyApi } from '../../api/walletMoney';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
-import { Avatar, Card, InfoBanner, LinkText, ListRow } from '../../components/ui';
+import { Avatar, Card, Checkbox, InfoBanner, LinkText, ListRow } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, fonts, radius, spacing, typography } from '../../theme';
 import { naira, shortDate } from '../../utils/format';
@@ -23,49 +23,103 @@ import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
-/** Screen 44 · Wallet with Top up and Send credit (13 Oct: build now). */
+/**
+ * Screen 44 · Wallet (1 Nov: wallet money built). Two kinds of money, shown apart:
+ *  - Your money (top-ups, refunds, earnings kept in the wallet): never expires,
+ *    pays for seats, can be withdrawn to your own bank.
+ *  - Ride credit (referrals, gifts): for rides only, never cash, expires.
+ */
 export function WalletScreen() {
   const navigation = useNavigation<Nav>();
+  const queryClient = useQueryClient();
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.wallet });
   const activity = useQuery({
     queryKey: ['wallet-activity'],
     queryFn: walletApi.activity,
     retry: false,
   });
+  const [toCard, setToCard] = useState<WalletActivity | null>(null);
+  const [openedAt] = useState(() => Date.now());
+  const [note, setNote] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  const sendToCard = useMutation({
+    mutationFn: (entryId: string) => walletMoneyApi.refundToCard(entryId),
+    onSuccess: (m) => {
+      setToCard(null);
+      setNote({ tone: 'success', text: m ?? 'Sent back to your card.' });
+      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      void queryClient.invalidateQueries({ queryKey: ['wallet-activity'] });
+    },
+    onError: (e) => {
+      setToCard(null);
+      setNote({ tone: 'error', text: toApiError(e).message });
+    },
+  });
   const w = wallet.data;
+  const cfg = appConfig();
+  const money = Number(w?.walletMoney ?? 0);
+  // GET /api/wallet/activity has both kinds; an older server only has the ride-credit list.
+  const items = activity.data ?? w?.activity ?? [];
+  const refundCanGoToCard = (a: WalletActivity) =>
+    canSendRefundToCard(a.type, a.id, a.date, openedAt, cfg.refundToCardDays);
+
   return (
     <Screen topBar={null} testID="wallet-screen">
       <Text style={styles.title}>Wallet</Text>
-      <View style={styles.balance}>
-        <Text style={styles.balanceLabel}>RIDE CREDITS</Text>
-        <Text style={styles.balanceAmount}>{wallet.isPending ? '…' : naira(w?.balance ?? 0)}</Text>
-        <Text style={styles.balanceSub}>Use them to pay for your next ride</Text>
+      {note ? (
+        <Banner tone={note.tone} message={note.text} onDismiss={() => setNote(null)} />
+      ) : null}
+
+      <View style={styles.balance} testID="wallet-money">
+        <Text style={styles.balanceLabel}>YOUR MONEY</Text>
+        <Text style={styles.balanceAmount}>{wallet.isPending ? '…' : naira(money)}</Text>
+        <Text style={styles.balanceSub}>
+          {w?.walletMoneyNote ?? 'Never expires. Pay for seats or withdraw to your bank.'}
+        </Text>
       </View>
       <View style={styles.twoUp}>
-        {FEATURES.topUp ? (
+        {cfg.walletTopUpEnabled ? (
           <Button
             title="Top up"
             variant="secondary"
             icon="add-circle-outline"
             onPress={() => navigation.navigate('TopUp')}
             style={styles.flex}
+            testID="top-up-button"
           />
         ) : null}
-        <Button
-          title="Send credit"
-          variant="secondary"
-          icon="paper-plane-outline"
-          onPress={() => navigation.navigate('SendCredit')}
-          style={styles.flex}
-        />
+        {money > 0 ? (
+          <Button
+            title="Withdraw"
+            variant="secondary"
+            icon="arrow-up-circle-outline"
+            onPress={() => navigation.navigate('Withdraw')}
+            style={styles.flex}
+            testID="withdraw-button"
+          />
+        ) : null}
       </View>
-      <View style={styles.row}>
-        <Ionicons name="information-circle-outline" size={18} color={colors.textMuted} />
-        <Text style={styles.helperFlex}>
+
+      <Card tone="tile" testID="ride-credit">
+        <View style={styles.row}>
+          <View style={styles.flex}>
+            <Text style={shared.overline}>Ride credit</Text>
+            <Text style={styles.creditAmount}>
+              {wallet.isPending ? '…' : naira(w?.balance ?? 0)}
+            </Text>
+          </View>
+          <Button
+            title="Send credit"
+            variant="secondary"
+            icon="paper-plane-outline"
+            onPress={() => navigation.navigate('SendCredit')}
+          />
+        </View>
+        <Text style={styles.helper}>
           {w?.expiryNote ??
-            "Ride credits aren't cash and can't be withdrawn. They expire 12 months after you earn them."}
+            "Ride credit is for rides only. It isn't cash, can't be withdrawn and expires 12 months after you earn it."}
         </Text>
-      </View>
+      </Card>
+
       <Card onPress={() => navigation.navigate('Invite')} testID="invite-card">
         <View style={styles.row}>
           <View style={styles.flex}>
@@ -79,28 +133,63 @@ export function WalletScreen() {
       </Card>
       {wallet.isError ? <Banner tone="error" message={toApiError(wallet.error).message} /> : null}
       <Text style={shared.overline}>Activity</Text>
-      {activity.data && activity.data.length === 0 && (w?.activity.length ?? 0) === 0 ? (
-        <Text style={shared.subtitle}>No credit activity yet.</Text>
+      {!activity.isPending && items.length === 0 ? (
+        <Text style={shared.subtitle}>No activity yet.</Text>
       ) : null}
-      {[...(activity.data ?? []), ...(w?.activity ?? [])].map((a) => {
+      {items.map((a) => {
         const negative =
           (a.amount ?? '').startsWith('-') ||
-          /used|expired|sent|debit/i.test(`${a.type} ${a.description}`);
+          (!a.money && /used|expired|sent|debit/i.test(`${a.type} ${a.description}`));
         return (
-          <View key={a.id} style={styles.activity}>
-            <View style={styles.flex}>
-              <Text style={styles.body}>{a.description}</Text>
-              {a.date ? <Text style={shared.subtitle}>{shortDate(a.date)}</Text> : null}
+          <View key={a.id} style={styles.activityBlock}>
+            <View style={styles.activity}>
+              <View style={styles.flex}>
+                <Text style={styles.body}>{a.description}</Text>
+                <Text style={shared.subtitle}>
+                  {[a.date ? shortDate(a.date) : null, kindLabel(a)].filter(Boolean).join(' · ')}
+                </Text>
+              </View>
+              <Text style={[styles.amount, { color: negative ? colors.text : colors.navy }]}>
+                {negative ? '−' : ''}
+                {naira((a.amount ?? '').replace('-', ''))}
+              </Text>
             </View>
-            <Text style={[styles.amount, { color: negative ? colors.text : colors.navy }]}>
-              {negative && !(a.amount ?? '').startsWith('-') ? '−' : ''}
-              {naira((a.amount ?? '').replace('-', ''))}
-            </Text>
+            {refundCanGoToCard(a) && toCard?.id !== a.id ? (
+              <LinkText onPress={() => setToCard(a)}>Send back to my card instead</LinkText>
+            ) : null}
+            {toCard?.id === a.id ? (
+              <View style={styles.confirm}>
+                <Text style={styles.body}>
+                  Send {naira((a.amount ?? '').replace('-', ''))} back to the card you paid with?
+                  Your bank usually shows it within 3 to 10 working days. It leaves your wallet now.
+                </Text>
+                <View style={styles.twoUp}>
+                  <Button
+                    title="Keep in wallet"
+                    variant="secondary"
+                    onPress={() => setToCard(null)}
+                    style={styles.flex}
+                  />
+                  <Button
+                    title="Send to card"
+                    onPress={() => sendToCard.mutate(cashEntryId(a.id)!)}
+                    loading={sendToCard.isPending}
+                    style={styles.flex}
+                  />
+                </View>
+              </View>
+            ) : null}
           </View>
         );
       })}
     </Screen>
   );
+}
+
+function kindLabel(a: WalletActivity): string | null {
+  if (a.money === 'wallet') return 'Your money';
+  if (a.money === 'credit') return 'Ride credit';
+  return null;
 }
 
 /** Screen 45 · Invite friends. */
@@ -281,39 +370,90 @@ export function SendCreditScreen() {
   );
 }
 
-/** W2 · Top up: card via Paystack, or the user's own bank-transfer account. */
+/**
+ * W2 · Top up: card via Paystack, or the user's own bank-transfer account numbers.
+ * Account numbers are opened in his name only after he agrees (release 114).
+ * The card amount limits come from the server (release 118); Paystack's fee
+ * is added on its page (card) or taken from the transfer (bank), release 115.
+ */
 export function TopUpScreen() {
   const navigation = useNavigation<Nav>();
   const queryClient = useQueryClient();
+  const cfg = appConfig();
   const [method, setMethod] = useState<'card' | 'transfer' | null>(null);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [result, setResult] = useState<{ credited: boolean; amount: string } | null>(null);
   const account = useQuery({
     queryKey: ['topup-account'],
     queryFn: walletApi.topUpAccounts,
     enabled: method === 'transfer',
     retry: false,
   });
+  const open = useMutation({
+    mutationFn: walletMoneyApi.openTopUpAccounts,
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['topup-account'] }),
+    onError: (e) => setError(toApiError(e).message),
+  });
+  const refreshWallet = () => {
+    void queryClient.invalidateQueries({ queryKey: ['wallet'] });
+    void queryClient.invalidateQueries({ queryKey: ['wallet-activity'] });
+  };
   const card = useMutation({
     mutationFn: async () => {
       const r = await walletApi.topUpByCard(amount);
-      if (!r.authorizationUrl) throw new Error('No payment page was returned');
-      await WebBrowser.openBrowserAsync(r.authorizationUrl);
-      return r;
+      if (!r.authorizationUrl || !r.reference) throw new Error('No payment page was returned');
+      await WebBrowser.openBrowserAsync(r.authorizationUrl, { showTitle: true });
+      // The page closed: ask the server (the webhook may already have credited it).
+      try {
+        return await walletMoneyApi.verifyTopUp(r.reference);
+      } catch {
+        return { credited: false, status: 'unknown', balance: null };
+      }
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['wallet'] });
-      navigation.goBack();
+    onSuccess: (v) => {
+      refreshWallet();
+      setResult({ credited: v.credited, amount });
     },
     onError: (e) => setError(toApiError(e).message),
   });
 
+  const n = Number(amount);
+  const amountOk = !!amount && n >= cfg.walletTopUpMin && n <= cfg.walletTopUpMax;
   const copy = (label: string, value: string | null) => {
     if (!value) return;
     void Clipboard.setStringAsync(value);
     setCopied(label);
   };
+  const support = (
+    <LinkText onPress={() => Linking.openURL(`mailto:${appConfig().supportEmail}?subject=Top-up`)}>
+      Problem with a top-up? Contact support
+    </LinkText>
+  );
+
+  if (result) {
+    return (
+      <Screen
+        testID="top-up"
+        topBar={{ leading: 'close', onLeadingPress: () => navigation.goBack() }}
+        footer={<Button title="Back to wallet" onPress={() => navigation.goBack()} />}
+      >
+        <View style={shared.centered}>
+          <ResultIcon icon={result.credited ? 'checkmark' : 'time-outline'} tone="blue" />
+          <Text style={shared.heading}>
+            {result.credited ? `${naira(result.amount)} added` : 'Checking your payment'}
+          </Text>
+          <Text style={shared.body}>
+            {result.credited
+              ? 'The money is in your wallet. Use it for seats or withdraw it to your bank.'
+              : 'If you paid, your wallet updates within a few minutes. If you closed the page without paying, nothing was taken.'}
+          </Text>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -323,9 +463,23 @@ export function TopUpScreen() {
         method === 'card' ? (
           <Button
             title={amount ? `Pay ${naira(amount)}` : 'Pay'}
-            onPress={() => card.mutate()}
-            disabled={!amount || Number(amount) <= 0}
+            onPress={() => {
+              setError(null);
+              card.mutate();
+            }}
+            disabled={!amountOk}
             loading={card.isPending}
+            loadingTitle="Opening Paystack…"
+          />
+        ) : method === 'transfer' && account.data?.status === 'not_created' ? (
+          <Button
+            title="Get my account numbers"
+            onPress={() => {
+              setError(null);
+              open.mutate();
+            }}
+            disabled={!agreed}
+            loading={open.isPending}
           />
         ) : method === 'transfer' ? (
           <Button title="Done" onPress={() => navigation.goBack()} />
@@ -335,7 +489,10 @@ export function TopUpScreen() {
       {error ? <Banner tone="error" message={error} onDismiss={() => setError(null)} /> : null}
       {!method ? (
         <>
-          <Text style={styles.body}>Add money to your SR2Go wallet to pay for rides.</Text>
+          <Text style={styles.body}>
+            Add your own money to your SR2Go wallet. It never expires: use it for seats, or withdraw
+            it to your bank.
+          </Text>
           <ListRow
             icon="card-outline"
             title="Card"
@@ -345,7 +502,7 @@ export function TopUpScreen() {
           <ListRow
             icon="business-outline"
             title="Bank transfer"
-            subtitle="Transfer from any bank app to your SR2Go account"
+            subtitle="Transfer from any bank app to your own SR2Go account number"
             onPress={() => setMethod('transfer')}
           />
         </>
@@ -353,37 +510,64 @@ export function TopUpScreen() {
         <>
           <TextField
             label="Amount"
-            prefix={appConfig().currencySymbol}
+            prefix={cfg.currencySymbol}
             keyboardType="number-pad"
             value={amount}
             onChangeText={(t) => setAmount(t.replace(/\D/g, ''))}
+            helper={`Between ${naira(cfg.walletTopUpMin)} and ${naira(cfg.walletTopUpMax)}`}
+            error={
+              amount && !amountOk
+                ? `Top up between ${naira(cfg.walletTopUpMin)} and ${naira(cfg.walletTopUpMax)}`
+                : undefined
+            }
             autoFocus
           />
+          <InfoBanner>
+            Paystack&apos;s card fee is added on the payment page. Your wallet gets the full amount
+            you enter. Money from a card can pay for seats at once; it can be withdrawn to a bank
+            after {cfg.cardHoldDays} days.
+          </InfoBanner>
           <View style={styles.row}>
             <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />
             <Text style={styles.helperFlex}>
               We never store your card details. Payments are handled by Paystack.
             </Text>
           </View>
+          {support}
         </>
       ) : (
         <>
-          <Text style={styles.body}>
-            Transfer any amount to this account from any bank app. Your wallet updates
-            automatically, usually within a few minutes.
-          </Text>
           {account.isPending ? <ActivityIndicator color={colors.brand} /> : null}
           {account.isError ? (
             <Banner tone="error" message={toApiError(account.error).message} />
           ) : null}
+          {account.data?.status === 'not_created' ? (
+            <>
+              <Text style={shared.heading}>Your own account numbers</Text>
+              <Text style={styles.body}>
+                To give you account numbers for top-ups, SR2Go asks Paystack to open them in your
+                name, using the name, email and phone on your SR2Go account. Money sent to them goes
+                only into your SR2Go wallet.
+              </Text>
+              <Checkbox checked={agreed} onChange={setAgreed}>
+                I agree that SR2Go opens top-up account numbers in my name with Paystack.
+              </Checkbox>
+            </>
+          ) : null}
           {account.data?.status === 'creating' ? (
             <Text style={shared.subtitle}>
-              Your top-up accounts are being created. Check back in a few minutes.
+              Your account numbers are being opened. Check back in a few minutes.
             </Text>
           ) : null}
           {account.data?.status === 'not_available' ? (
             <Text style={shared.subtitle}>
-              Bank-transfer top-up is not available for your account yet.
+              Bank-transfer top-up is not available for your account yet. You can top up by card.
+            </Text>
+          ) : null}
+          {account.data?.status === 'ready' ? (
+            <Text style={styles.body}>
+              Transfer any amount to one of these accounts from any bank app. Your wallet updates
+              automatically, usually within a few minutes.
             </Text>
           ) : null}
           {account.data?.accounts.map((acc, i) => (
@@ -412,15 +596,13 @@ export function TopUpScreen() {
               ))}
             </View>
           ))}
-          <InfoBanner>
-            These accounts are yours alone and only accept top-ups for your SR2Go wallet. Your
-            wallet updates when the transfer arrives.
-          </InfoBanner>
-          <LinkText
-            onPress={() => Linking.openURL('mailto:support@shareride2go.com?subject=Top-up')}
-          >
-            Problem with a transfer? Contact support
-          </LinkText>
+          {account.data && account.data.status !== 'not_created' ? (
+            <InfoBanner>
+              {account.data.note ??
+                "These accounts are yours alone and only accept top-ups for your SR2Go wallet. Paystack's transfer fee is taken from the money you send."}
+            </InfoBanner>
+          ) : null}
+          {support}
         </>
       )}
     </Screen>
@@ -444,6 +626,20 @@ const styles = StyleSheet.create({
     color: colors.textOnBrand,
   },
   balanceSub: { ...typography.body, color: colors.textOnBrand },
+  creditAmount: { ...typography.price, color: colors.text },
+  helper: { ...typography.secondary, color: colors.textMuted, marginTop: spacing.xs },
+  activityBlock: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    paddingBottom: spacing.xs,
+    gap: spacing.xs,
+  },
+  confirm: {
+    backgroundColor: colors.tile,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.sm,
+  },
   twoUp: { flexDirection: 'row', gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   helperFlex: { ...typography.secondary, color: colors.textMuted, flex: 1 },
@@ -454,8 +650,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     minHeight: 56,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
   amount: { ...typography.bodySemibold, fontVariant: ['tabular-nums'] },
   codeTile: {
