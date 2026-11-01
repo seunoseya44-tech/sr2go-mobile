@@ -37,7 +37,12 @@ export function SplashScreen() {
       {/* Top scrim: white 100% → 100% at 28% → 80% at 46% → 0% at 60% */}
       <LinearGradient
         pointerEvents="none"
-        colors={[colors.background, colors.background, 'rgba(255,255,255,0.8)', 'rgba(255,255,255,0)']}
+        colors={[
+          colors.background,
+          colors.background,
+          'rgba(255,255,255,0.8)',
+          'rgba(255,255,255,0)',
+        ]}
         locations={[0, 0.28, 0.46, 0.6]}
         style={StyleSheet.absoluteFill}
       />

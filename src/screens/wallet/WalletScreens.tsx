@@ -38,9 +38,7 @@ export function WalletScreen() {
       <Text style={styles.title}>Wallet</Text>
       <View style={styles.balance}>
         <Text style={styles.balanceLabel}>RIDE CREDITS</Text>
-        <Text style={styles.balanceAmount}>
-          {wallet.isPending ? '…' : naira(w?.balance ?? 0)}
-        </Text>
+        <Text style={styles.balanceAmount}>{wallet.isPending ? '…' : naira(w?.balance ?? 0)}</Text>
         <Text style={styles.balanceSub}>Use them to pay for your next ride</Text>
       </View>
       <View style={styles.twoUp}>

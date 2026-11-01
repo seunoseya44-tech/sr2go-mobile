@@ -1,7 +1,8 @@
 /**
  * The SR2Go logo (Martin, 1 Nov): the 3D logo with black R and GO - made for the app's white background (the
- * chrome version is for the website's dark header). The slogan "SHARE THE RIDE REACH TOGETHER." (no dot after RIDE, Martin 1 Nov) is set as text
- * under it when `slogan` is set, so it is never smaller than 13 px. One place for the logo: every page uses this.
+ * chrome version is for the website's dark header). The slogan "SHARE THE RIDE REACH TOGETHER." (no dot after
+ * RIDE, Martin 1 Nov) is set as text under it when `slogan` is set, so it is never smaller than 13 px.
+ * One place for the logo: every page uses this.
  */
 import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
@@ -37,7 +38,9 @@ export function BrandLogo({
           numberOfLines={1}
           accessible={false}
         >
-          <Text style={{ color: onDark ? colors.textOnBrand : colors.midnight }}>SHARE THE RIDE </Text>
+          <Text style={{ color: onDark ? colors.textOnBrand : colors.midnight }}>
+            SHARE THE RIDE{' '}
+          </Text>
           <Text style={{ color: colors.brand }}>REACH TOGETHER.</Text>
         </Text>
       ) : null}

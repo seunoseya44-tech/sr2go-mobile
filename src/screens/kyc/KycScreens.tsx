@@ -441,8 +441,8 @@ export function KycIdScreen() {
         <View style={styles.tile}>
           <Text style={styles.body}>{state.message}</Text>
           <Text style={shared.subtitle}>
-            Trying again with the same ID and selfie is free for the next {appConfig().selfieRetryMinutes}{' '}
-            minutes.
+            Trying again with the same ID and selfie is free for the next{' '}
+            {appConfig().selfieRetryMinutes} minutes.
           </Text>
         </View>
       ) : null}
