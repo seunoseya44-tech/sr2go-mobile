@@ -32,6 +32,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, TAP, typography } from '../../theme';
 import { shortDate } from '../../utils/format';
 import { shared } from '../booking/shared';
+import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -80,7 +81,7 @@ export function MyReportsScreen() {
       </LinkText>
       <LinkText
         onPress={() =>
-          Linking.openURL('mailto:support@shareride2go.com?subject=Help with a report')
+          Linking.openURL(`mailto:${appConfig().supportEmail}?subject=Help with a report`)
         }
       >
         Need help? Contact support

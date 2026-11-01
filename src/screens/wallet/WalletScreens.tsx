@@ -19,6 +19,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { colors, fonts, radius, spacing, typography } from '../../theme';
 import { naira, shortDate } from '../../utils/format';
 import { ResultIcon, shared } from '../booking/shared';
+import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -38,7 +39,7 @@ export function WalletScreen() {
       <View style={styles.balance}>
         <Text style={styles.balanceLabel}>RIDE CREDITS</Text>
         <Text style={styles.balanceAmount}>
-          {wallet.isPending ? '…' : w?.balance ? naira(w.balance) : '₦0'}
+          {wallet.isPending ? '…' : naira(w?.balance ?? 0)}
         </Text>
         <Text style={styles.balanceSub}>Use them to pay for your next ride</Text>
       </View>
@@ -269,7 +270,7 @@ export function SendCreditScreen() {
       ) : null}
       <TextField
         label="Amount"
-        prefix="₦"
+        prefix={appConfig().currencySymbol}
         keyboardType="number-pad"
         value={amount}
         onChangeText={(t) => setAmount(t.replace(/\D/g, ''))}
@@ -354,7 +355,7 @@ export function TopUpScreen() {
         <>
           <TextField
             label="Amount"
-            prefix="₦"
+            prefix={appConfig().currencySymbol}
             keyboardType="number-pad"
             value={amount}
             onChangeText={(t) => setAmount(t.replace(/\D/g, ''))}

@@ -18,6 +18,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { shared } from '../booking/shared';
 import { breakdownApi } from '../../api/breakdown';
+import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 const GPS_EVERY_MS = 5 * 60_000;
@@ -187,7 +188,7 @@ export function ActiveTripScreen() {
             <Button
               title="Call SR2Go support"
               variant="outlineLight"
-              onPress={() => Linking.openURL('tel:+2349053451158')}
+              onPress={() => Linking.openURL(`tel:${appConfig().supportPhone}`)}
             />
             <Button title="Back to the trip" variant="outlineLight" onPress={() => sos.reset()} />
           </>

@@ -8,7 +8,7 @@ import type {
   SyncStatus,
   Vehicle,
 } from './types';
-import { SUPPORT_PHONE_FALLBACK } from './types';
+import { supportPhone } from './types';
 
 type Obj = Record<string, unknown>;
 const obj = (v: unknown): Obj =>
@@ -75,7 +75,7 @@ export function parsePassengerPack(payload: unknown, clockOffsetSeconds = 0): Pa
       vehicle: parseVehicle(d.vehicle),
     },
     boarding: parseFlags(s.boarding),
-    supportPhone: str(s.support_phone) ?? SUPPORT_PHONE_FALLBACK,
+    supportPhone: str(s.support_phone) ?? supportPhone(),
     clockOffsetSeconds,
   };
 }
@@ -108,7 +108,7 @@ export function parseDriverPack(payload: unknown, clockOffsetSeconds = 0): Drive
     key: parseKey(s.key),
     tripQr: str(s.trip_qr) ?? '',
     passengers: list.map(parseDriverPackPassenger),
-    supportPhone: str(s.support_phone) ?? SUPPORT_PHONE_FALLBACK,
+    supportPhone: str(s.support_phone) ?? supportPhone(),
     clockOffsetSeconds,
   };
 }

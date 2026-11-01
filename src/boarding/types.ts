@@ -1,3 +1,4 @@
+import { appConfig } from '../config/appConfig';
 /** Boarding pack shapes from the 16 Oct 2026 update (GET /api/boarding/pack/...). */
 
 export interface PackKey {
@@ -78,7 +79,9 @@ export interface DriverPack {
 }
 
 /** Fallback until `support_phone` is in every pack (SR2Go, 16 Oct). */
-export const SUPPORT_PHONE_FALLBACK = '+2349053451158';
+/** Review 1 Nov: the support number comes from GET /api/app/config (release 109), never typed in the app.
+ *  Kept as a getter so offline boarding packs still have the last number the server gave. */
+export const supportPhone = (): string => appConfig().supportPhone;
 
 export type SyncSide = 'driver' | 'passenger';
 

@@ -112,7 +112,7 @@ const PALETTES: Record<
   },
   // On the blue splash: solid white, blue text.
   light: { background: colors.textOnBrand, pressed: colors.brandSoft, text: colors.brand },
-  danger: { background: colors.danger, pressed: '#BE123C', text: colors.textOnBrand },
+  danger: { background: colors.danger, pressed: colors.dangerPressed, text: colors.textOnBrand },
 };
 
 const styles = StyleSheet.create({

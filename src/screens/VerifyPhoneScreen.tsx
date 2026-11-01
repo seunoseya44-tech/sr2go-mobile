@@ -10,6 +10,7 @@ import { Screen } from '../components/Screen';
 import { Heading, LinkText, Overline, RoadLine, Subtext } from '../components/ui';
 import { colors, radius, spacing, typography } from '../theme';
 import { maskPhone } from '../utils/format';
+import { appConfig } from '../config/appConfig';
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -93,7 +94,8 @@ export function VerifyPhoneScreen() {
       <View style={styles.header}>
         <Heading>Enter the code</Heading>
         <Subtext>
-          We sent a 6-digit code to {maskPhone(user?.phone)}. It expires in 10 minutes.
+          We sent a 6-digit code to {maskPhone(user?.phone)}. It expires in{' '}
+          {appConfig().otpExpiryMinutes} minutes.
         </Subtext>
       </View>
 

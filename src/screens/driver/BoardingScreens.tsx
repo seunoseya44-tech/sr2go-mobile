@@ -12,7 +12,7 @@ import { packStore } from '../../boarding/store';
 import { checkPassengerQr, QR_FAILURE_MESSAGE } from '../../boarding/token';
 import { driverApi, type RideBooking } from '../../api/driver';
 import { toApiError } from '../../api/errors';
-import { SUPPORT_PHONE_FALLBACK } from '../../boarding/types';
+import { supportPhone } from '../../boarding/types';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { QrBox } from '../../components/QrBox';
@@ -392,7 +392,7 @@ export function ConfirmPassengerScreen() {
             <Button
               title="Call SR2Go"
               icon="call-outline"
-              onPress={() => Linking.openURL(`tel:${SUPPORT_PHONE_FALLBACK}`)}
+              onPress={() => Linking.openURL(`tel:${supportPhone()}`)}
             />
             <Button
               title="Call emergency 112"
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#1F2A3C',
+    backgroundColor: colors.cameraBackground,
     minHeight: 320,
   },
   camera: { flex: 1 },

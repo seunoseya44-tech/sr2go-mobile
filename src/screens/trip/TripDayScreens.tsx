@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#1F2A3C',
+    backgroundColor: colors.cameraBackground,
     minHeight: 320,
   },
   shutterRow: { alignItems: 'center', paddingVertical: spacing.sm },

@@ -1,4 +1,5 @@
 import { lagosDateTime } from './time';
+import { appConfig } from '../config/appConfig';
 import type { User } from '../api/types';
 
 export function greeting(date = new Date()): string {
@@ -39,13 +40,14 @@ export function capitalize(value: string): string {
 export function naira(value: string | number | null | undefined): string {
   if (value == null || value === '') return '';
   const n = typeof value === 'number' ? value : Number(value);
-  if (!Number.isFinite(n)) return `₦${value}`;
+  const sym = appConfig().currencySymbol; // from GET /api/app/config (release 109), not fixed in the app
+  if (!Number.isFinite(n)) return `${sym}${value}`;
   const hasKobo = Math.abs(n - Math.trunc(n)) > 0.000001;
   const formatted = n.toLocaleString('en-NG', {
     minimumFractionDigits: hasKobo ? 2 : 0,
     maximumFractionDigits: hasKobo ? 2 : 0,
   });
-  return `₦${formatted}`;
+  return `${sym}${formatted}`;
 }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

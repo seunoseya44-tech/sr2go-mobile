@@ -6,6 +6,7 @@ import { Screen } from '../components/Screen';
 import { LinkText } from '../components/ui';
 import { accountState, useAccountState } from '../state/accountState';
 import { ResultIcon, shared } from './booking/shared';
+import { appConfig } from '../config/appConfig';
 
 /** C1 · Account suspended, C2 · Account closed. Shown instead of the app. */
 export function AccountStateScreen() {
@@ -28,7 +29,7 @@ export function AccountStateScreen() {
             />
             <LinkText
               onPress={() =>
-                Linking.openURL('mailto:support@shareride2go.com?subject=Suspended account')
+                Linking.openURL(`mailto:${appConfig().supportEmail}?subject=Suspended account`)
               }
               style={{ alignSelf: 'center' }}
             >
@@ -40,7 +41,7 @@ export function AccountStateScreen() {
             <Button
               title="Contact support"
               onPress={() =>
-                Linking.openURL('mailto:support@shareride2go.com?subject=Closed account')
+                Linking.openURL(`mailto:${appConfig().supportEmail}?subject=Closed account`)
               }
             />
             <Button title="Log out" variant="secondary" onPress={() => void signOut()} />

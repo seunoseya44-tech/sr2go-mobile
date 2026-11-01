@@ -13,7 +13,7 @@ import { toApiError } from '../../api/errors';
 import { packs, recordCheck, usePendingSync } from '../../boarding/manager';
 import { packStore } from '../../boarding/store';
 import { checkTripQr, QR_FAILURE_MESSAGE } from '../../boarding/token';
-import { SUPPORT_PHONE_FALLBACK } from '../../boarding/types';
+import { supportPhone } from '../../boarding/types';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
@@ -244,7 +244,7 @@ export function ConfirmDriverScreen() {
             <Button
               title="Call SR2Go"
               icon="call-outline"
-              onPress={() => Linking.openURL(`tel:${SUPPORT_PHONE_FALLBACK}`)}
+              onPress={() => Linking.openURL(`tel:${supportPhone()}`)}
             />
             <Button
               title="Call emergency 112"
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#1F2A3C',
+    backgroundColor: colors.cameraBackground,
     minHeight: 320,
   },
   camera: { flex: 1 },

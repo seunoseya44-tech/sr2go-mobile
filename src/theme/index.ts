@@ -25,8 +25,12 @@ export const colors = {
   textMuted: '#4A5568',
   textSubtle: '#8A97A8',
   textOnBrand: '#FFFFFF',
+  /** Camera / scanner screens (review 1 Nov: were typed in 4 screens). */
+  cameraBackground: '#1F2A3C',
+  textOnDarkMuted: '#B8C4D4',
 
   danger: '#E11D48',
+  dangerPressed: '#BE123C',
   dangerSoft: '#FFE4E6',
   warning: '#B45309',
   warningSoft: '#FEF3C7',

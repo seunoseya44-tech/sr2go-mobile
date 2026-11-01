@@ -19,6 +19,7 @@ import { postRide, usePostRide } from '../../state/postRide';
 import { colors, radius, spacing, TAP, typography } from '../../theme';
 import { chipDate, isoDate, naira } from '../../utils/format';
 import { shared } from '../booking/shared';
+import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -350,7 +351,7 @@ export function PostRidePriceScreen() {
       {own || form.driverPrice ? (
         <TextField
           label="Your price per seat (what you take home)"
-          prefix="₦"
+          prefix={appConfig().currencySymbol}
           keyboardType="numeric"
           value={form.driverPrice}
           onChangeText={(driverPrice) =>

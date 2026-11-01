@@ -32,6 +32,7 @@ import { colors, radius, spacing, typography } from '../../theme';
 import { clearSelfie, loadSelfie, saveSelfie } from '../../kyc/selfieStore';
 import { formatDobInput, parseDob } from '../../utils/dob';
 import { ResultIcon, shared } from '../booking/shared';
+import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 type Next = 'book' | 'post' | undefined;
@@ -440,7 +441,8 @@ export function KycIdScreen() {
         <View style={styles.tile}>
           <Text style={styles.body}>{state.message}</Text>
           <Text style={shared.subtitle}>
-            Trying again with the same ID and selfie is free for the next 30 minutes.
+            Trying again with the same ID and selfie is free for the next {appConfig().selfieRetryMinutes}{' '}
+            minutes.
           </Text>
         </View>
       ) : null}

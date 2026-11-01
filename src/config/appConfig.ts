@@ -15,6 +15,10 @@ export interface AppConfig {
   supportEmail: string;
   supportHours: string | null;
   selfieRetryMinutes: number;
+  /** Release 118 (review 1 Nov): code validity and card-money hold, from the server. */
+  otpExpiryMinutes: number;
+  withdrawCodeMinutes: number;
+  cardHoldDays: number;
 }
 
 const DEFAULTS: AppConfig = {
@@ -26,6 +30,9 @@ const DEFAULTS: AppConfig = {
   supportEmail: 'support@shareride2go.com',
   supportHours: null,
   selfieRetryMinutes: 60,
+  otpExpiryMinutes: 10,
+  withdrawCodeMinutes: 10,
+  cardHoldDays: 7,
 };
 
 let current: AppConfig = { ...DEFAULTS };
@@ -52,6 +59,9 @@ export async function loadAppConfig(): Promise<AppConfig> {
       supportEmail: str(s.support_email, current.supportEmail),
       supportHours: typeof s.support_hours === 'string' ? s.support_hours : current.supportHours,
       selfieRetryMinutes: num(s.selfie_retry_minutes, current.selfieRetryMinutes),
+      otpExpiryMinutes: num(s.otp_expiry_minutes, current.otpExpiryMinutes),
+      withdrawCodeMinutes: num(s.withdraw_code_minutes, current.withdrawCodeMinutes),
+      cardHoldDays: num(s.card_hold_days, current.cardHoldDays),
     };
   } catch {
     // keep defaults / last values

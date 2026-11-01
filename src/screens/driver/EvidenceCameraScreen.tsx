@@ -187,12 +187,12 @@ export function EvidenceCameraScreen() {
 const styles = StyleSheet.create({
   content: { flex: 1, gap: spacing.sm },
   title: { ...typography.screenTitle, color: colors.textOnBrand },
-  sub: { ...typography.secondary, color: '#B8C4D4' },
+  sub: { ...typography.secondary, color: colors.textOnDarkMuted },
   preview: {
     flex: 1,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    backgroundColor: '#1F2A3C',
+    backgroundColor: colors.cameraBackground,
     minHeight: 320,
   },
   camera: { flex: 1 },

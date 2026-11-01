@@ -16,6 +16,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { appMode } from '../../state/mode';
 import { colors, spacing, typography } from '../../theme';
 import { ResultIcon, shared } from '../booking/shared';
+import { appConfig } from '../../config/appConfig';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 const PLATE_COLOURS: VehiclePayload['plateColour'][] = ['Blue', 'Yellow', 'Red', 'Green', 'Other'];
@@ -206,7 +207,7 @@ export function DriverReviewScreen() {
             <Button
               title="Contact support"
               onPress={() =>
-                Linking.openURL('mailto:support@shareride2go.com?subject=Vehicle review')
+                Linking.openURL(`mailto:${appConfig().supportEmail}?subject=Vehicle review`)
               }
             />
             <Button title="Back to home" variant="secondary" onPress={goHome} />
@@ -219,7 +220,7 @@ export function DriverReviewScreen() {
           <Text style={shared.body}>
             Please contact our support team and we&apos;ll explain what&apos;s needed.
           </Text>
-          <Text style={styles.email}>support@shareride2go.com</Text>
+          <Text style={styles.email}>{appConfig().supportEmail}</Text>
         </View>
       </Screen>
     );
