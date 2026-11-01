@@ -23,6 +23,7 @@ import type { AppStackParamList } from '../navigation/types';
 import { searchForm, useSearchForm } from '../state/searchForm';
 import { colors, radius, spacing, TAP, typography } from '../theme';
 import { addDays, chipDate, displayName, greeting, initials } from '../utils/format';
+import { BrandLogo } from '../components/BrandLogo';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -78,9 +79,7 @@ export function HomeScreen() {
   return (
     <Screen testID="home-screen" topBar={null} contentStyle={styles.content}>
       <View style={styles.topRow}>
-        <Text style={styles.brand}>
-          SR<Text style={styles.brandAccent}>2</Text>Go
-        </Text>
+        <BrandLogo width={150} style={styles.brandLogo} />
         <Pressable
           onPress={() => navigation.navigate('Main', { screen: 'Profile' })}
           accessibilityRole="button"
@@ -282,8 +281,7 @@ function PlaceField({
 const styles = StyleSheet.create({
   content: { gap: spacing.md },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  brand: { ...typography.screenTitle, color: colors.midnight },
-  brandAccent: { color: colors.brand },
+  brandLogo: { alignItems: 'flex-start' },
   avatarPress: { width: TAP, height: TAP, alignItems: 'center', justifyContent: 'center' },
   greetingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
   greeting: { ...typography.title, color: colors.text },

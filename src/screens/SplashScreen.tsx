@@ -1,4 +1,4 @@
-import { Image, ImageBackground, StyleSheet, Text, View } from 'react-native';
+import { ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,9 +8,9 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Button } from '../components/Button';
 import type { AuthStackParamList } from '../navigation/types';
 import { colors, fonts, spacing, typography } from '../theme';
+import { BrandLogo } from '../components/BrandLogo';
 
-const LOGO_WIDTH = 260;
-const LOGO_ASPECT = 1972 / 605;
+const LOGO_WIDTH = 280; // chrome logo + slogan (1 Nov): slogan stays at the 13 px minimum
 /** Clearance above the iOS home indicator asked for in the 8 Oct review. */
 const BOTTOM_CLEARANCE = 20;
 
@@ -55,13 +55,7 @@ export function SplashScreen() {
       />
 
       <View style={[styles.content, { paddingTop: Math.max(insets.top, 24) + 72 }]}>
-        <Image
-          source={require('../../assets/logo-full.png')}
-          style={styles.logo}
-          resizeMode="contain"
-          accessibilityRole="image"
-          accessibilityLabel="SR2Go. Share the ride, reach together."
-        />
+        <BrandLogo width={LOGO_WIDTH} slogan style={styles.logo} />
 
         <View style={styles.copy}>
           <Text style={styles.headline}>Travel between cities{'\n'}for less.</Text>
@@ -98,7 +92,7 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
   flex: { flex: 1 },
   content: { flex: 1, paddingHorizontal: spacing.xl },
-  logo: { width: LOGO_WIDTH, height: LOGO_WIDTH / LOGO_ASPECT, alignSelf: 'center' },
+  logo: { alignSelf: 'center' },
   copy: { marginTop: 36, gap: spacing.md, alignItems: 'center' },
   headline: {
     fontFamily: fonts.displayBold,

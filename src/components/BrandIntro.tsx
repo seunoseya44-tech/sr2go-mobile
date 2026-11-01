@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Easing, Image, StyleSheet, View } from 'react-native';
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View } from 'react-native';
 
 import { colors } from '../theme';
+import { BrandLogo } from './BrandLogo';
 
 const MARK_WIDTH = 200;
-const MARK_ASPECT = 1969 / 529;
 const DASHES = 9;
 
 /**
@@ -91,11 +91,7 @@ export function BrandIntro({ onDone }: { onDone: () => void }) {
           transform: [{ scale: mark.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] }) }],
         }}
       >
-        <Image
-          source={require('../../assets/logo-mark.png')}
-          style={styles.mark}
-          resizeMode="contain"
-        />
+        <BrandLogo width={MARK_WIDTH} />
       </Animated.View>
       <View style={styles.road} accessible={false}>
         {dashes.map((d, i) => (
@@ -120,7 +116,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mark: { width: MARK_WIDTH, height: MARK_WIDTH / MARK_ASPECT },
   road: { flexDirection: 'row', gap: 8, marginTop: 22 },
   dash: { width: 14, height: 3, borderRadius: 2, backgroundColor: colors.brand },
 });
