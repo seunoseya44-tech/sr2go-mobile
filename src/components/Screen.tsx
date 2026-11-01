@@ -17,12 +17,12 @@ import { colors, spacing, TAP, typography } from '../theme';
 import { OfflineNotice } from './OfflineNotice';
 import { BrandLogo } from './BrandLogo';
 
-const BRAND_ROW_LOGO_WIDTH = 112; // chrome logo on every page (Martin, 1 Nov)
+const BRAND_ROW_LOGO_WIDTH = 112; // the 3D logo on every page (Martin, 1 Nov)
 
 interface TopBarProps {
   /** Centred title; omit for a bare chevron. */
   title?: string;
-  /** Martin, 1 Nov: the chrome 3D logo on every page, in a slim row above the title. false hides it. */
+  /** Martin, 1 Nov: the 3D logo on every page, in a slim row above the title. false hides it. */
   brand?: boolean;
   /** 'back' shows a chevron, 'close' an X, 'none' nothing. */
   leading?: 'back' | 'close' | 'none';
@@ -87,7 +87,7 @@ interface ScreenProps {
   contentStyle?: ViewStyle;
   background?: string;
   statusBar?: 'light' | 'dark';
-  /** The chrome logo row on pages without a top bar too (Martin, 1 Nov: every page). Home has its own. */
+  /** The logo row on pages without a top bar too (Martin, 1 Nov: every page). Home has its own. */
   brand?: boolean;
   testID?: string;
 }

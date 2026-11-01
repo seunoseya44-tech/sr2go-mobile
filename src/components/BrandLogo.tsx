@@ -1,13 +1,13 @@
 /**
- * The SR2Go logo (1 Nov, Martin): the chrome 3D logo of the website header (logo_10.png), with the slogan
- * "SHARE THE RIDE  REACH TOGETHER." under it when `slogan` is set. One place for the logo in the app:
- * Home header, welcome screen and the brand intro all use this.
+ * The SR2Go logo (Martin, 1 Nov): the 3D logo with black R and GO - made for the app's white background (the
+ * chrome version is for the website's dark header). The slogan "SHARE THE RIDE. REACH TOGETHER." is set as text
+ * under it when `slogan` is set, so it is never smaller than 13 px. One place for the logo: every page uses this.
  */
 import { Image, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { colors, fonts } from '../theme';
 
-const ASPECT = 899 / 249; // assets/logo-chrome.png (trimmed website logo)
+const ASPECT = 1200 / 326; // assets/logo-3d.png (Martin's logo of 1 Nov, without the slogan line)
 
 export function BrandLogo({
   width,
@@ -25,11 +25,11 @@ export function BrandLogo({
   return (
     <View style={[styles.wrap, style]}>
       <Image
-        source={require('../../assets/logo-chrome.png')}
+        source={require('../../assets/logo-3d.png')}
         style={{ width, height: width / ASPECT }}
         resizeMode="contain"
         accessibilityRole="image"
-        accessibilityLabel={slogan ? 'SR2Go. Share the ride, reach together.' : 'SR2Go'}
+        accessibilityLabel={slogan ? 'SR2Go. Share the ride. Reach together.' : 'SR2Go'}
       />
       {slogan ? (
         <Text
@@ -37,7 +37,7 @@ export function BrandLogo({
           numberOfLines={1}
           accessible={false}
         >
-          <Text style={{ color: onDark ? colors.textOnBrand : colors.midnight }}>SHARE THE RIDE </Text>
+          <Text style={{ color: onDark ? colors.textOnBrand : colors.midnight }}>SHARE THE RIDE. </Text>
           <Text style={{ color: colors.brand }}>REACH TOGETHER.</Text>
         </Text>
       ) : null}

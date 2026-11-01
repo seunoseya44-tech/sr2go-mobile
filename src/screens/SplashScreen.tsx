@@ -10,7 +10,7 @@ import type { AuthStackParamList } from '../navigation/types';
 import { colors, fonts, spacing, typography } from '../theme';
 import { BrandLogo } from '../components/BrandLogo';
 
-const LOGO_WIDTH = 280; // chrome logo + slogan (1 Nov): slogan stays at the 13 px minimum
+const LOGO_WIDTH = 280; // 3D logo + slogan (1 Nov): slogan stays at the 13 px minimum
 /** Clearance above the iOS home indicator asked for in the 8 Oct review. */
 const BOTTOM_CLEARANCE = 20;
 
