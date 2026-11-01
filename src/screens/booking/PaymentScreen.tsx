@@ -170,7 +170,16 @@ export function PaymentScreen() {
           />
         ) : (
           <Button
-            title={youPay ? `Pay ${naira(youPay)}${useWallet ? ' from wallet' : ''}` : 'Pay'}
+            title={
+              useWallet
+                ? // Without the server's quote the ride credit taken off is unknown: no amount.
+                  quote
+                  ? `Pay ${naira(youPay ?? '')} from wallet`
+                  : 'Pay from wallet'
+                : youPay
+                  ? `Pay ${naira(youPay)}`
+                  : 'Pay'
+            }
             onPress={() => {
               setError(null);
               if (useWallet) payFromWallet.mutate();
