@@ -163,18 +163,16 @@ export function WalletScreen() {
                   Send {naira((a.amount ?? '').replace('-', ''))} back to the card you paid with?
                   Your bank usually shows it within 3 to 10 working days. It leaves your wallet now.
                 </Text>
-                <View style={styles.twoUp}>
-                  <Button
-                    title="Keep in wallet"
-                    variant="secondary"
-                    onPress={() => setToCard(null)}
-                    style={styles.flex}
-                  />
+                <View style={styles.stack}>
                   <Button
                     title="Send to card"
                     onPress={() => sendToCard.mutate(cashEntryId(a.id)!)}
                     loading={sendToCard.isPending}
-                    style={styles.flex}
+                  />
+                  <Button
+                    title="Keep in wallet"
+                    variant="secondary"
+                    onPress={() => setToCard(null)}
                   />
                 </View>
               </View>
@@ -641,6 +639,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   twoUp: { flexDirection: 'row', gap: spacing.sm },
+  stack: { gap: spacing.sm },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   helperFlex: { ...typography.secondary, color: colors.textMuted, flex: 1 },
   semi: { ...typography.bodySemibold, color: colors.text },
