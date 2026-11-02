@@ -25,6 +25,8 @@ export interface AppConfig {
   walletTopUpMax: number;
   withdrawMin: number;
   refundToCardDays: number;
+  /** Server release 122 (2 Nov): false = the wallet is a prepaid ride balance - no withdrawal to a bank. */
+  walletWithdrawEnabled: boolean;
 }
 
 const DEFAULTS: AppConfig = {
@@ -44,6 +46,7 @@ const DEFAULTS: AppConfig = {
   walletTopUpMax: 200000,
   withdrawMin: 1000,
   refundToCardDays: 30,
+  walletWithdrawEnabled: false,
 };
 
 let current: AppConfig = { ...DEFAULTS };
@@ -79,6 +82,7 @@ export async function loadAppConfig(): Promise<AppConfig> {
       walletTopUpMax: num(s.wallet_topup_max, current.walletTopUpMax),
       withdrawMin: num(s.withdraw_min, current.withdrawMin),
       refundToCardDays: num(s.refund_to_card_days, current.refundToCardDays),
+      walletWithdrawEnabled: bool(s.wallet_withdraw_enabled, current.walletWithdrawEnabled),
     };
   } catch {
     // keep defaults / last values

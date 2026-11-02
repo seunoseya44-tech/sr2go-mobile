@@ -70,10 +70,15 @@ export function WalletScreen() {
       ) : null}
 
       <View style={styles.balance} testID="wallet-money">
-        <Text style={styles.balanceLabel}>YOUR MONEY</Text>
+        <Text style={styles.balanceLabel}>
+          {cfg.walletWithdrawEnabled ? 'YOUR MONEY' : 'YOUR BALANCE'}
+        </Text>
         <Text style={styles.balanceAmount}>{wallet.isPending ? '…' : naira(money)}</Text>
         <Text style={styles.balanceSub}>
-          {w?.walletMoneyNote ?? 'Never expires. Pay for seats or withdraw to your bank.'}
+          {w?.walletMoneyNote ??
+            (cfg.walletWithdrawEnabled
+              ? 'Never expires. Pay for seats or withdraw to your bank.'
+              : 'Never expires. Pays for your SR2Go rides.')}
         </Text>
       </View>
       <View style={styles.twoUp}>
@@ -87,7 +92,7 @@ export function WalletScreen() {
             testID="top-up-button"
           />
         ) : null}
-        {money > 0 ? (
+        {money > 0 && cfg.walletWithdrawEnabled ? (
           <Button
             title="Withdraw"
             variant="secondary"
@@ -522,8 +527,10 @@ export function TopUpScreen() {
           />
           <InfoBanner>
             Paystack&apos;s card fee is added on the payment page. Your wallet gets the full amount
-            you enter. Money from a card can pay for seats at once; it can be withdrawn to a bank
-            after {cfg.cardHoldDays} days.
+            you enter.{' '}
+            {cfg.walletWithdrawEnabled
+              ? `Money from a card can pay for seats at once; it can be withdrawn to a bank after ${cfg.cardHoldDays} days.`
+              : 'Your balance pays for SR2Go rides and never expires.'}
           </InfoBanner>
           <View style={styles.row}>
             <Ionicons name="lock-closed-outline" size={16} color={colors.textMuted} />

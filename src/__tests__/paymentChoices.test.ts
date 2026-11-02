@@ -31,3 +31,12 @@ describe('payment choices', () => {
     expect(p.explain.refundsWallet).toBe('Instant.');
   });
 });
+
+describe('ride balance (server release 122)', () => {
+  it('knows when the server has switched the choices off', () => {
+    expect(parsePaymentChoices({ refunds: 'wallet', choices_enabled: false }).choicesEnabled).toBe(
+      false,
+    );
+    expect(parsePaymentChoices({ refunds: 'wallet' }).choicesEnabled).toBe(true); // older server
+  });
+});

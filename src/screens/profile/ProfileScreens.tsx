@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
+import { appConfig } from '../../config/appConfig';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
@@ -304,8 +305,17 @@ export function DeleteAccountScreen() {
       footer={
         blocked ? (
           <>
-            {moneyLeft ? (
+            {moneyLeft && appConfig().walletWithdrawEnabled ? (
               <Button title="Withdraw my money" onPress={() => navigation.navigate('Withdraw')} />
+            ) : moneyLeft ? (
+              <Button
+                title="Contact support"
+                onPress={() =>
+                  void Linking.openURL(
+                    `mailto:${appConfig().supportEmail}?subject=Refund my SR2Go balance`,
+                  )
+                }
+              />
             ) : null}
             <Button
               title="Back to profile"
@@ -344,7 +354,12 @@ export function DeleteAccountScreen() {
         ['id-card-outline', 'Your verified selfie and ID details'],
         ['card-outline', 'Your bank account details'],
         ['wallet-outline', 'Unused ride credit is lost'],
-        ['cash-outline', 'Your own money in the wallet must be withdrawn first'],
+        [
+          'cash-outline',
+          appConfig().walletWithdrawEnabled
+            ? 'Your own money in the wallet must be withdrawn first'
+            : 'Unused balance: SR2Go support refunds it to the way you paid',
+        ],
         ['car-outline', 'Past trips and payments are kept, without your name'],
         ['time-outline', 'Your personal data is removed after 90 days'],
       ].map(([icon, text]) => (

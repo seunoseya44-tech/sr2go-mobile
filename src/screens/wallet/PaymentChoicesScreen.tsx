@@ -41,7 +41,28 @@ export function PaymentChoicesScreen() {
       ) : null}
       {prefs.isPending ? <ActivityIndicator color={colors.brand} /> : null}
       {prefs.isError ? <Banner tone="error" message={toApiError(prefs.error).message} /> : null}
-      {p ? (
+      {p && !p.choicesEnabled ? (
+        <View style={styles.group}>
+          {p.isDriver ? (
+            <InfoRow
+              icon="business-outline"
+              title="Trip earnings"
+              text={
+                p.explain.earningsBank ??
+                "Each trip's earnings go to your bank account 24-48 hours after the trip."
+              }
+            />
+          ) : null}
+          <InfoRow
+            icon="wallet-outline"
+            title="Refunds"
+            text={
+              p.explain.refundsWallet ??
+              'Refunds go into your SR2Go balance at once and pay for your next rides. A refund of a seat paid by card can be sent back to that card from your Wallet.'
+            }
+          />
+        </View>
+      ) : p ? (
         <>
           {p.isDriver ? (
             <Choice
@@ -69,6 +90,26 @@ export function PaymentChoicesScreen() {
         </>
       ) : null}
     </Screen>
+  );
+}
+
+function InfoRow({
+  icon,
+  title,
+  text,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  text: string;
+}) {
+  return (
+    <View style={styles.option}>
+      <Ionicons name={icon} size={22} color={colors.navy} />
+      <View style={styles.flex}>
+        <Text style={styles.label}>{title}</Text>
+        <Text style={shared.subtitle}>{text}</Text>
+      </View>
+    </View>
   );
 }
 

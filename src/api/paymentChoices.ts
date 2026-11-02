@@ -13,6 +13,8 @@ export interface PaymentChoices {
   driverEarnings: PayoutTarget | null;
   refunds: PayoutTarget | null;
   isDriver: boolean;
+  /** Server release 122: false = no choices (earnings always to the bank, refunds into the ride balance). */
+  choicesEnabled: boolean;
   explain: {
     earningsBank: string | null;
     earningsWallet: string | null;
@@ -41,6 +43,7 @@ export function parsePaymentChoices(payload: unknown): PaymentChoices {
     driverEarnings: target(s.driver_earnings),
     refunds: target(s.refunds),
     isDriver: s.is_driver === true,
+    choicesEnabled: s.choices_enabled !== false,
     explain: {
       earningsBank: pick(ex, 'driver_earnings', 'bank') ?? fieldText('driver_earnings'),
       earningsWallet: pick(ex, 'driver_earnings', 'wallet'),
