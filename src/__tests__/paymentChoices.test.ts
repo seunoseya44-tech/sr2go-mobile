@@ -1,3 +1,4 @@
+import { breakdownLines } from '../api/driver';
 import { parsePaymentChoices } from '../api/paymentChoices';
 
 describe('payment choices', () => {
@@ -38,5 +39,19 @@ describe('ride balance (server release 122)', () => {
       false,
     );
     expect(parsePaymentChoices({ refunds: 'wallet' }).choicesEnabled).toBe(true); // older server
+  });
+});
+
+describe('driver price lines (server release 123)', () => {
+  it("adds the server's fee sentence under the driver's take-home", () => {
+    const lines = breakdownLines({
+      take_home: 2100,
+      fees: 273,
+      passenger_pays: 2373,
+      payout_note: "Paid to your bank less Paystack's transfer fee (N10-N50 per payout).",
+    });
+    expect(lines[0]).toMatch(/^You receive/);
+    expect(lines[3]).toBe("Paid to your bank less Paystack's transfer fee (N10-N50 per payout).");
+    expect(breakdownLines({ take_home: 2100 })).toHaveLength(1); // older server: no sentence
   });
 });

@@ -143,6 +143,8 @@ export function breakdownLines(bd: Record<string, unknown>): string[] {
   if (money(bd.take_home)) out.push(`You receive ${money(bd.take_home)}`);
   if (money(bd.fees)) out.push(`Fees ${money(bd.fees)}`);
   if (money(bd.passenger_pays)) out.push(`Passenger pays ${money(bd.passenger_pays)}`);
+  // Server release 123 (2 Nov): the driver bears Paystack's transfer fee and stamp duty - the server's own sentence
+  if (typeof bd.payout_note === 'string' && bd.payout_note) out.push(bd.payout_note);
   return out;
 }
 
