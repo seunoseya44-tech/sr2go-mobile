@@ -1,0 +1,40 @@
+name: Build test APK
+
+# SR2Go builds its own test APKs (4 Nov 2026): Martin clicks "Run workflow" on GitHub.
+# Needs one repository secret, EXPO_TOKEN: an access token from SR2Go's Expo account
+# (expo.dev -> Account settings -> Access tokens), added by Martin in
+# GitHub -> Settings -> Secrets and variables -> Actions. Never paste it anywhere else.
+# The APK link appears on expo.dev (organisation shareride2go-ltd -> Builds) when it finishes.
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'staging = test server (Paystack test money). preview = LIVE server.'
+        required: true
+        default: staging
+        type: choice
+        options: [staging, preview]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test -- --ci
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Start the Android build on Expo
+        run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --no-wait
