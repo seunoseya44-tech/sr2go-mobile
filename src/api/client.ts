@@ -80,6 +80,9 @@ export const ENDPOINTS = {
   startRide: (rideId: string) => `/api/rides/${rideId}/start`,
   completeRide: (rideId: string) => `/api/rides/${rideId}/complete`,
   gpsPoint: (bookingId: string) => `/api/rides/bookings/${bookingId}/gps-point`,
+  // server release 128 (6 Nov): live position every few seconds; the driver's own Share my trip link
+  livePosition: (rideId: string) => `/api/rides/${rideId}/live-position`,
+  driverTrackingLink: (rideId: string) => `/api/rides/${rideId}/tracking-link`,
   escrowMe: '/api/escrow/me',
   escrowStrikes: '/api/escrow/strikes/me',
   rideEvidence: (rideId: string) => `/api/rides/${rideId}/evidence`,

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Linking, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
@@ -19,14 +19,20 @@ import { colors, radius, spacing, typography } from '../../theme';
 import { shared } from '../booking/shared';
 import { breakdownApi } from '../../api/breakdown';
 import { appConfig } from '../../config/appConfig';
+import {
+  liveTripState,
+  sendPosition,
+  startLiveTrip,
+  stopLiveTrip,
+  type LiveTripStart,
+} from '../../trip/liveTrip';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
-const GPS_EVERY_MS = 5 * 60_000;
 
 /**
- * Screen 33 (driver view) + 35 · Active trip. Sends the driver's position
- * every 5 minutes while the app is open (background sending follows in the
- * offline-boarding build). SOS is one tap.
+ * Screen 33 (driver view) + 35 · Active trip. Shares the car's position in the
+ * background every few seconds until the ride is completed (server release
+ * 128); the driver can share his own tracking link. SOS is one tap.
  */
 export function ActiveTripScreen() {
   const navigation = useNavigation<Nav>();
@@ -40,68 +46,71 @@ export function ActiveTripScreen() {
     queryKey: ['ride-bookings', params.rideId],
     queryFn: () => driverApi.rideBookings(params.rideId),
   });
-  const [minsAgo, setMinsAgo] = useState<number | null>(null);
   const rooms = useQuery({
     queryKey: ['dispute-rooms'],
     queryFn: disputeRoomsApi.rooms,
     retry: false,
   });
-  const lastSent = useRef<number | null>(null);
-  const [gpsNote, setGpsNote] = useState<string | null>(null);
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const paid = (bookings.data ?? []).filter((b) => b.paid);
 
+  // Server release 128 (6 Nov): from Start ride until the trip ends the phone sends the car's position in the
+  // background every few seconds ("SR2Go is sharing your trip" notification), also with the phone locked.
+  const [mode, setMode] = useState<LiveTripStart | null>(null);
+  const [lastSentAt, setLastSentAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    let cancelled = false;
+    let alive = true;
+    startLiveTrip(params.rideId)
+      .then((m) => alive && setMode(m))
+      .catch(() => alive && setMode('screen_only'));
+    return () => {
+      alive = false;
+    };
+  }, [params.rideId]);
+  // Location not allowed "all the time": this screen sends while it is open.
+  useEffect(() => {
+    if (mode !== 'screen_only') return;
+    let stopped = false;
     const send = async () => {
+      if (stopped) return;
       try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          setGpsNote('Location permission is off, so your position is not shared.');
-          return;
-        }
-        const pos = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-        });
-        const first = paid[0];
-        if (!first) return;
-        await driverApi.gpsPoint(first.id, {
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-          accuracyM: pos.coords.accuracy ?? null,
-          speedKmh: pos.coords.speed != null ? Math.max(0, pos.coords.speed * 3.6) : null,
-          heading: pos.coords.heading ?? null,
-        });
-        if (!cancelled) {
-          lastSent.current = Date.now();
-          setMinsAgo(0);
-          setGpsNote(null);
-        }
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        if (!(await sendPosition(params.rideId, pos))) stopped = true;
       } catch {
-        /* a missed point is sent at the next tick */
+        // a missed position is sent at the next tick
       }
     };
-    let ticker: ReturnType<typeof setInterval> | null = null;
-    if (paid.length > 0) {
-      void send();
-      timer.current = setInterval(() => void send(), GPS_EVERY_MS);
-      ticker = setInterval(() => {
-        if (lastSent.current != null) {
-          setMinsAgo(Math.max(0, Math.round((Date.now() - lastSent.current) / 60_000)));
-        }
-      }, 30_000);
-    }
-    return () => {
-      cancelled = true;
-      if (timer.current) clearInterval(timer.current);
-      if (ticker) clearInterval(ticker);
+    void send();
+    const t = setInterval(() => void send(), appConfig().livePositionSeconds * 1000);
+    return () => clearInterval(t);
+  }, [mode, params.rideId]);
+  useEffect(() => {
+    const tick = async () => {
+      setNow(Date.now());
+      setLastSentAt((await liveTripState())?.lastSentAt ?? null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paid.length]);
+    void tick();
+    const t = setInterval(() => void tick(), 15_000);
+    return () => clearInterval(t);
+  }, []);
+  const minsAgo = lastSentAt != null ? Math.max(0, Math.round((now - lastSentAt) / 60_000)) : null;
+  const gpsNote =
+    mode === 'denied'
+      ? 'Location permission is off, so your position is not shared.'
+      : mode === 'screen_only'
+        ? 'Allow location "All the time" so families can still follow the car when your phone is locked.'
+        : null;
+  const share = useMutation({
+    mutationFn: async () => {
+      const l = await driverApi.trackingLink(params.rideId);
+      await Share.share({ message: l.shareMessage ?? l.trackingUrl ?? '' });
+    },
+  });
 
   const complete = useMutation({
     mutationFn: () => driverApi.completeRide(params.rideId),
     onSuccess: () => {
+      void stopLiveTrip();
       void queryClient.invalidateQueries({ queryKey: ['my-rides'] });
       navigation.replace('EvidenceCamera', { rideId: params.rideId, event: 'journey_complete' });
     },
@@ -259,6 +268,21 @@ export function ActiveTripScreen() {
         </Text>
       </View>
       {gpsNote ? <InfoBanner tone="amber">{gpsNote}</InfoBanner> : null}
+      {mode === 'screen_only' ? (
+        <Button
+          title="Open location settings"
+          variant="secondary"
+          onPress={() => void Linking.openSettings()}
+        />
+      ) : null}
+      {share.isError ? <Banner tone="error" message={toApiError(share.error).message} /> : null}
+      <Button
+        title="Share my trip"
+        variant="secondary"
+        icon="share-social-outline"
+        onPress={() => share.mutate()}
+        loading={share.isPending}
+      />
       <Text style={shared.overline}>Passengers</Text>
       {paid.map((b) => (
         <View key={b.id} style={styles.row}>
@@ -303,7 +327,8 @@ export function ActiveTripScreen() {
         />
       ) : null}
       <Text style={shared.small}>
-        Keep the app running during the trip; your position is shared every 5 minutes.
+        Your position is shared every few seconds until you complete the ride, also with the phone
+        locked.
       </Text>
     </Screen>
   );

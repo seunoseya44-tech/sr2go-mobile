@@ -76,6 +76,10 @@ export interface TrackPosition {
   lastUpdated: string | null;
   status: string | null;
   message: string | null;
+  /** Server release 128: ask again after this many seconds; the car's speed (km/h) and direction (degrees). */
+  refreshSeconds: number | null;
+  speedKmh: number | null;
+  heading: number | null;
 }
 
 export interface Strike {
@@ -138,6 +142,10 @@ export const tripApi = {
       lastUpdated: first(s, ['last_updated']),
       status: first(s, ['status', 'ride_status']),
       message: first(s, ['message']),
+      // server release 128: how often to ask again (seconds), the car's speed and direction
+      refreshSeconds: num(s.refresh_seconds),
+      speedKmh: num(s.speed_kmh),
+      heading: num(s.heading),
     };
   },
 
