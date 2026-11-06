@@ -30,6 +30,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme';
 import { loadAppConfig } from './src/config/appConfig';
 import { clearNavState, loadNavState, saveNavState } from './src/navigation/persistence';
+import { clearPendingTopUps } from './src/wallet/pendingTopUps';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
@@ -107,6 +108,7 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
     if (status === 'restoring') return;
     let live = true;
     if (status !== 'signedIn') {
+      void clearPendingTopUps();
       void clearNavState().then(() => live && setNavState(undefined));
       return () => {
         live = false;
