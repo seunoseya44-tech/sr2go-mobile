@@ -229,7 +229,13 @@ export function ConfirmDriverScreen() {
       return bookingsApi.passengerConfirm(params.bookingId, matched, matched ? undefined : reason);
     },
     onSuccess: (message, matched) => {
-      if (matched) navigation.replace('BoardingPass', { bookingId: params.bookingId });
+      // Field test 6 Nov: after both checks the passenger was left on the boarding pass and had to go back
+      // by hand to find "Share my trip". With signal he now lands on his trip screen (Share my trip, SOS);
+      // offline he stays on the pass, which works without signal.
+      if (matched)
+        navigation.replace(params.offline ? 'BoardingPass' : 'PassengerTrip', {
+          bookingId: params.bookingId,
+        });
       else setHeld(message ?? 'Do not get in. SR2Go will contact you.');
     },
   });

@@ -12,6 +12,7 @@ import { packs, usePendingSync } from '../../boarding/manager';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
+import { LinkText } from '../../components/ui';
 import { QrBox } from '../../components/QrBox';
 import { Screen } from '../../components/Screen';
 import type { AppStackParamList } from '../../navigation/types';
@@ -94,6 +95,12 @@ export function BoardingPassScreen() {
               Type the driver code: available at the car with signal.
             </Text>
           )}
+          <LinkText
+            onPress={() => navigation.navigate('PassengerTrip', { bookingId: params.bookingId })}
+            style={styles.center}
+          >
+            My trip: share it with family, SOS
+          </LinkText>
         </>
       }
     >
@@ -141,6 +148,7 @@ export function BoardingPassScreen() {
 }
 
 const styles = StyleSheet.create({
+  center: { textAlign: 'center', alignSelf: 'center' },
   card: {
     borderWidth: 2,
     borderColor: colors.brand,
