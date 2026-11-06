@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   NavigationContainer,
+  type NavigationState,
   DefaultTheme,
   createNavigationContainerRef,
   type Theme,
@@ -28,6 +29,7 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme';
 import { loadAppConfig } from './src/config/appConfig';
+import { clearNavState, loadNavState, saveNavState } from './src/navigation/persistence';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
@@ -98,15 +100,38 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
     void loadAppConfig();
   }, []);
 
-  if (!ready) return null;
+  // Field test 6 Nov: Android may close the app while the user is in WhatsApp or Paystack;
+  // reopen on the screen they left (signed-in only, kept 30 min).
+  const [navState, setNavState] = useState<NavigationState | undefined | null>(null);
+  useEffect(() => {
+    if (status === 'restoring') return;
+    let live = true;
+    if (status !== 'signedIn') {
+      void clearNavState().then(() => live && setNavState(undefined));
+      return () => {
+        live = false;
+      };
+    }
+    void loadNavState().then((s) => live && setNavState(s));
+    return () => {
+      live = false;
+    };
+  }, [status]);
+
+  if (!ready || navState === null) return null;
 
   return (
     <>
-      <NavigationContainer ref={navigationRef} theme={navigationTheme}>
+      <NavigationContainer
+        ref={navigationRef}
+        theme={navigationTheme}
+        initialState={status === 'signedIn' ? navState : undefined}
+        onStateChange={status === 'signedIn' ? saveNavState : undefined}
+      >
         <RootNavigator />
       </NavigationContainer>
       {/* Animated logo over the first screen; the native splash hands off to it. */}
-      {introDone ? null : <BrandIntro onDone={finishIntro} />}
+      {introDone || navState ? null : <BrandIntro onDone={finishIntro} />}
     </>
   );
 }

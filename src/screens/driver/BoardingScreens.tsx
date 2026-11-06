@@ -23,6 +23,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { shortDate } from '../../utils/format';
 import { ResultIcon, shared } from '../booking/shared';
+import NetInfo from '@react-native-community/netinfo';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -167,42 +168,54 @@ export function ScanPassengerScreen() {
     mutationFn: async (input: { qr?: string; pin?: string }) => {
       // Offline first: a QR is checked against the driver pack on the phone.
       if (input.qr) {
-        const pack = await packStore.getDriver(params.rideId);
-        if (pack) {
-          const res = checkPassengerQr(
-            input.qr,
+        let pack = await packStore.getDriver(params.rideId);
+        const online = (await NetInfo.fetch()).isInternetReachable !== false;
+        const checkWith = (pk: NonNullable<typeof pack>) =>
+          checkPassengerQr(
+            input.qr!,
             {
-              rideId: pack.rideId,
-              publicKey: pack.key.publicKey,
-              passengers: pack.passengers.map((p) => ({
+              rideId: pk.rideId,
+              publicKey: pk.key.publicKey,
+              passengers: pk.passengers.map((p) => ({
                 bookingId: p.bookingId,
                 passengerId: p.passengerId,
               })),
             },
-            Math.floor(Date.now() / 1000) + pack.clockOffsetSeconds,
+            Math.floor(Date.now() / 1000) + pk.clockOffsetSeconds,
           );
-          if (!res.ok) throw new Error(QR_FAILURE_MESSAGE);
-          const p = pack.passengers.find((x) => x.bookingId === res.payload.b)!;
-          if (p.heldForReview)
-            throw new Error('This booking is on hold. Do not board. SR2Go will contact you.');
-          let photo = await packStore.photoUri('driver', params.rideId, p.bookingId);
-          // Item 16: no stored photo yet -> fetch a fresh signed link while there is signal.
-          if (!photo) {
-            photo = await driverApi
-              .scanQr(p.bookingId, input.qr)
-              .then((r) => r.passengerPhoto)
-              .catch(() => null);
+        // Field test 6 Nov: a passenger who paid after the pack was saved is not in it.
+        // With signal, refresh the pack once before deciding.
+        if (online && (!pack || !checkWith(pack).ok)) {
+          await packs.driver(params.rideId).catch(() => null);
+          pack = await packStore.getDriver(params.rideId);
+        }
+        if (pack) {
+          const res = checkWith(pack);
+          // Offline: the phone's check is final. Online: the server decides (scan-qr below).
+          if (!res.ok && !online) throw new Error(QR_FAILURE_MESSAGE);
+          if (res.ok) {
+            const p = pack.passengers.find((x) => x.bookingId === res.payload.b)!;
+            if (p.heldForReview)
+              throw new Error('This booking is on hold. Do not board. SR2Go will contact you.');
+            let photo = await packStore.photoUri('driver', params.rideId, p.bookingId);
+            // Item 16: no stored photo yet -> fetch a fresh signed link while there is signal.
+            if (!photo) {
+              photo = await driverApi
+                .scanQr(p.bookingId, input.qr)
+                .then((r) => r.passengerPhoto)
+                .catch(() => null);
+            }
+            return {
+              bookingId: p.bookingId,
+              passengerName: p.name,
+              passengerPhoto: photo,
+              seats: p.seatsBooked,
+              children: p.children,
+              message: null,
+              scanned: input.qr,
+              offline: true,
+            };
           }
-          return {
-            bookingId: p.bookingId,
-            passengerName: p.name,
-            passengerPhoto: photo,
-            seats: p.seatsBooked,
-            children: p.children,
-            message: null,
-            scanned: input.qr,
-            offline: true,
-          };
         }
       }
       // The online calls need a booking id; with a token we can read it from the payload.

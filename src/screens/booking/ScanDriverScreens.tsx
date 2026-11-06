@@ -60,23 +60,26 @@ export function ScanDriverScreen() {
           { rideId: p.rideId, driverUserId: p.driver.userId, publicKey: p.key.publicKey },
           Math.floor(Date.now() / 1000) + p.clockOffsetSeconds,
         );
-        if (!res.ok) throw new Error(QR_FAILURE_MESSAGE);
-        let photo = await packStore.photoUri('passenger', params.bookingId, 'driver');
-        // Item 16: no stored photo yet -> fetch a fresh signed link while there is signal.
-        if (!photo) {
-          photo = await bookingsApi
-            .scanDriver(params.bookingId, input.qr)
-            .then((r) => r.photo)
-            .catch(() => null);
+        // Field test 6 Nov: offline the phone's check is final; with signal the server decides.
+        if (!res.ok && offline) throw new Error(QR_FAILURE_MESSAGE);
+        if (res.ok) {
+          let photo = await packStore.photoUri('passenger', params.bookingId, 'driver');
+          // Item 16: no stored photo yet -> fetch a fresh signed link while there is signal.
+          if (!photo) {
+            photo = await bookingsApi
+              .scanDriver(params.bookingId, input.qr)
+              .then((r) => r.photo)
+              .catch(() => null);
+          }
+          return {
+            scanned: input.qr,
+            name: p.driver.name,
+            verified: p.driver.verified,
+            photo,
+            vehicle: vehicleLine(p.driver.vehicle),
+            offline: true,
+          };
         }
-        return {
-          scanned: input.qr,
-          name: p.driver.name,
-          verified: p.driver.verified,
-          photo,
-          vehicle: vehicleLine(p.driver.vehicle),
-          offline: true,
-        };
       }
       if (offline) throw new Error('No signal - scan the QR instead.');
       const res = await bookingsApi.scanDriver(params.bookingId, input.qr ?? input.pin!);
