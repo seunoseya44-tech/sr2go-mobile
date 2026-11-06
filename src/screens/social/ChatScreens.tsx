@@ -23,7 +23,9 @@ import { Avatar, Chip } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { secureStorage } from '../../storage/secureStorage';
 import { colors, fonts, radius, spacing, TAP, typography } from '../../theme';
+import { useAppMode } from '../../state/mode';
 import { shared } from '../booking/shared';
+import { quickRepliesFor, withQuickReply } from './quickReplies';
 
 const RETENTION_LINE =
   'Messages in this chat are kept by SR2Go and may be reviewed if there is a problem on this trip.';
@@ -49,13 +51,21 @@ function Composer({
   onSend,
   disabled,
   sending,
+  quickReplies,
 }: {
   placeholder: string;
   onSend: (t: string) => void;
   disabled?: boolean;
   sending?: boolean;
+  /** Ready-made messages above the box (trip chat, 6 Nov 2026): a tap puts the words in the box to edit, then Send. */
+  quickReplies?: readonly string[];
 }) {
   const [text, setText] = useState('');
+  const input = useRef<TextInput>(null);
+  const pickQuick = (q: string) => {
+    setText((t) => withQuickReply(t, q));
+    input.current?.focus();
+  };
   const submit = () => {
     const t = text.trim();
     if (!t || disabled) return;
@@ -63,31 +73,48 @@ function Composer({
     setText('');
   };
   return (
-    <View style={styles.composer}>
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        placeholderTextColor={colors.textSubtle}
-        value={text}
-        onChangeText={setText}
-        editable={!disabled}
-        multiline
-        onSubmitEditing={submit}
-        accessibilityLabel={placeholder}
-      />
-      <Pressable
-        onPress={submit}
-        disabled={disabled || !text.trim()}
-        style={[styles.send, (disabled || !text.trim()) && styles.sendOff]}
-        accessibilityRole="button"
-        accessibilityLabel="Send"
-      >
-        {sending ? (
-          <ActivityIndicator color={colors.textOnBrand} />
-        ) : (
-          <Ionicons name="send" size={20} color={colors.textOnBrand} />
-        )}
-      </Pressable>
+    <View>
+      {quickReplies?.length && !disabled ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.quick}
+          testID="quick-replies"
+        >
+          {quickReplies.map((q) => (
+            <Chip key={q} label={q} tone="blue" onPress={() => pickQuick(q)} />
+          ))}
+        </ScrollView>
+      ) : null}
+      <View style={styles.composer}>
+        <TextInput
+          ref={input}
+          testID="chat-input"
+          style={styles.input}
+          placeholder={placeholder}
+          placeholderTextColor={colors.textSubtle}
+          value={text}
+          onChangeText={setText}
+          editable={!disabled}
+          multiline
+          onSubmitEditing={submit}
+          accessibilityLabel={placeholder}
+        />
+        <Pressable
+          onPress={submit}
+          disabled={disabled || !text.trim()}
+          style={[styles.send, (disabled || !text.trim()) && styles.sendOff]}
+          accessibilityRole="button"
+          accessibilityLabel="Send"
+        >
+          {sending ? (
+            <ActivityIndicator color={colors.textOnBrand} />
+          ) : (
+            <Ionicons name="send" size={20} color={colors.textOnBrand} />
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -96,6 +123,7 @@ function Composer({
 export function TripChatScreen() {
   const { params } = useRoute<RouteProp<AppStackParamList, 'TripChat'>>();
   const { user } = useAuth();
+  const mode = useAppMode();
   const queryClient = useQueryClient();
   const myId = user?.id ?? null;
   const history = useQuery({
@@ -178,6 +206,7 @@ export function TripChatScreen() {
           onSend={(t) => send.mutate(t)}
           disabled={closed}
           sending={send.isPending}
+          quickReplies={quickRepliesFor(mode)}
         />
       }
     >
@@ -338,6 +367,7 @@ const styles = StyleSheet.create({
   typing: { alignSelf: 'flex-start' },
   dots: { fontFamily: fonts.bold, fontSize: 18, color: colors.textMuted, letterSpacing: 2 },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.xs },
+  quick: { gap: spacing.xs, paddingBottom: spacing.xs },
   input: {
     flex: 1,
     minHeight: TAP,
