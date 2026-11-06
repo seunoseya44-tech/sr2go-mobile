@@ -25,7 +25,7 @@ import { secureStorage } from '../../storage/secureStorage';
 import { colors, fonts, radius, spacing, TAP, typography } from '../../theme';
 import { useAppMode } from '../../state/mode';
 import { shared } from '../booking/shared';
-import { quickRepliesFor } from './quickReplies';
+import { quickRepliesFor, withQuickReply } from './quickReplies';
 
 const RETENTION_LINE =
   'Messages in this chat are kept by SR2Go and may be reviewed if there is a problem on this trip.';
@@ -57,10 +57,15 @@ function Composer({
   onSend: (t: string) => void;
   disabled?: boolean;
   sending?: boolean;
-  /** One-tap messages shown above the box (trip chat, 6 Nov 2026); a tap sends at once. */
+  /** Ready-made messages above the box (trip chat, 6 Nov 2026): a tap puts the words in the box to edit, then Send. */
   quickReplies?: readonly string[];
 }) {
   const [text, setText] = useState('');
+  const input = useRef<TextInput>(null);
+  const pickQuick = (q: string) => {
+    setText((t) => withQuickReply(t, q));
+    input.current?.focus();
+  };
   const submit = () => {
     const t = text.trim();
     if (!t || disabled) return;
@@ -78,12 +83,14 @@ function Composer({
           testID="quick-replies"
         >
           {quickReplies.map((q) => (
-            <Chip key={q} label={q} tone="blue" onPress={() => !sending && onSend(q)} />
+            <Chip key={q} label={q} tone="blue" onPress={() => pickQuick(q)} />
           ))}
         </ScrollView>
       ) : null}
       <View style={styles.composer}>
         <TextInput
+          ref={input}
+          testID="chat-input"
           style={styles.input}
           placeholder={placeholder}
           placeholderTextColor={colors.textSubtle}
