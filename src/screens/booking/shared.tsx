@@ -60,6 +60,17 @@ export type BookingView =
   | 'cancelled'
   | 'refunded';
 
+/** What the "Rate your driver" screen needs, from the booking (Trips list, trip screen, ride-completed push). */
+export function rateTripParams(b: Booking) {
+  return {
+    bookingId: b.id,
+    revieweeId: b.ride?.driverId ?? String(b.raw.driver_id ?? ''),
+    name: b.driverName,
+    route: `${b.originCity ?? ''} → ${b.destinationCity ?? ''} · ${shortDate(b.departureDate)}`,
+    rideId: b.rideId,
+  };
+}
+
 export function bookingView(b: Booking): BookingView {
   if (b.status === 'completed') return 'completed';
   if (b.status === 'rejected') return 'declined';

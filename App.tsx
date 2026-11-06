@@ -29,6 +29,7 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { colors } from './src/theme';
 import { loadAppConfig } from './src/config/appConfig';
+import { bookingsApi } from './src/api/bookings';
 import { clearNavState, loadNavState, saveNavState } from './src/navigation/persistence';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
@@ -54,10 +55,27 @@ function openFromPush(type: string, data: Record<string, unknown>) {
     navigationRef.navigate('BookingConfirmation', { bookingId });
   else if (type === 'boarding_pack' && bookingId)
     navigationRef.navigate('BoardingPass', { bookingId });
+  // Field test 6 Nov: the passenger was never asked to rate. The ride-completed push names only the ride, so
+  // find this passenger's booking on it and open the rating (it used to open the driver's requests screen).
+  else if (type === 'ride_completed') void openRatingForRide(bookingId, rideId);
   else if (type === 'booking_transferred' && rideId)
     navigationRef.navigate('RideRequests', { rideId });
   else if (bookingId) navigationRef.navigate('BookingConfirmation', { bookingId });
   else if (rideId) navigationRef.navigate('RideRequests', { rideId });
+  else navigationRef.navigate('Main', { screen: 'Trips' });
+}
+
+async function openRatingForRide(bookingId: string | null, rideId: string | null) {
+  let id = bookingId;
+  if (!id && rideId) {
+    try {
+      id = (await bookingsApi.mine()).find((b) => b.rideId === rideId)?.id ?? null;
+    } catch {
+      id = null;
+    }
+  }
+  if (!navigationRef.isReady()) return;
+  if (id) navigationRef.navigate('PassengerTrip', { bookingId: id, rate: true });
   else navigationRef.navigate('Main', { screen: 'Trips' });
 }
 
