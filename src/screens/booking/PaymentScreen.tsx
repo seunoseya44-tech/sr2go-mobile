@@ -17,6 +17,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
 import { naira } from '../../utils/format';
 import { appConfig } from '../../config/appConfig';
+import { useConfirmPendingTopUps } from '../../wallet/useConfirmPendingTopUps';
 import { bookingView, mmss, shared, tripLine, useCountdown } from './shared';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -45,6 +46,8 @@ export function PaymentScreen() {
   const [checkAgain, setCheckAgain] = useState(false);
   const [paidByBooker, setPaidByBooker] = useState<string | null>(null);
   const wallet = useQuery({ queryKey: ['wallet'], queryFn: walletApi.wallet });
+  // A top-up confirmed on return refreshes the balance, so "Pay from wallet" shows (field test 6 Nov).
+  useConfirmPendingTopUps();
   const walletMoney = Number(wallet.data?.walletMoney ?? 0);
   const [fromWallet, setFromWallet] = useState<boolean | null>(null);
 
