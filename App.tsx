@@ -32,6 +32,7 @@ import { loadAppConfig } from './src/config/appConfig';
 import { clearNavState, loadNavState, saveNavState } from './src/navigation/persistence';
 // Server release 128: defines the background task that sends the car's position (must load at start).
 import { stopLiveTrip } from './src/trip/liveTrip';
+import { clearPendingTopUps } from './src/wallet/pendingTopUps';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
@@ -110,6 +111,7 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
     let live = true;
     if (status !== 'signedIn') {
       void stopLiveTrip();
+      void clearPendingTopUps();
       void clearNavState().then(() => live && setNavState(undefined));
       return () => {
         live = false;

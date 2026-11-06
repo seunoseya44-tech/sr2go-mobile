@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -89,6 +90,9 @@ interface ScreenProps {
   statusBar?: 'light' | 'dark';
   /** The logo row on pages without a top bar too (Martin, 1 Nov: every page). Home has its own. */
   brand?: boolean;
+  /** Pull down to refresh (scrolling screens only). */
+  onRefresh?: () => void;
+  refreshing?: boolean;
   testID?: string;
 }
 
@@ -105,6 +109,8 @@ export function Screen({
   background = colors.background,
   statusBar = 'dark',
   brand: brandProp,
+  onRefresh,
+  refreshing = false,
   testID,
 }: ScreenProps) {
   // Gallery 1 Nov: the black-and-blue logo disappears on the dark camera screens - no logo row there.
@@ -136,6 +142,16 @@ export function Screen({
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              onRefresh ? (
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[colors.brand]}
+                  tintColor={colors.brand}
+                />
+              ) : undefined
+            }
           >
             {body}
           </ScrollView>

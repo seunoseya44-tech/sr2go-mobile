@@ -25,6 +25,8 @@ import { colors, fonts, radius, spacing, typography } from '../../theme';
 import { naira, shortDate } from '../../utils/format';
 import { ResultIcon, shared } from '../booking/shared';
 import { appConfig } from '../../config/appConfig';
+import { addPendingTopUp, removePendingTopUp } from '../../wallet/pendingTopUps';
+import { useConfirmPendingTopUps } from '../../wallet/useConfirmPendingTopUps';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -46,6 +48,18 @@ export function WalletScreen() {
   const [toCard, setToCard] = useState<WalletActivity | null>(null);
   const [openedAt] = useState(() => Date.now());
   const [note, setNote] = useState<{ tone: 'success' | 'error'; text: string } | null>(null);
+  // Field test 6 Nov: a top-up paid while Android had closed the app is confirmed here.
+  useConfirmPendingTopUps((amounts) =>
+    setNote({
+      tone: 'success',
+      text: `${naira(amounts.reduce((a, b) => a + b, 0))} top-up confirmed and added to your balance.`,
+    }),
+  );
+  const refreshing = wallet.isRefetching || activity.isRefetching;
+  const refresh = () => {
+    void wallet.refetch();
+    void activity.refetch();
+  };
   const sendToCard = useMutation({
     mutationFn: (entryId: string) => walletMoneyApi.refundToCard(entryId),
     onSuccess: (m) => {
@@ -68,7 +82,7 @@ export function WalletScreen() {
     canSendRefundToCard(a.type, a.id, a.date, openedAt, cfg.refundToCardDays);
 
   return (
-    <Screen topBar={null} testID="wallet-screen">
+    <Screen topBar={null} testID="wallet-screen" onRefresh={refresh} refreshing={refreshing}>
       <Text style={styles.title}>Wallet</Text>
       {note ? (
         <Banner tone={note.tone} message={note.text} onDismiss={() => setNote(null)} />
@@ -417,10 +431,15 @@ export function TopUpScreen() {
     mutationFn: async () => {
       const r = await walletApi.topUpByCard(amount);
       if (!r.authorizationUrl || !r.reference) throw new Error('No payment page was returned');
+      // Remembered on the phone first: if Android closes the app while the Paystack page is
+      // open, the wallet screen still confirms it when the app comes back (field test 6 Nov).
+      await addPendingTopUp({ reference: r.reference, amount, at: Date.now() });
       await WebBrowser.openBrowserAsync(r.authorizationUrl, { showTitle: true });
       // The page closed: ask the server (the webhook may already have credited it).
       try {
-        return await walletMoneyApi.verifyTopUp(r.reference);
+        const v = await walletMoneyApi.verifyTopUp(r.reference);
+        if (v.credited) await removePendingTopUp(r.reference);
+        return v;
       } catch {
         return { credited: false, status: 'unknown', balance: null };
       }
@@ -431,6 +450,14 @@ export function TopUpScreen() {
     },
     onError: (e) => setError(toApiError(e).message),
   });
+
+  useConfirmPendingTopUps((amounts) =>
+    setResult({
+      credited: true,
+      unpaid: false,
+      amount: String(amounts.reduce((a, b) => a + b, 0)),
+    }),
+  );
 
   const n = Number(amount);
   const amountOk = !!amount && n >= cfg.walletTopUpMin && n <= cfg.walletTopUpMax;
