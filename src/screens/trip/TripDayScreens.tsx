@@ -23,7 +23,7 @@ import { colors, radius, spacing, typography } from '../../theme';
 import { shortDate } from '../../utils/format';
 import { openDirections } from '../RideDetailsScreen';
 import { readEmergencyContact } from '../profile/ProfileScreens';
-import { shared } from '../booking/shared';
+import { bookingView, rateTripParams, shared } from '../booking/shared';
 import { lagosDateTime } from '../../utils/time';
 import { routeApi } from '../../api/route';
 
@@ -40,9 +40,25 @@ export function PassengerTripScreen() {
   const booking = useQuery({
     queryKey: ['bookings', params.bookingId],
     queryFn: () => bookingsApi.get(params.bookingId),
-    refetchInterval: 60_000,
+    refetchInterval: 20_000, // 6 Nov: see the end of the trip within ~20 s, to ask for the rating
   });
   const b = booking.data ?? null;
+  // Field test 6 Nov 2026: the driver was asked to rate at the end of the trip, the passenger was not. When the
+  // trip ends while this screen is open (or it was opened from the ride-completed push), go to "Rate your driver",
+  // the same moment the driver rates his passengers.
+  const wasOnTrip = useRef(false);
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!b || asked.current) return;
+    if (bookingView(b) !== 'completed') {
+      wasOnTrip.current = true;
+      return;
+    }
+    if (wasOnTrip.current || params.rate) {
+      asked.current = true;
+      navigation.replace('RateTrip', rateTripParams(b));
+    }
+  }, [b, params.rate, navigation]);
   const contacts = useQuery({
     queryKey: ['contacts', b?.rideId],
     queryFn: () => bookingsApi.contacts(b!.rideId!),

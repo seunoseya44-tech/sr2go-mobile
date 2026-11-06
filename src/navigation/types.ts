@@ -45,7 +45,8 @@ export type AppStackParamList = {
   // Build 8: trip day and safety record
   EvidenceCamera: { rideId: string; event: 'journey_start' | 'journey_complete' };
   JourneyRecord: { rideId: string; route?: string | null; bookingId?: string | null };
-  PassengerTrip: { bookingId: string };
+  /** rate: opened from the ride-completed push - go straight to rating the driver (6 Nov 2026). */
+  PassengerTrip: { bookingId: string; rate?: boolean };
   TravellingWith: { bookingId: string };
   CompanionInvites: undefined;
   // Build 7

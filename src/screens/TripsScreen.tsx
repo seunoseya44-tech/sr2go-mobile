@@ -23,7 +23,14 @@ import { connectionsApi } from '../api/social';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { shortDate, vehicleLabel } from '../utils/format';
-import { bookingView, mmss, useCountdown, VIEW_TEXT, type BookingView } from './booking/shared';
+import {
+  bookingView,
+  mmss,
+  rateTripParams,
+  useCountdown,
+  VIEW_TEXT,
+  type BookingView,
+} from './booking/shared';
 import { ENDPOINTS } from '../api/client';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -173,13 +180,7 @@ function openBooking(navigation: Nav, b: Booking) {
   if (view === 'waiting') navigation.navigate('BookingStatus', { bookingId: b.id });
   else if (view === 'payNow') navigation.navigate('Payment', { bookingId: b.id });
   else if (view === 'completed') {
-    navigation.navigate('RateTrip', {
-      bookingId: b.id,
-      revieweeId: b.ride?.driverId ?? String(b.raw.driver_id ?? ''),
-      name: b.driverName,
-      route: `${b.originCity ?? ''} → ${b.destinationCity ?? ''} · ${shortDate(b.departureDate)}`,
-      rideId: b.rideId,
-    });
+    navigation.navigate('RateTrip', rateTripParams(b));
   } else if (view === 'confirmed' || view === 'boarded') {
     navigation.navigate('BookingConfirmation', { bookingId: b.id });
   } else navigation.navigate('BookingStatus', { bookingId: b.id });
