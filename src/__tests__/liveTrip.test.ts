@@ -6,6 +6,7 @@ import { driverApi } from '../api/driver';
 import { ApiError } from '../api/errors';
 import { session } from '../auth/session';
 import { loadAppConfig } from '../config/appConfig';
+import { askBackgroundLocationConsent } from '../trip/locationDisclosure';
 import {
   LIVE_TRIP_TASK,
   liveTripState,
@@ -20,6 +21,9 @@ const mockLocation = {
   fg: 'granted',
   bg: 'granted',
   started: false,
+  canAsk: false,
+  consent: true,
+  asked: 0,
   options: null as null | Record<string, unknown>,
 };
 
@@ -47,9 +51,12 @@ jest.mock('expo-location', () => ({
   requestForegroundPermissionsAsync: jest.fn(async () => ({ status: mockLocation.fg })),
   getBackgroundPermissionsAsync: jest.fn(async () => ({
     status: mockLocation.bg,
-    canAskAgain: false,
+    canAskAgain: mockLocation.canAsk,
   })),
-  requestBackgroundPermissionsAsync: jest.fn(async () => ({ status: mockLocation.bg })),
+  requestBackgroundPermissionsAsync: jest.fn(async () => {
+    mockLocation.asked += 1;
+    return { status: mockLocation.bg };
+  }),
   hasStartedLocationUpdatesAsync: jest.fn(async () => mockLocation.started),
   startLocationUpdatesAsync: jest.fn(async (_n: string, o: Record<string, unknown>) => {
     mockLocation.started = true;
@@ -58,6 +65,9 @@ jest.mock('expo-location', () => ({
   stopLocationUpdatesAsync: jest.fn(async () => {
     mockLocation.started = false;
   }),
+}));
+jest.mock('../trip/locationDisclosure', () => ({
+  askBackgroundLocationConsent: jest.fn(async () => mockLocation.consent),
 }));
 jest.mock('../api/driver', () => ({ driverApi: { livePosition: jest.fn() } }));
 jest.mock('../auth/session', () => ({
@@ -96,7 +106,16 @@ const runTask = (data: unknown) =>
 describe('live trip tracking on the driver phone', () => {
   beforeEach(async () => {
     await stopLiveTrip();
-    Object.assign(mockLocation, { fg: 'granted', bg: 'granted', started: false, options: null });
+    Object.assign(mockLocation, {
+      fg: 'granted',
+      bg: 'granted',
+      started: false,
+      canAsk: false,
+      consent: true,
+      asked: 0,
+      options: null,
+    });
+    (askBackgroundLocationConsent as jest.Mock).mockClear();
     live.mockReset();
   });
 
@@ -117,6 +136,31 @@ describe('live trip tracking on the driver phone', () => {
     expect(mockLocation.started).toBe(false);
     mockLocation.fg = 'denied';
     expect(await startLiveTrip('25')).toBe('denied');
+  });
+
+  it('explains in the app before Android asks for location all the time (Google Play)', async () => {
+    Object.assign(mockLocation, { bg: 'denied', canAsk: true, consent: false });
+    expect(await startLiveTrip('25')).toBe('screen_only'); // Not now: Android is not asked
+    expect(askBackgroundLocationConsent).toHaveBeenCalledTimes(1);
+    expect(mockLocation.asked).toBe(0);
+    mockLocation.consent = true;
+    (askBackgroundLocationConsent as jest.Mock).mockImplementationOnce(async () => {
+      expect(mockLocation.asked).toBe(0); // the explanation comes BEFORE the Android prompt
+      mockLocation.bg = 'granted'; // the driver then taps "Allow all the time"
+      return true;
+    });
+    expect(await startLiveTrip('25')).toBe('background');
+    expect(mockLocation.asked).toBe(1);
+  });
+
+  it('shows the explanation once when Start ride and the trip screen start together', async () => {
+    Object.assign(mockLocation, { bg: 'granted', canAsk: true });
+    const both = await Promise.all([startLiveTrip('25'), startLiveTrip('25')]);
+    expect(both).toEqual(['background', 'background']);
+    expect(askBackgroundLocationConsent).toHaveBeenCalledTimes(0); // already allowed: nothing shown
+    Object.assign(mockLocation, { bg: 'denied', started: false });
+    await Promise.all([startLiveTrip('25'), startLiveTrip('25')]);
+    expect(askBackgroundLocationConsent).toHaveBeenCalledTimes(1);
   });
 
   it('sends each position in km/h and remembers when the server took it', async () => {

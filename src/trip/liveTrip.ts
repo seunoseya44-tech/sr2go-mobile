@@ -21,6 +21,7 @@ import { driverApi } from '../api/driver';
 import { toApiError } from '../api/errors';
 import { session } from '../auth/session';
 import { appConfig } from '../config/appConfig';
+import { askBackgroundLocationConsent } from './locationDisclosure';
 
 export const LIVE_TRIP_TASK = 'sr2go-live-trip';
 const FILE = `${FS.documentDirectory ?? ''}live-trip.json`;
@@ -98,7 +99,14 @@ export type LiveTripStart = 'background' | 'screen_only' | 'denied';
  * the driver did not allow location "all the time", so the trip screen sends
  * while it is open; 'denied': no location at all.
  */
-export async function startLiveTrip(rideId: string): Promise<LiveTripStart> {
+export function startLiveTrip(rideId: string): Promise<LiveTripStart> {
+  // Start ride and the trip screen both call this within a second: one start, one disclosure.
+  if (!starting) starting = doStart(rideId).finally(() => (starting = null));
+  return starting;
+}
+let starting: Promise<LiveTripStart> | null = null;
+
+async function doStart(rideId: string): Promise<LiveTripStart> {
   const fg = await Location.requestForegroundPermissionsAsync();
   if (fg.status !== 'granted') return 'denied';
   const prev = await liveTripState();
@@ -106,8 +114,11 @@ export async function startLiveTrip(rideId: string): Promise<LiveTripStart> {
     prev && prev.rideId === rideId ? prev : { rideId, startedAt: Date.now(), lastSentAt: null },
   );
   let bg = await Location.getBackgroundPermissionsAsync();
-  if (bg.status !== 'granted' && bg.canAskAgain)
+  if (bg.status !== 'granted' && bg.canAskAgain) {
+    // Google Play: the app's own explanation comes first, then Android's prompt.
+    if (!(await askBackgroundLocationConsent())) return 'screen_only';
     bg = await Location.requestBackgroundPermissionsAsync();
+  }
   if (bg.status !== 'granted') return 'screen_only';
   if (await Location.hasStartedLocationUpdatesAsync(LIVE_TRIP_TASK).catch(() => false)) {
     return 'background';
