@@ -27,6 +27,9 @@ export interface AppConfig {
   refundToCardDays: number;
   /** Server release 122 (2 Nov): false = the wallet is a prepaid ride balance - no withdrawal to a bank. */
   walletWithdrawEnabled: boolean;
+  /** Server release 128 (6 Nov): live trip tracking - send the car's position this often, once it moved this far. */
+  livePositionSeconds: number;
+  livePositionMinMeters: number;
 }
 
 const DEFAULTS: AppConfig = {
@@ -47,6 +50,8 @@ const DEFAULTS: AppConfig = {
   withdrawMin: 1000,
   refundToCardDays: 30,
   walletWithdrawEnabled: false,
+  livePositionSeconds: 10,
+  livePositionMinMeters: 25,
 };
 
 let current: AppConfig = { ...DEFAULTS };
@@ -83,6 +88,8 @@ export async function loadAppConfig(): Promise<AppConfig> {
       withdrawMin: num(s.withdraw_min, current.withdrawMin),
       refundToCardDays: num(s.refund_to_card_days, current.refundToCardDays),
       walletWithdrawEnabled: bool(s.wallet_withdraw_enabled, current.walletWithdrawEnabled),
+      livePositionSeconds: num(s.live_position_seconds, current.livePositionSeconds),
+      livePositionMinMeters: num(s.live_position_min_meters, current.livePositionMinMeters),
     };
   } catch {
     // keep defaults / last values

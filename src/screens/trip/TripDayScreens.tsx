@@ -31,7 +31,7 @@ type Nav = NativeStackNavigationProp<AppStackParamList>;
 
 /**
  * Screens 29 + 33 (passenger) · Trip day: driver arrived with the plate photo,
- * then the active trip with the car's position every 5 min, the contact card,
+ * then the active trip with the car moving on the map (every few seconds), the contact card,
  * the meeting point, Share my trip and one-tap SOS.
  */
 export function PassengerTripScreen() {
@@ -81,7 +81,10 @@ export function PassengerTripScreen() {
     queryKey: ['track', token],
     queryFn: () => tripApi.track(token!),
     enabled: !!token,
-    refetchInterval: 5 * 60_000,
+    // server release 128: the car moves every few seconds while the trip is on the road; ask as often as the
+    // server says (refresh_seconds), and once a minute before the trip starts
+    refetchInterval: (q) =>
+      q.state.data?.lat != null ? Math.max(5, q.state.data.refreshSeconds ?? 10) * 1000 : 60_000,
     retry: false,
   });
   const [plateDone, setPlateDone] = useState<string | null>(null);

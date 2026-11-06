@@ -55,7 +55,11 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "SR2Go shares your position with your passengers every 5 minutes during a trip."
+          "locationWhenInUsePermission": "SR2Go shares the car's position with your passengers' and your families during a trip, so they can follow it.",
+          "locationAlwaysAndWhenInUsePermission": "During a trip SR2Go keeps sharing the car's position when your phone is locked or you use another app, so families can follow the trip. It stops when the trip ends.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true,
+          "isIosBackgroundLocationEnabled": true
         }
       ],
       [

@@ -576,6 +576,43 @@ export const driverApi = {
     });
   },
 
+  /** Server release 128: the car's position every few seconds (the server keeps the latest). */
+  async livePosition(
+    rideId: string,
+    p: {
+      latitude: number;
+      longitude: number;
+      accuracyM: number | null;
+      speedKmh: number | null;
+      heading: number | null;
+    },
+  ): Promise<{ accepted: boolean; nextSeconds: number | null }> {
+    const { data } = await http.post(ENDPOINTS.livePosition(rideId), {
+      latitude: p.latitude,
+      longitude: p.longitude,
+      accuracy_m: p.accuracyM,
+      speed_kmh: p.speedKmh,
+      heading: p.heading,
+    });
+    const s = (data ?? {}) as Record<string, unknown>;
+    return {
+      accepted: s.accepted === true,
+      nextSeconds: typeof s.next_seconds === 'number' ? s.next_seconds : null,
+    };
+  },
+
+  /** Server release 128: the driver's own "Share my trip" link for his family. */
+  async trackingLink(
+    rideId: string,
+  ): Promise<{ trackingUrl: string | null; shareMessage: string | null }> {
+    const { data } = await http.get(ENDPOINTS.driverTrackingLink(rideId));
+    const s = (data ?? {}) as Record<string, unknown>;
+    return {
+      trackingUrl: typeof s.tracking_url === 'string' ? s.tracking_url : null,
+      shareMessage: typeof s.share_message === 'string' ? s.share_message : null,
+    };
+  },
+
   async earnings(): Promise<Payout[]> {
     const { data } = await http.get(ENDPOINTS.escrowMe);
     return parsePayouts(data);

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Platform, StyleSheet, View } from 'react-native';
+import MapView, { MapMarker, Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { colors, radius } from '../theme';
 
@@ -21,9 +21,21 @@ interface Props {
  */
 export function TrackingMap({ car, meetingPoint, height = 220, line }: Props) {
   const ref = useRef<MapView | null>(null);
+  const carRef = useRef<MapMarker | null>(null);
+  const fitted = useRef(false);
   const mpLat = meetingPoint?.lat;
   const mpLng = meetingPoint?.lng;
+  // Server release 128 (6 Nov): new positions arrive every few seconds - the car glides to each one (Android)
+  // and the camera follows it instead of jumping; the first position frames the car and the meeting point.
   useEffect(() => {
+    if (!fitted.current) return;
+    const to = { latitude: car.lat, longitude: car.lng };
+    if (Platform.OS === 'android') carRef.current?.animateMarkerToCoordinate(to, 2500);
+    ref.current?.animateCamera({ center: to }, { duration: 2500 });
+  }, [car.lat, car.lng]);
+  useEffect(() => {
+    if (fitted.current) return;
+    fitted.current = true;
     const points = [
       { latitude: car.lat, longitude: car.lng },
       ...(mpLat != null && mpLng != null ? [{ latitude: mpLat, longitude: mpLng }] : []),
@@ -36,7 +48,8 @@ export function TrackingMap({ car, meetingPoint, height = 220, line }: Props) {
     } else {
       ref.current?.animateCamera({ center: points[0], zoom: 14 }, { duration: 600 });
     }
-  }, [car.lat, car.lng, mpLat, mpLng]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mpLat, mpLng]);
 
   return (
     <View style={[styles.wrap, { height }]} accessibilityLabel="Live map of the car's position">
@@ -59,9 +72,10 @@ export function TrackingMap({ car, meetingPoint, height = 220, line }: Props) {
           <Polyline coordinates={line} strokeColor={colors.brand} strokeWidth={4} />
         ) : null}
         <Marker
+          ref={carRef}
           coordinate={{ latitude: car.lat, longitude: car.lng }}
           title="Your ride"
-          description="Last reported position"
+          description="Moves as the driver's phone sends its position"
           pinColor={colors.navy}
         />
         {meetingPoint ? (

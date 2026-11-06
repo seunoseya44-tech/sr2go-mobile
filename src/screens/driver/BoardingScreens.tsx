@@ -16,6 +16,7 @@ import { supportPhone } from '../../boarding/types';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { QrBox } from '../../components/QrBox';
+import { startLiveTrip } from '../../trip/liveTrip';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { Avatar, Chip, InfoBanner, LinkText } from '../../components/ui';
@@ -53,8 +54,11 @@ export function DriverBoardingScreen() {
   });
   const start = useMutation({
     mutationFn: () => driverApi.startRide(params.rideId),
-    onSuccess: () =>
-      navigation.replace('EvidenceCamera', { rideId: params.rideId, event: 'journey_start' }),
+    onSuccess: () => {
+      // server release 128: the car's position is shared in the background from now until the ride ends
+      void startLiveTrip(params.rideId).catch(() => undefined);
+      navigation.replace('EvidenceCamera', { rideId: params.rideId, event: 'journey_start' });
+    },
   });
   const paid = (bookings.data ?? []).filter((b) => b.paid);
   const packError = pack.isError ? toApiError(pack.error) : null;
