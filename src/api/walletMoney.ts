@@ -45,6 +45,15 @@ export function parseTopUpCheck(payload: unknown): TopUpCheck {
   };
 }
 
+/**
+ * Field test 6 Nov: Paystack marked an unfinished top-up "abandoned" and the app
+ * still said "If you paid, your wallet updates". These statuses mean no money moved.
+ */
+const UNPAID_TOP_UP = ['abandoned', 'failed', 'cancelled', 'canceled', 'reversed', 'declined'];
+export function isTopUpUnpaid(check: Pick<TopUpCheck, 'credited' | 'status'>): boolean {
+  return !check.credited && UNPAID_TOP_UP.includes(check.status.toLowerCase());
+}
+
 /* ---------- withdraw ---------- */
 
 export type WithdrawalStatus =

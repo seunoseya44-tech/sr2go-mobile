@@ -4,6 +4,7 @@ import { toApiError } from '../api/errors';
 import {
   canSendRefundToCard,
   cashEntryId,
+  isTopUpUnpaid,
   parseTopUpCheck,
   parseWithdrawInfo,
   parseWithdrawStarted,
@@ -133,5 +134,15 @@ describe('wallet money (server releases 114-116)', () => {
     });
     expect(withdrawalStatusText('review')).toBe('Being checked by SR2Go');
     expect(withdrawalStatusText('failed')).toMatch(/back in your wallet/);
+  });
+});
+
+describe('unfinished top-up (field test 6 Nov)', () => {
+  it('says not paid only when Paystack says no money moved', () => {
+    expect(isTopUpUnpaid({ credited: false, status: 'abandoned' })).toBe(true);
+    expect(isTopUpUnpaid({ credited: false, status: 'Failed' })).toBe(true);
+    expect(isTopUpUnpaid({ credited: false, status: 'pending' })).toBe(false);
+    expect(isTopUpUnpaid({ credited: false, status: 'unknown' })).toBe(false);
+    expect(isTopUpUnpaid({ credited: true, status: 'success' })).toBe(false);
   });
 });

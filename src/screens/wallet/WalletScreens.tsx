@@ -8,7 +8,12 @@ import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 
 import { walletApi, type GiftRecipient, type WalletActivity } from '../../api/account';
-import { canSendRefundToCard, cashEntryId, walletMoneyApi } from '../../api/walletMoney';
+import {
+  canSendRefundToCard,
+  cashEntryId,
+  isTopUpUnpaid,
+  walletMoneyApi,
+} from '../../api/walletMoney';
 import { toApiError } from '../../api/errors';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
@@ -388,7 +393,11 @@ export function TopUpScreen() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
-  const [result, setResult] = useState<{ credited: boolean; amount: string } | null>(null);
+  const [result, setResult] = useState<{
+    credited: boolean;
+    unpaid: boolean;
+    amount: string;
+  } | null>(null);
   const account = useQuery({
     queryKey: ['topup-account'],
     queryFn: walletApi.topUpAccounts,
@@ -418,7 +427,7 @@ export function TopUpScreen() {
     },
     onSuccess: (v) => {
       refreshWallet();
-      setResult({ credited: v.credited, amount });
+      setResult({ credited: v.credited, unpaid: isTopUpUnpaid(v), amount });
     },
     onError: (e) => setError(toApiError(e).message),
   });
@@ -444,14 +453,23 @@ export function TopUpScreen() {
         footer={<Button title="Back to wallet" onPress={() => navigation.goBack()} />}
       >
         <View style={shared.centered}>
-          <ResultIcon icon={result.credited ? 'checkmark' : 'time-outline'} tone="blue" />
+          <ResultIcon
+            icon={result.credited ? 'checkmark' : result.unpaid ? 'close' : 'time-outline'}
+            tone={result.unpaid ? 'grey' : 'blue'}
+          />
           <Text style={shared.heading}>
-            {result.credited ? `${naira(result.amount)} added` : 'Checking your payment'}
+            {result.credited
+              ? `${naira(result.amount)} added`
+              : result.unpaid
+                ? 'Not paid'
+                : 'Checking your payment'}
           </Text>
           <Text style={shared.body}>
             {result.credited
-              ? 'The money is in your wallet. Use it for seats or withdraw it to your bank.'
-              : 'If you paid, your wallet updates within a few minutes. If you closed the page without paying, nothing was taken.'}
+              ? 'The money is in your wallet. Use it to pay for your seats.'
+              : result.unpaid
+                ? 'The payment was not completed, so nothing was taken. You can try again.'
+                : 'If you paid, your wallet updates within a few minutes. If you closed the page without paying, nothing was taken.'}
           </Text>
         </View>
       </Screen>
