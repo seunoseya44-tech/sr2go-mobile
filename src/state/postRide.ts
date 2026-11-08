@@ -26,6 +26,9 @@ export interface PostRideForm {
   maxLuggageKg: string;
   luggageNote: string;
   notes: string;
+  /** 8 Nov 2026: repeat this ride on these weekdays (0 Monday .. 6 Sunday). */
+  repeat: boolean;
+  repeatDays: number[];
 }
 
 const initial = (): PostRideForm => ({
@@ -49,6 +52,8 @@ const initial = (): PostRideForm => ({
   maxLuggageKg: '20',
   luggageNote: '',
   notes: '',
+  repeat: false,
+  repeatDays: [0, 1, 2, 3, 4],
 });
 
 let state = initial();

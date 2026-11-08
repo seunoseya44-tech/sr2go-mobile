@@ -130,6 +130,7 @@ export type AppStackParamList = {
   PostRideRoute: undefined;
   PostRidePrice: undefined;
   PostRideDetails: undefined;
+  MyRepeatRides: undefined;
   RideRequests: { rideId: string };
   DriverBoarding: { rideId: string };
   ScanPassenger: { rideId: string; bookingId?: string };

@@ -69,6 +69,11 @@ export const ENDPOINTS = {
   suggestPrice: '/api/rides/suggest-price',
   checkPrice: '/api/rides/check-price',
   rides: '/api/rides/',
+  // Repeat rides (8 Nov 2026)
+  rideSchedules: '/api/ride-schedules',
+  rideSchedulesMine: '/api/ride-schedules/mine',
+  rideScheduleAction: (id: string, action: 'pause' | 'resume' | 'stop') =>
+    `/api/ride-schedules/${id}/${action}`,
   driverMyRides: '/api/rides/driver/my-rides',
   rideBookings: (rideId: string) => `/api/rides/${rideId}/bookings`,
   bookingStatus: (bookingId: string) => `/api/rides/bookings/${bookingId}/status`,

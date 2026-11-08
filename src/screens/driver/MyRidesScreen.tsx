@@ -107,6 +107,12 @@ export function MyRidesScreen() {
           ))
         )}
         <Button title="Post a ride" onPress={() => navigation.navigate('PostRideRoute')} />
+        <Button
+          title="My repeat rides"
+          variant="secondary"
+          onPress={() => navigation.navigate('MyRepeatRides')}
+          testID="open-repeat-rides"
+        />
       </ScrollView>
     </Screen>
   );

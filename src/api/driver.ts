@@ -369,6 +369,46 @@ export function parsePayouts(payload: unknown): Payout[] {
 
 /* ---------- api ---------- */
 
+/** The body of POST /api/rides/ (also the `ride` of a repeat ride). */
+export function rideBody(p: PostRidePayload): Record<string, unknown> {
+  const local = new Date(`${p.date}T${p.time}:00`);
+  const off = -local.getTimezoneOffset();
+  const sign = off >= 0 ? '+' : '-';
+  const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
+  return {
+    origin_lat: p.route.originLat,
+    origin_lng: p.route.originLng,
+    origin_city: p.route.originCity,
+    origin_address: p.originName,
+    destination_lat: p.route.destLat,
+    destination_lng: p.route.destLng,
+    destination_city: p.route.destCity,
+    destination_address: p.destName,
+    // Local wall time with the phone's offset, so 07:30 in Lagos stays 07:30.
+    departure_time: `${p.date}T${p.time}:00${sign}${pad(Math.floor(off / 60))}:${pad(off % 60)}`,
+    total_seats: p.seats,
+    vehicle_type: p.car,
+    meeting_point_name: p.meetingPoint.name,
+    meeting_point_address: p.meetingPoint.address,
+    meeting_point_lat: p.meetingPoint.lat,
+    meeting_point_lng: p.meetingPoint.lng,
+    // price_per_seat is what the driver takes home; the server adds the fee.
+    price_per_seat: Number(p.driverPrice),
+    price_override_acknowledged: p.priceAcknowledged,
+    override_route_acknowledged: p.priceAcknowledged,
+    auto_approve: p.autoApprove,
+    is_ac: p.isAc,
+    pref_music: p.prefMusic,
+    pref_pets: p.prefPets,
+    pref_chat: p.prefChat,
+    pref_smoking: p.prefSmoking,
+    driver_smokes: p.driverSmokes,
+    max_luggage_kg: p.maxLuggageKg,
+    luggage_note: p.luggageNote || null,
+    notes: p.notes || null,
+  };
+}
+
 export const driverApi = {
   /** GET /api/drivers/profile/me. 404 = no vehicle yet. */
   async profile(): Promise<DriverProfile | null> {
@@ -447,43 +487,15 @@ export const driverApi = {
 
   /** POST /api/rides/. 403 driver_profile_required / driver_not_approved / driver_suspended. */
   async postRide(p: PostRidePayload): Promise<Ride | null> {
-    const local = new Date(`${p.date}T${p.time}:00`);
-    const off = -local.getTimezoneOffset();
-    const sign = off >= 0 ? '+' : '-';
-    const pad = (n: number) => String(Math.abs(n)).padStart(2, '0');
-    const { data } = await http.post(ENDPOINTS.rides, {
-      origin_lat: p.route.originLat,
-      origin_lng: p.route.originLng,
-      origin_city: p.route.originCity,
-      origin_address: p.originName,
-      destination_lat: p.route.destLat,
-      destination_lng: p.route.destLng,
-      destination_city: p.route.destCity,
-      destination_address: p.destName,
-      // Local wall time with the phone's offset, so 07:30 in Lagos stays 07:30.
-      departure_time: `${p.date}T${p.time}:00${sign}${pad(Math.floor(off / 60))}:${pad(off % 60)}`,
-      total_seats: p.seats,
-      vehicle_type: p.car,
-      meeting_point_name: p.meetingPoint.name,
-      meeting_point_address: p.meetingPoint.address,
-      meeting_point_lat: p.meetingPoint.lat,
-      meeting_point_lng: p.meetingPoint.lng,
-      // price_per_seat is what the driver takes home; the server adds the fee.
-      price_per_seat: Number(p.driverPrice),
-      price_override_acknowledged: p.priceAcknowledged,
-      override_route_acknowledged: p.priceAcknowledged,
-      auto_approve: p.autoApprove,
-      is_ac: p.isAc,
-      pref_music: p.prefMusic,
-      pref_pets: p.prefPets,
-      pref_chat: p.prefChat,
-      pref_smoking: p.prefSmoking,
-      driver_smokes: p.driverSmokes,
-      max_luggage_kg: p.maxLuggageKg,
-      luggage_note: p.luggageNote || null,
-      notes: p.notes || null,
-    });
+    const { data } = await http.post(ENDPOINTS.rides, rideBody(p));
     return parseRide(data);
+  },
+
+  /** 8 Nov 2026: a repeat ride - the same ride body plus its weekdays (0 Monday .. 6 Sunday). SR2Go posts each ride
+   * a week ahead; any refusal (price, meeting point, car) comes back exactly as for a single ride. */
+  async postRepeatRide(p: PostRidePayload, days: number[]): Promise<unknown> {
+    const { data } = await http.post(ENDPOINTS.rideSchedules, { ride: rideBody(p), days });
+    return data;
   },
 
   async myRides(): Promise<DriverRide[]> {

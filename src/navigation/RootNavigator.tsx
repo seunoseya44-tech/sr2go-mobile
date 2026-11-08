@@ -57,6 +57,7 @@ import {
 } from '../screens/driver/PostRideScreens';
 import { RideRequestsScreen } from '../screens/driver/RideRequestsScreen';
 import { DriverReviewScreen, VehicleProfileScreen } from '../screens/driver/VehicleProfileScreen';
+import { MyRepeatRidesScreen } from '../screens/driver/MyRepeatRidesScreen';
 import { useAppMode } from '../state/mode';
 import { useAccountState } from '../state/accountState';
 import { AccountStateScreen } from '../screens/AccountStateScreen';
@@ -334,6 +335,7 @@ export function RootNavigator() {
       <App.Screen name="PostRideRoute" component={PostRideRouteScreen} />
       <App.Screen name="PostRidePrice" component={PostRidePriceScreen} />
       <App.Screen name="PostRideDetails" component={PostRideDetailsScreen} />
+      <App.Screen name="MyRepeatRides" component={MyRepeatRidesScreen} />
       <App.Screen name="RideRequests" component={RideRequestsScreen} />
       <App.Screen name="DriverBoarding" component={DriverBoardingScreen} />
       <App.Screen

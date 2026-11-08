@@ -6,7 +6,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { driverApi, type MeetingPoint, type PriceCheck, type RouteInput } from '../../api/driver';
+import {
+  driverApi,
+  type MeetingPoint,
+  type PostRidePayload,
+  type PriceCheck,
+  type RouteInput,
+} from '../../api/driver';
 import { toApiError } from '../../api/errors';
 import type { Preference } from '../../api/types';
 import { Banner } from '../../components/Banner';
@@ -20,6 +26,14 @@ import { colors, radius, spacing, TAP, typography } from '../../theme';
 import { chipDate, isoDate, naira } from '../../utils/format';
 import { shared } from '../booking/shared';
 import { appConfig } from '../../config/appConfig';
+import {
+  DAY_SHORT,
+  EVERY_DAY,
+  MON_FRI,
+  daysText,
+  toggleDay,
+  weekdayOf,
+} from '../../repeat/repeatRides';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -407,9 +421,10 @@ export function PostRideDetailsScreen() {
   const form = usePostRide();
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const repeatNoDays = form.repeat && form.repeatDays.length === 0;
   const post = useMutation({
-    mutationFn: () =>
-      driverApi.postRide({
+    mutationFn: () => {
+      const payload: PostRidePayload = {
         route: routeOf(form)!,
         originName: form.origin!.name,
         destName: form.destination!.name,
@@ -437,11 +452,19 @@ export function PostRideDetailsScreen() {
         maxLuggageKg: form.maxLuggageKg.trim() ? Number(form.maxLuggageKg) : null,
         luggageNote: form.luggageNote.trim(),
         notes: form.notes.trim(),
-      }),
+      };
+      // 8 Nov 2026: a repeat ride goes through the same checks; SR2Go then posts it every chosen day.
+      return form.repeat
+        ? driverApi.postRepeatRide(payload, form.repeatDays)
+        : driverApi.postRide(payload);
+    },
     onSuccess: () => {
+      const wasRepeat = form.repeat;
       void queryClient.invalidateQueries({ queryKey: ['my-rides'] });
+      void queryClient.invalidateQueries({ queryKey: ['repeat-rides'] });
       postRide.reset();
-      navigation.navigate('DriverMain', { screen: 'MyRides' });
+      if (wasRepeat) navigation.navigate('MyRepeatRides');
+      else navigation.navigate('DriverMain', { screen: 'MyRides' });
     },
     onError: (e) => {
       const err = toApiError(e);
@@ -456,13 +479,14 @@ export function PostRideDetailsScreen() {
       topBar={{ title: 'Post a ride' }}
       footer={
         <Button
-          title="Post ride"
+          title={form.repeat ? 'Save repeat ride' : 'Post ride'}
           onPress={() => {
             setError(null);
             post.mutate();
           }}
+          disabled={repeatNoDays}
           loading={post.isPending}
-          loadingTitle="Posting…"
+          loadingTitle={form.repeat ? 'Saving…' : 'Posting…'}
         />
       }
     >
@@ -483,6 +507,40 @@ export function PostRideDetailsScreen() {
         />
       ) : null}
 
+      <Toggle
+        label="Repeat this ride"
+        helper="For a route you drive often. SR2Go posts it for you a week ahead on the days you choose."
+        value={form.repeat}
+        onChange={(repeat) => postRide.set({ repeat })}
+      />
+      {form.repeat ? (
+        <View style={styles.repeatBox} testID="repeat-days">
+          <View style={styles.dayRow}>
+            {DAY_SHORT.map((d, i) => (
+              <Chip
+                key={d}
+                label={d}
+                selected={form.repeatDays.includes(i)}
+                onPress={() => postRide.set({ repeatDays: toggleDay(form.repeatDays, i) })}
+                testID={`repeat-day-${i}`}
+              />
+            ))}
+          </View>
+          <View style={styles.dayRow}>
+            <Chip label="Mon–Fri" onPress={() => postRide.set({ repeatDays: MON_FRI })} />
+            <Chip label="Every day" onPress={() => postRide.set({ repeatDays: EVERY_DAY })} />
+          </View>
+          <Text style={shared.subtitle}>
+            {repeatNoDays
+              ? 'Choose at least one day.'
+              : `${daysText(form.repeatDays)} at ${form.time}. ${
+                  form.repeatDays.includes(weekdayOf(form.date))
+                    ? `First ride ${chipDate(form.date)}.`
+                    : 'First ride on the next chosen day.'
+                } You can pause or stop it any time in My repeat rides.`}
+          </Text>
+        </View>
+      ) : null}
       <Toggle
         label="Instant booking"
         helper="Passengers book without waiting for you to accept"
@@ -625,6 +683,8 @@ function WhenField({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  repeatBox: { gap: spacing.sm },
+  dayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   prefRow: { gap: spacing.xs },
   carRow: {
     flexDirection: 'row',
