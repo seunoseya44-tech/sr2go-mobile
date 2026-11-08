@@ -109,6 +109,8 @@ export interface Ride {
   maxLuggageKg: number | null;
   luggageNote: string | null;
   notes: string | null;
+  /** When the ride stops taking bookings (server, release 134); null = not given. */
+  bookingClosesAt: string | null;
   raw: Record<string, unknown>;
 }
 

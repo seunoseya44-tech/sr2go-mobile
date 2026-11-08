@@ -29,6 +29,12 @@ export type AppStackParamList = {
   DriverProfile: { driverId: string; name?: string | null };
   // B2
   BookSeat: { rideId: string };
+  /** Martin, 7 Nov 2026: the server said booking_closed - message as sent, and a ready "later ride" search. */
+  BookingClosed: {
+    message?: string | null;
+    route?: string | null;
+    search?: RideSearchParams | null;
+  };
   BookingStatus: { bookingId: string };
   Payment: { bookingId: string; connectionId?: string };
   PaymentResult: {

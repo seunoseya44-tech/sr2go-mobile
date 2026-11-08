@@ -7,6 +7,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { bookingsApi } from '../../api/bookings';
 import { toApiError } from '../../api/errors';
 import { ridesApi } from '../../api/rides';
+import { laterRideSearch, placeOf } from '../../booking/bookingClosed';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
@@ -71,6 +72,18 @@ export function BookSeatScreen() {
     },
     onError: (e) => {
       const err = toApiError(e);
+      if (err.code === 'booking_closed') {
+        navigation.replace('BookingClosed', {
+          message: err.message,
+          route: r ? `${r.originCity ?? ''} → ${r.destinationCity ?? ''}` : null,
+          search: laterRideSearch(
+            placeOf(r, 'origin'),
+            placeOf(r, 'destination'),
+            r?.departureDate,
+          ),
+        });
+        return;
+      }
       if (err.code === 'kyc_required') {
         setKycRequired(true);
       }
