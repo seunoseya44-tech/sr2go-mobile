@@ -19,7 +19,7 @@ import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
-import { Checkbox, InfoBanner, Segmented, Stepper } from '../../components/ui';
+import { Checkbox, Chip, InfoBanner, Segmented, Stepper } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { postRide, usePostRide } from '../../state/postRide';
 import { colors, radius, spacing, TAP, typography } from '../../theme';
