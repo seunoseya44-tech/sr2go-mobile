@@ -13,7 +13,7 @@ import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
-import { Checkbox, Chip, InfoBanner, Segmented, Stepper } from '../../components/ui';
+import { Checkbox, InfoBanner, Segmented, Stepper } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { postRide, usePostRide } from '../../state/postRide';
 import { colors, radius, spacing, TAP, typography } from '../../theme';
@@ -115,14 +115,22 @@ export function PostRideRouteScreen() {
         }
       />
 
-      <View style={styles.chips}>
-        <Chip
-          label={chipDate(form.date)}
+      {/* Fix a (GitHub #8, 7 Nov): two clear labelled fields instead of small grey chips. */}
+      <View style={styles.when}>
+        <WhenField
+          label="Departure date"
+          value={chipDate(form.date)}
           icon="calendar-outline"
-          tone="grey"
           onPress={() => setPicker('date')}
+          testID="post-date"
         />
-        <Chip label={form.time} icon="time-outline" tone="grey" onPress={() => setPicker('time')} />
+        <WhenField
+          label="Departure time"
+          value={form.time}
+          icon="time-outline"
+          onPress={() => setPicker('time')}
+          testID="post-time"
+        />
       </View>
       {picker ? (
         <DateTimePicker
@@ -583,6 +591,38 @@ function PrefRow({
   );
 }
 
+function WhenField({
+  label,
+  value,
+  icon,
+  onPress,
+  testID,
+}: {
+  label: string;
+  value: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  onPress: () => void;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={styles.whenField}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}: ${value}. Tap to change`}
+      testID={testID}
+    >
+      <Text style={styles.whenLabel}>{label}</Text>
+      <View style={styles.whenRow}>
+        <Ionicons name={icon} size={22} color={colors.brand} />
+        <Text style={styles.whenValue} numberOfLines={1}>
+          {value}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   prefRow: { gap: spacing.xs },
@@ -623,6 +663,20 @@ const styles = StyleSheet.create({
   placeValue: { ...typography.body, color: colors.text },
   placeholder: { color: colors.textSubtle },
   chips: { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
+  when: { flexDirection: 'row', gap: spacing.sm },
+  whenField: {
+    flex: 1,
+    gap: spacing.xxs,
+    minHeight: TAP + 24,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    borderColor: colors.brand,
+    backgroundColor: colors.surface,
+  },
+  whenLabel: { ...typography.label, color: colors.textMuted },
+  whenRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  whenValue: { ...typography.priceSmall, color: colors.text, flexShrink: 1 },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minHeight: TAP },
   rowStart: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   label: { ...typography.body, color: colors.text },

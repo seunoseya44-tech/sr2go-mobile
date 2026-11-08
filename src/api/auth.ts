@@ -1,3 +1,4 @@
+import { otpDelivery, parseOtpDelivery, type OtpDelivery } from '../auth/otpDelivery';
 import { ENDPOINTS, http } from './client';
 import { parseTokens, parseUser } from './parsers';
 import type { LoginCredentials, LoginResult, RegisterPayload, User } from './types';
@@ -24,6 +25,8 @@ export const authApi = {
       password: payload.password,
       role: payload.role,
     });
+    // Fix c: what the server says about the code, for the code screen.
+    otpDelivery.set(parseOtpDelivery(data));
     return { tokens: parseTokens(data), user: parseUser(data) };
   },
 
@@ -33,8 +36,11 @@ export const authApi = {
   },
 
   /** POST /api/auth/resend-otp (auth). */
-  async resendOtp(): Promise<void> {
-    await http.post(ENDPOINTS.resendOtp, {}, { skipSessionHandling: true });
+  async resendOtp(): Promise<OtpDelivery> {
+    const { data } = await http.post(ENDPOINTS.resendOtp, {}, { skipSessionHandling: true });
+    const d = parseOtpDelivery(data);
+    otpDelivery.set(d);
+    return d;
   },
 
   /**

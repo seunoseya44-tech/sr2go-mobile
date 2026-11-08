@@ -358,6 +358,19 @@ export function PassengerTripScreen() {
   );
 }
 
+/**
+ * Fix b (7 Nov): a fresh position if the phone gets one within a few seconds,
+ * otherwise its last known position (up to 30 min old), otherwise none.
+ */
+async function platePosition(): Promise<Location.LocationObject | null> {
+  const fresh = await Promise.race([
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }).catch(() => null),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+  ]);
+  if (fresh) return fresh;
+  return Location.getLastKnownPositionAsync({ maxAge: 30 * 60_000 }).catch(() => null);
+}
+
 function PlateCamera({
   bookingId,
   onDone,
@@ -384,9 +397,7 @@ function PlateCamera({
         format: SaveFormat.JPEG,
         base64: true,
       });
-      const pos = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      }).catch(() => null);
+      const pos = await platePosition();
       const m = await tripApi.plantePhoto(bookingId, {
         photoBase64: small.base64 ?? '',
         latitude: pos?.coords.latitude ?? null,
@@ -411,19 +422,48 @@ function PlateCamera({
     >
       {error ? <Banner tone="error" message={error} onDismiss={() => setError(null)} /> : null}
       <View style={styles.preview}>
-        {permission?.granted ? <CameraView ref={camera} style={styles.flex} facing="back" /> : null}
+        {permission?.granted ? (
+          <CameraView ref={camera} style={styles.flex} facing="back" />
+        ) : permission ? (
+          // Fix b (7 Nov): camera refused -> say so and offer a way to allow it.
+          <View style={styles.cameraBlocked} testID="plate-camera-blocked">
+            <Ionicons name="camera-outline" size={40} color={colors.textOnBrand} />
+            <Text style={styles.cameraBlockedTitle}>Allow the camera</Text>
+            <Text style={styles.cameraBlockedText}>
+              {permission.canAskAgain
+                ? 'SR2Go needs the camera to photograph the plate. The photo is not saved on your phone.'
+                : 'The camera is turned off for SR2Go. Open Settings, tap Permissions, then allow Camera.'}
+            </Text>
+            <Button
+              title={permission.canAskAgain ? 'Allow camera' : 'Open Settings'}
+              icon="camera-outline"
+              onPress={() =>
+                permission.canAskAgain ? void requestPermission() : void Linking.openSettings()
+              }
+              testID="plate-allow-camera"
+            />
+          </View>
+        ) : (
+          <ActivityIndicator color={colors.brand} style={styles.flex} />
+        )}
       </View>
-      <View style={styles.shutterRow}>
-        <Pressable
-          onPress={() => void take()}
-          style={styles.shutter}
-          accessibilityRole="button"
-          accessibilityLabel="Take photo"
-          disabled={busy || !permission?.granted}
-        >
-          {busy ? <ActivityIndicator color={colors.brand} /> : <View style={styles.shutterInner} />}
-        </Pressable>
-      </View>
+      {permission?.granted ? (
+        <View style={styles.shutterRow}>
+          <Pressable
+            onPress={() => void take()}
+            style={styles.shutter}
+            accessibilityRole="button"
+            accessibilityLabel="Take photo"
+            disabled={busy || !permission?.granted}
+          >
+            {busy ? (
+              <ActivityIndicator color={colors.brand} />
+            ) : (
+              <View style={styles.shutterInner} />
+            )}
+          </Pressable>
+        </View>
+      ) : null}
     </Screen>
   );
 }
@@ -589,6 +629,15 @@ const styles = StyleSheet.create({
     minHeight: 320,
   },
   shutterRow: { alignItems: 'center', paddingVertical: spacing.sm },
+  cameraBlocked: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    padding: spacing.lg,
+  },
+  cameraBlockedTitle: { ...typography.heading, color: colors.textOnBrand, textAlign: 'center' },
+  cameraBlockedText: { ...typography.body, color: colors.textOnDarkMuted, textAlign: 'center' },
   shutter: {
     width: 76,
     height: 76,

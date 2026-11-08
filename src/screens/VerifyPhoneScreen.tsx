@@ -11,6 +11,7 @@ import { Heading, LinkText, Overline, RoadLine, Subtext } from '../components/ui
 import { colors, radius, spacing, typography } from '../theme';
 import { maskPhone } from '../utils/format';
 import { appConfig } from '../config/appConfig';
+import { otpDelivery, otpSubtitle, type OtpDelivery } from '../auth/otpDelivery';
 
 const CODE_LENGTH = 6;
 const RESEND_SECONDS = 60;
@@ -28,6 +29,7 @@ export function VerifyPhoneScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resendIn, setResendIn] = useState(RESEND_SECONDS);
+  const [delivery, setDelivery] = useState<OtpDelivery>(otpDelivery.get);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -41,6 +43,7 @@ export function VerifyPhoneScreen() {
     setError(null);
     try {
       await authApi.verifyPhone(value);
+      otpDelivery.clear();
       await markPhoneVerified();
     } catch (e) {
       setError(toApiError(e).message);
@@ -59,8 +62,16 @@ export function VerifyPhoneScreen() {
 
   const resend = async () => {
     try {
-      await authApi.resendOtp();
-      setNotice('We sent a new code.');
+      const d = await authApi.resendOtp();
+      setDelivery(d);
+      // Fix c: "sent" only when the server says so.
+      setNotice(
+        d.sent === false
+          ? null
+          : d.sent === true
+            ? `We sent a new code${d.channel === 'email' ? ' to your email' : d.channel === 'sms' ? ' by SMS' : ''}.`
+            : 'A new code was requested.',
+      );
       setResendIn(RESEND_SECONDS);
     } catch (e) {
       setError(toApiError(e).message);
@@ -94,9 +105,13 @@ export function VerifyPhoneScreen() {
       <View style={styles.header}>
         <Heading>Enter the code</Heading>
         <Subtext>
-          We sent a 6-digit code to {maskPhone(user?.phone)}. It expires in{' '}
-          {appConfig().otpExpiryMinutes} minutes.
+          {otpSubtitle(delivery, maskPhone(user?.phone), appConfig().otpExpiryMinutes)}
         </Subtext>
+        {delivery.testCode ? (
+          <Text style={styles.testCode} testID="otp-test-code">
+            Test server code: {delivery.testCode}
+          </Text>
+        ) : null}
       </View>
 
       <Pressable
@@ -181,4 +196,5 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   muted: { ...typography.secondary, color: colors.textMuted },
+  testCode: { ...typography.bodySemibold, color: colors.navy },
 });
