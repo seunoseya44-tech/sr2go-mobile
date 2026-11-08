@@ -47,7 +47,8 @@ export function parseOtpDelivery(payload: unknown, isStaging = env.isStaging): O
   const sent = flag ?? (sentTo || channel ? true : null);
   const to =
     sentTo && channelOf(sentTo) && !/^(sms|email|phone|whatsapp)$/i.test(sentTo) ? sentTo : null;
-  const raw = [s.otp_code, s.dev_otp, s.debug_otp, nested.code, s.otp]
+  // The server sends the staging test code as `sandbox_code` (app/routers/auth.py: register, resend-otp).
+  const raw = [s.sandbox_code, s.otp_code, s.dev_otp, s.debug_otp, nested.code, s.otp]
     .map((v) => (typeof v === 'number' ? String(v) : text(v)))
     .find((v) => !!v && /^\d{4,8}$/.test(v));
   return { sent, channel, to, testCode: isStaging ? (raw ?? null) : null };

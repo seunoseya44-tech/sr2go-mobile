@@ -25,5 +25,8 @@ describe('phone code delivery (fix c, 7 Nov)', () => {
   it('shows a returned code on staging only', () => {
     expect(parseOtpDelivery({ otp_code: '123456' }, true).testCode).toBe('123456');
     expect(parseOtpDelivery({ otp_code: '123456' }, false).testCode).toBeNull();
+    // the name the server really uses (review of PR #9, 8 Nov 2026)
+    expect(parseOtpDelivery({ sandbox_code: '654321' }, true).testCode).toBe('654321');
+    expect(parseOtpDelivery({ sandbox_code: '654321' }, false).testCode).toBeNull();
   });
 });
