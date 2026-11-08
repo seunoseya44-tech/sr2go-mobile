@@ -37,6 +37,7 @@ import { BoardingPassScreen } from '../screens/booking/BoardingPassScreen';
 import { BookingConfirmationScreen } from '../screens/booking/BookingConfirmationScreen';
 import { BookingStatusScreen } from '../screens/booking/BookingStatusScreen';
 import { BookSeatScreen } from '../screens/booking/BookSeatScreen';
+import { BookingClosedScreen } from '../screens/booking/BookingClosedScreen';
 import { CancelBookingScreen } from '../screens/booking/CancelBookingScreen';
 import { PaymentResultScreen } from '../screens/booking/PaymentResultScreen';
 import { PaymentScreen } from '../screens/booking/PaymentScreen';
@@ -250,6 +251,11 @@ export function RootNavigator() {
       <App.Screen name="RideDetails" component={RideDetailsScreen} />
       <App.Screen name="DriverProfile" component={DriverProfileScreen} />
       <App.Screen name="BookSeat" component={BookSeatScreen} />
+      <App.Screen
+        name="BookingClosed"
+        component={BookingClosedScreen}
+        options={{ gestureEnabled: false }}
+      />
       <App.Screen
         name="BookingStatus"
         component={BookingStatusScreen}

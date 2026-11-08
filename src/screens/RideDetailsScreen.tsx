@@ -12,6 +12,7 @@ import { Button } from '../components/Button';
 import { Screen } from '../components/Screen';
 import { Avatar, Card, Chip, InfoBanner, LinkText, PriceBlock } from '../components/ui';
 import { env } from '../config/env';
+import { bookingClosed, laterRideSearch, placeOf } from '../booking/bookingClosed';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, radius, spacing, typography } from '../theme';
 import { shortDate, vehicleLabel } from '../utils/format';
@@ -219,6 +220,7 @@ export function RideDetailsScreen() {
 
 function BottomBar({ ride }: { ride: Ride }) {
   const navigation = useNavigation<Nav>();
+  const closed = bookingClosed(ride); // the server's booking_closes_at has passed
   return (
     <View style={styles.bottomBar}>
       <PriceBlock
@@ -228,9 +230,21 @@ function BottomBar({ ride }: { ride: Ride }) {
         align="left"
       />
       <Button
-        title={ride.autoApprove ? 'Book seat' : 'Request to book'}
-        onPress={() => navigation.navigate('BookSeat', { rideId: ride.id })}
-        disabled={ride.seatsLeft === 0}
+        title={closed ? 'Booking closed' : ride.autoApprove ? 'Book seat' : 'Request to book'}
+        variant={closed ? 'secondary' : undefined}
+        onPress={() =>
+          closed
+            ? navigation.navigate('BookingClosed', {
+                route: `${ride.originCity ?? ''} → ${ride.destinationCity ?? ''}`,
+                search: laterRideSearch(
+                  placeOf(ride, 'origin'),
+                  placeOf(ride, 'destination'),
+                  ride.departureDate,
+                ),
+              })
+            : navigation.navigate('BookSeat', { rideId: ride.id })
+        }
+        disabled={ride.seatsLeft === 0 && !closed}
         style={styles.bookButton}
         testID="book-button"
       />

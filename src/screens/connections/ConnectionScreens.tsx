@@ -6,6 +6,7 @@ import { useNavigation, useRoute, type RouteProp } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { toApiError } from '../../api/errors';
+import { laterRideSearch, placeOf } from '../../booking/bookingClosed';
 import { connectionsApi, type Connection, type ConnectionOption } from '../../api/social';
 import type { Ride } from '../../api/types';
 import { Banner } from '../../components/Banner';
@@ -259,6 +260,20 @@ export function ConnectionBookScreen() {
     onSuccess: (c) => {
       void queryClient.invalidateQueries({ queryKey: ['connections'] });
       navigation.replace('ConnectionStatus', { connectionId: c.id });
+    },
+    onError: (e) => {
+      const err = toApiError(e);
+      if (err.code === 'booking_closed' && o) {
+        navigation.replace('BookingClosed', {
+          message: err.message,
+          route: `${o.ride1?.originCity ?? ''} → ${o.ride2?.destinationCity ?? ''}`,
+          search: laterRideSearch(
+            placeOf(o.ride1, 'origin'),
+            placeOf(o.ride2, 'destination'),
+            o.ride1?.departureDate,
+          ),
+        });
+      }
     },
   });
   if (!o) return null;

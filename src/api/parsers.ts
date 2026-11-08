@@ -188,6 +188,7 @@ export function parseRide(payload: unknown): Ride | null {
     maxLuggageKg: numeric(s.max_luggage_kg),
     luggageNote: firstString(s, ['luggage_note']),
     notes: firstString(s, ['notes', 'driver_notes']),
+    bookingClosesAt: firstString(s, ['booking_closes_at']),
     raw: s,
   };
 }
