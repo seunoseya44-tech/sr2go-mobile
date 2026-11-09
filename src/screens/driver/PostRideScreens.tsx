@@ -78,6 +78,18 @@ export function PostRideRouteScreen() {
     queryFn: loadPostReadiness,
     staleTime: 0,
   });
+  // 9 Nov 2026 (Martin, "Ride distance is too short" only after Details): ask for the price on THIS step - the server
+  // refuses a trip under its minimum distance here (inside Lagos or Abuja none applies); same query as the Price step
+  const priceProbe = useQuery({
+    queryKey: ['suggest-price', route],
+    queryFn: () => driverApi.suggestPrice(route!),
+    enabled: !!route,
+    retry: false,
+  });
+  const routeRefused =
+    priceProbe.isError && toApiError(priceProbe.error).status === 400
+      ? toApiError(priceProbe.error).message
+      : null;
   const missing = readiness.data?.missing ?? null;
   const recheck = readiness.refetch;
   useFocusEffect(
@@ -106,6 +118,7 @@ export function PostRideRouteScreen() {
 
   const canNext =
     !missing &&
+    !routeRefused &&
     !!route &&
     !!form.car.trim() &&
     (!!form.meetingPoint || !!form.ownMeetingPoint.trim());
@@ -124,6 +137,11 @@ export function PostRideRouteScreen() {
       }
     >
       <Steps active={0} />
+      {routeRefused ? (
+        <InfoBanner tone="red" testID="post-route-refused">
+          {routeRefused}
+        </InfoBanner>
+      ) : null}
       {missing ? (
         <View style={styles.missing} testID="post-missing-verification">
           <InfoBanner tone="amber">{readiness.data?.message ?? ''}</InfoBanner>

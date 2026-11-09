@@ -30,6 +30,9 @@ export const ENDPOINTS = {
   alert: (id: string) => `/api/alerts/${id}`,
   reviews: '/api/reviews/',
   reviewsOf: (userId: string) => `/api/reviews/user/${userId}`,
+  // 9 Nov 2026: star ratings on the Reviews page (server release 143)
+  ratingSummary: (userId: string) => `/api/ratings/user/${userId}/summary`,
+  ratingsOf: (userId: string) => `/api/ratings/user/${userId}?context=all`,
   reviewReply: (id: string) => `/api/reviews/${id}/reply`,
   reviewFlag: (id: string) => `/api/reviews/${id}/flag`,
   meetingProposals: (rideId: string) => `/api/rides/${rideId}/meeting-point/proposals`,

@@ -3,6 +3,7 @@
  * alerts, public reviews, meeting-point change and company booking. Every
  * figure and rule comes from the server; the app only shows the answer.
  */
+import { ratingsCount, starsApi } from '../../rating/starSummary';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -217,6 +218,15 @@ export function PublicReviewsScreen() {
     queryKey: ['public-reviews', params.userId],
     queryFn: () => featuresApi.reviews(params.userId),
   });
+  // 9 Nov 2026 (Martin): the star ratings too - they were stored but not shown on this page
+  const stars = useQuery({
+    queryKey: ['star-summary', params.userId],
+    queryFn: () => starsApi.summary(params.userId),
+  });
+  const starNotes = useQuery({
+    queryKey: ['star-comments', params.userId],
+    queryFn: () => starsApi.comments(params.userId),
+  });
   const refresh = () =>
     void queryClient.invalidateQueries({ queryKey: ['public-reviews', params.userId] });
   const reply = useMutation({
@@ -242,6 +252,30 @@ export function PublicReviewsScreen() {
       topBar={{ title: `Reviews${params.name ? ` · ${params.name}` : ''}` }}
     >
       {note ? <Banner tone="info" message={note} onDismiss={() => setNote(null)} /> : null}
+      <Text style={shared.overline}>Star ratings</Text>
+      {stars.data && stars.data.length > 0 ? (
+        stars.data.map((l) => (
+          <View key={l.label} style={styles.row} testID={`stars-${l.label}`}>
+            <Ionicons name="star" size={18} color={colors.brand} />
+            <Text style={[styles.title, styles.flex]}>
+              {l.label}: {l.average.toFixed(1)}
+            </Text>
+            <Text style={shared.subtitle}>{ratingsCount(l.count)}</Text>
+          </View>
+        ))
+      ) : stars.isPending ? null : (
+        <Text style={shared.subtitle}>No star ratings yet.</Text>
+      )}
+      {starNotes.data?.map((c) => (
+        <Card key={`star-${c.id}`}>
+          <Text style={styles.title}>
+            {'★'.repeat(Math.max(0, Math.min(5, c.score)))}
+            {'☆'.repeat(Math.max(0, 5 - Math.min(5, c.score)))}
+          </Text>
+          <Text style={shared.body}>{c.comment}</Text>
+        </Card>
+      ))}
+      <Text style={shared.overline}>Written reviews</Text>
       {reviews.isPending ? <ActivityIndicator color={colors.brand} /> : null}
       {reviews.isError ? <Banner tone="error" message={errorText(reviews.error)} /> : null}
       {s ? (
