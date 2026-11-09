@@ -1,3 +1,4 @@
+import { postReadiness } from '../verification/postReadiness';
 import { kgLabel, kgOptions } from '../components/KgPicker';
 import { BUSY_SCREENS, parseTripsToRate, pickTripToRate, rateParams } from '../rating/ratingPrompt';
 import { clock12, isNightTime } from '../utils/time';
@@ -77,5 +78,27 @@ describe('rating pops up after the trip', () => {
     for (const s of ['Payment', 'PassengerTrip', 'RateTrip', 'DisputeRoom'])
       expect(BUSY_SCREENS.has(s)).toBe(true);
     expect(BUSY_SCREENS.has('Main')).toBe(false);
+  });
+});
+
+describe('Post a ride says what is missing on its first step (Seun, 8 Nov 2026)', () => {
+  it('asks a driver without a bank account to add it first', () => {
+    const r = postReadiness({ identity_verified: true, bank_required: true, bank_verified: false });
+    expect(r.missing).toBe('bank');
+    expect(r.message).toMatch(/Add your bank account/);
+  });
+  it('asks for the identity check before the bank', () => {
+    expect(
+      postReadiness({ identity_verified: false, bank_required: true, bank_verified: false })
+        .missing,
+    ).toBe('identity');
+  });
+  it('lets a fully verified driver go on', () => {
+    expect(
+      postReadiness({ identity_verified: true, bank_required: true, bank_verified: true }),
+    ).toEqual({
+      missing: null,
+      message: null,
+    });
   });
 });

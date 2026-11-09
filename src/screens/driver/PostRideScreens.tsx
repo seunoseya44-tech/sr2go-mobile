@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import {
@@ -34,6 +34,7 @@ import {
   toggleDay,
   weekdayOf,
 } from '../../repeat/repeatRides';
+import { loadPostReadiness } from '../../verification/postReadiness';
 import { clock12, isNightTime } from '../../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -71,6 +72,19 @@ export function PostRideRouteScreen() {
   const route = routeOf(form);
   const [picker, setPicker] = useState<'date' | 'time' | null>(null);
   const profile = useQuery({ queryKey: ['driver-profile'], queryFn: driverApi.profile });
+  // 8 Nov 2026 (Seun's phone): say what is missing on this FIRST step, not after the third
+  const readiness = useQuery({
+    queryKey: ['post-readiness'],
+    queryFn: loadPostReadiness,
+    staleTime: 0,
+  });
+  const missing = readiness.data?.missing ?? null;
+  const recheck = readiness.refetch;
+  useFocusEffect(
+    useCallback(() => {
+      void recheck(); // back from adding the bank account: check again
+    }, [recheck]),
+  );
   const points = useQuery({
     queryKey: ['meeting-points', route],
     queryFn: () => driverApi.meetingPoints(route!),
@@ -91,7 +105,10 @@ export function PostRideRouteScreen() {
   }, [registeredCar, form.car]);
 
   const canNext =
-    !!route && !!form.car.trim() && (!!form.meetingPoint || !!form.ownMeetingPoint.trim());
+    !missing &&
+    !!route &&
+    !!form.car.trim() &&
+    (!!form.meetingPoint || !!form.ownMeetingPoint.trim());
   const dateValue = new Date(`${form.date}T${form.time}:00`);
 
   return (
@@ -107,6 +124,17 @@ export function PostRideRouteScreen() {
       }
     >
       <Steps active={0} />
+      {missing ? (
+        <View style={styles.missing} testID="post-missing-verification">
+          <InfoBanner tone="amber">{readiness.data?.message ?? ''}</InfoBanner>
+          <Button
+            title={missing === 'bank' ? 'Add your bank account' : 'Verify your identity'}
+            onPress={() =>
+              navigation.navigate(missing === 'bank' ? 'KycBank' : 'KycConsent', { next: 'post' })
+            }
+          />
+        </View>
+      ) : null}
       <PlaceRow
         label="From"
         value={form.origin?.name ?? null}
@@ -695,6 +723,7 @@ function WhenField({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   repeatBox: { gap: spacing.sm },
+  missing: { gap: spacing.sm },
   dayRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs },
   prefRow: { gap: spacing.xs },
   carRow: {
