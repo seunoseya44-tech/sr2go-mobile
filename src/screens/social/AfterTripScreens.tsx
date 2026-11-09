@@ -111,6 +111,20 @@ export function RateTripScreen() {
         onChangeText={setComment}
         multiline
       />
+      {/* 9 Nov 2026 (Martin): straight from the rating to the dispute chat, without going through My trips. */}
+      <Button
+        title="Report a problem"
+        variant="secondary"
+        icon="alert-circle-outline"
+        onPress={() =>
+          navigation.navigate('ReportProblem', {
+            bookingId: params.bookingId,
+            route: params.route ?? null,
+            rideId: params.rideId ?? null,
+          })
+        }
+        testID="rate-report-problem"
+      />
       {params.rideId ? (
         <LinkText
           onPress={() =>

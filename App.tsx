@@ -34,6 +34,7 @@ import { clearNavState, loadNavState, saveNavState } from './src/navigation/pers
 // Server release 128: defines the background task that sends the car's position (must load at start).
 import { stopLiveTrip } from './src/trip/liveTrip';
 import { clearPendingTopUps } from './src/wallet/pendingTopUps';
+import { useRatingPrompt } from './src/rating/ratingPrompt';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
@@ -111,6 +112,8 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
   const finishIntro = useCallback(() => setIntroDone(true), []);
   useBoardingBackground(status === 'signedIn', user?.role === 'driver');
   usePushNotifications(status === 'signedIn', openFromPush);
+  // 9 Nov 2026 (Martin): "Rate your trip" pops up after the journey, not only from My trips.
+  useRatingPrompt(status === 'signedIn', true, navigationRef);
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => undefined);

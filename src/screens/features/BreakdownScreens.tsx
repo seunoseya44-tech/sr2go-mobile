@@ -20,7 +20,7 @@ import { Card, Chip, InfoBanner } from '../../components/ui';
 import type { AppStackParamList } from '../../navigation/types';
 import { colors, spacing, typography } from '../../theme';
 import { naira } from '../../utils/format';
-import { lagosDateTime } from '../../utils/time';
+import { lagosDateTime, clock12 } from '../../utils/time';
 import { shared } from '../booking/shared';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -231,7 +231,7 @@ export function RescueScreen() {
                         {c.driverRating != null ? `  ★ ${c.driverRating.toFixed(1)}` : ''}
                       </Text>
                       <Text style={shared.subtitle}>
-                        {lagosDateTime(c.departureTime).time ?? ''}
+                        {clock12(lagosDateTime(c.departureTime).time) ?? ''}
                         {c.seatsLeft != null
                           ? ` · ${c.seatsLeft} seat${c.seatsLeft === 1 ? '' : 's'} left`
                           : ''}

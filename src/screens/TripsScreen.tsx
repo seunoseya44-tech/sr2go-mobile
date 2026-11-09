@@ -32,6 +32,7 @@ import {
   type BookingView,
 } from './booking/shared';
 import { ENDPOINTS } from '../api/client';
+import { clock12 } from '../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 type Tab = 'Upcoming' | 'Completed' | 'Cancelled';
@@ -156,7 +157,7 @@ export function TripsScreen() {
                   <View style={styles.cardTop}>
                     <Text style={styles.when}>
                       {shortDate(c.legs[0]?.ride?.departureDate)} ·{' '}
-                      {c.legs[0]?.ride?.departureTime ?? ''}
+                      {clock12(c.legs[0]?.ride?.departureTime) ?? ''}
                     </Text>
                     <Chip
                       label={c.status.replace(/_/g, ' ')}

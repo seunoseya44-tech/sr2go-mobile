@@ -30,6 +30,12 @@ export interface AppConfig {
   /** Server release 128 (6 Nov): live trip tracking - send the car's position this often, once it moved this far. */
   livePositionSeconds: number;
   livePositionMinMeters: number;
+  /** Server release 140 (9 Nov): the luggage picker's top weight (kg); days a finished trip is offered for rating;
+   * a departure picked from/to these local hours makes Post a ride ask the driver to check the time. */
+  luggagePickerMaxKg: number;
+  ratingPromptDays: number;
+  nightDepartureFromHour: number;
+  nightDepartureToHour: number;
 }
 
 const DEFAULTS: AppConfig = {
@@ -52,6 +58,10 @@ const DEFAULTS: AppConfig = {
   walletWithdrawEnabled: false,
   livePositionSeconds: 10,
   livePositionMinMeters: 25,
+  luggagePickerMaxKg: 20,
+  ratingPromptDays: 7,
+  nightDepartureFromHour: 22,
+  nightDepartureToHour: 5,
 };
 
 let current: AppConfig = { ...DEFAULTS };
@@ -90,6 +100,10 @@ export async function loadAppConfig(): Promise<AppConfig> {
       walletWithdrawEnabled: bool(s.wallet_withdraw_enabled, current.walletWithdrawEnabled),
       livePositionSeconds: num(s.live_position_seconds, current.livePositionSeconds),
       livePositionMinMeters: num(s.live_position_min_meters, current.livePositionMinMeters),
+      luggagePickerMaxKg: num(s.luggage_picker_max_kg, current.luggagePickerMaxKg),
+      ratingPromptDays: num(s.rating_prompt_days, current.ratingPromptDays),
+      nightDepartureFromHour: num(s.night_departure_from_hour, current.nightDepartureFromHour),
+      nightDepartureToHour: num(s.night_departure_to_hour, current.nightDepartureToHour),
     };
   } catch {
     // keep defaults / last values

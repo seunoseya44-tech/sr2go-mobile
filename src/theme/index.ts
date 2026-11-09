@@ -28,6 +28,8 @@ export const colors = {
   /** Camera / scanner screens (review 1 Nov: were typed in 4 screens). */
   cameraBackground: '#1F2A3C',
   textOnDarkMuted: '#B8C4D4',
+  /** 9 Nov 2026: the dimmed backdrop behind a bottom sheet (luggage picker). */
+  scrim: 'rgba(0,0,0,0.35)',
 
   danger: '#E11D48',
   dangerPressed: '#BE123C',

@@ -9,6 +9,7 @@ import { toApiError } from '../../api/errors';
 import { companionsApi, type CompanionInvite, type PersonLookup } from '../../api/social';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
+import { KgPicker } from '../../components/KgPicker';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { Avatar, Card, Chip, InfoBanner, ListRow } from '../../components/ui';
@@ -149,13 +150,13 @@ export function CompanionInvitesScreen() {
     queryFn: companionsApi.list,
     refetchInterval: 30_000,
   });
-  const [luggage, setLuggage] = useState<Record<string, { kg: string; desc: string }>>({});
+  const [luggage, setLuggage] = useState<Record<string, { kg: number | null; desc: string }>>({});
   const [note, setNote] = useState<{ tone: 'error' | 'info'; message: string } | null>(null);
   const act = useMutation({
     mutationFn: (v: { id: string; action: 'accept' | 'decline' }) =>
       v.action === 'accept'
         ? companionsApi.accept(v.id, {
-            luggageKg: luggage[v.id]?.kg ? Number(luggage[v.id]!.kg) : null,
+            luggageKg: luggage[v.id]?.kg ?? null,
             luggageDescription: luggage[v.id]?.desc ?? '',
           })
         : companionsApi.decline(v.id),
@@ -199,27 +200,22 @@ export function CompanionInvitesScreen() {
       </Text>
       {c.status === 'pending' ? (
         <>
-          <View style={styles.twoUp}>
-            <View style={styles.flex}>
-              <TextField
-                label="Luggage (kg)"
-                keyboardType="numeric"
-                value={luggage[c.id]?.kg ?? ''}
-                onChangeText={(kg) =>
-                  setLuggage((l) => ({ ...l, [c.id]: { kg, desc: l[c.id]?.desc ?? '' } }))
-                }
-              />
-            </View>
-            <View style={styles.flex}>
-              <TextField
-                label="Description"
-                value={luggage[c.id]?.desc ?? ''}
-                onChangeText={(desc) =>
-                  setLuggage((l) => ({ ...l, [c.id]: { kg: l[c.id]?.kg ?? '', desc } }))
-                }
-              />
-            </View>
-          </View>
+          <KgPicker
+            value={luggage[c.id]?.kg ?? null}
+            onChange={(kg) =>
+              setLuggage((l) => ({ ...l, [c.id]: { kg, desc: l[c.id]?.desc ?? '' } }))
+            }
+            testID={`companion-luggage-${c.id}`}
+          />
+          {luggage[c.id]?.kg ? (
+            <TextField
+              label="What are you bringing?"
+              value={luggage[c.id]?.desc ?? ''}
+              onChangeText={(desc) =>
+                setLuggage((l) => ({ ...l, [c.id]: { kg: l[c.id]?.kg ?? null, desc } }))
+              }
+            />
+          ) : null}
           <View style={styles.twoUp}>
             <Button
               title="Decline"

@@ -20,7 +20,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { repeatRidesApi, type RepeatRide } from '../../repeat/repeatRides';
 import { colors, radius, spacing, typography } from '../../theme';
 import { naira, shortDate } from '../../utils/format';
-import { lagosDateTime } from '../../utils/time';
+import { lagosDateTime, clock12 } from '../../utils/time';
 import { shared } from '../booking/shared';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -84,7 +84,7 @@ function RepeatCard({ ride }: { ride: RepeatRide }) {
         <Chip label={paused ? 'Paused' : 'Active'} tone={paused ? 'amber' : 'blue'} />
       </View>
       <Text style={styles.when}>
-        {ride.daysText} at {ride.time}
+        {ride.daysText} at {clock12(ride.time)}
       </Text>
       <Text style={shared.subtitle}>
         {[
@@ -106,7 +106,7 @@ function RepeatCard({ ride }: { ride: RepeatRide }) {
             return (
               <Text key={n.rideId} style={styles.nextLine}>
                 {shortDate(n.departureTime)}
-                {t.time ? `, ${t.time}` : ''} · {n.seatsBooked} booked
+                {t.time ? `, ${clock12(t.time)}` : ''} · {n.seatsBooked} booked
               </Text>
             );
           })}

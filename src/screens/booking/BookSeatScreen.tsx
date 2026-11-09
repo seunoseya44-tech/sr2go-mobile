@@ -10,6 +10,7 @@ import { ridesApi } from '../../api/rides';
 import { laterRideSearch, placeOf } from '../../booking/bookingClosed';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
+import { KgPicker } from '../../components/KgPicker';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import { Checkbox, InfoBanner, Stepper } from '../../components/ui';
@@ -36,7 +37,7 @@ export function BookSeatScreen() {
   const [frontSeat, setFrontSeat] = useState(false);
   const [note, setNote] = useState('');
   const [address, setAddress] = useState('');
-  const [luggageKg, setLuggageKg] = useState('');
+  const [luggageKg, setLuggageKg] = useState<number | null>(null);
   const [luggageDesc, setLuggageDesc] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [kycRequired, setKycRequired] = useState(false);
@@ -45,13 +46,8 @@ export function BookSeatScreen() {
   const seatsLeft = r?.seatsLeft ?? 7;
   const maxChildren = Math.max(0, Math.min(6, seatsLeft - 1));
   const maxKg = r?.maxLuggageKg ?? null;
-  const kg = luggageKg.trim() === '' ? null : Number(luggageKg);
-  const luggageError =
-    kg != null && (!Number.isFinite(kg) || kg < 0)
-      ? 'Enter a number'
-      : kg != null && maxKg != null && kg > maxKg
-        ? `This driver allows up to ${maxKg} kg`
-        : undefined;
+  // 9 Nov 2026 (Martin): chosen from a list (KgPicker), never above the driver's limit - nothing to type wrong.
+  const kg = luggageKg;
 
   const create = useMutation({
     mutationFn: () =>
@@ -109,7 +105,7 @@ export function BookSeatScreen() {
           }}
           loading={create.isPending}
           loadingTitle="Sending…"
-          disabled={!r || !!luggageError}
+          disabled={!r}
           testID="submit-booking"
         />
       }
@@ -174,26 +170,15 @@ export function BookSeatScreen() {
         value={address}
         onChangeText={setAddress}
       />
-      <View style={styles.twoUp}>
-        <View style={styles.flex}>
-          <TextField
-            label="Luggage (kg)"
-            value={luggageKg}
-            onChangeText={setLuggageKg}
-            keyboardType="numeric"
-            helper={maxKg != null ? `max ${maxKg}` : undefined}
-            error={luggageError}
-          />
-        </View>
-        <View style={styles.flex}>
-          <TextField
-            label="Description"
-            placeholder="1 travel bag"
-            value={luggageDesc}
-            onChangeText={setLuggageDesc}
-          />
-        </View>
-      </View>
+      <KgPicker value={luggageKg} onChange={setLuggageKg} rideMax={maxKg} testID="book-luggage" />
+      {luggageKg ? (
+        <TextField
+          label="What are you bringing?"
+          placeholder="1 travel bag"
+          value={luggageDesc}
+          onChangeText={setLuggageDesc}
+        />
+      ) : null}
     </Screen>
   );
 }

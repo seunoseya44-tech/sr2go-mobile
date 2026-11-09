@@ -32,3 +32,23 @@ export function lagosDateTime(value: string | null | undefined): {
   if (/^\d{1,2}:\d{2}/.test(s)) return { date: null, time: s.padStart(5, '0').slice(0, 5) };
   return { date: null, time: null };
 }
+
+/**
+ * 9 Nov 2026 (Martin): times as Nigerians read them - "07:00" -> "7:00 AM", "00:00" -> "12:00 AM", "13:30" ->
+ * "1:30 PM". For DISPLAY only: the data keeps "HH:MM" (boarding and booking code compute with it).
+ */
+export function clock12(hhmm: string | null | undefined): string | null {
+  if (!hhmm) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return hhmm;
+  const h = Number(m[1]);
+  if (h > 23) return hhmm;
+  return `${h % 12 || 12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+/** True when "HH:MM" falls in the night window [fromHour, toHour) that wraps midnight (e.g. 22 -> 5). */
+export function isNightTime(hhmm: string, fromHour: number, toHour: number): boolean {
+  const h = Number(hhmm.split(':')[0]);
+  if (!Number.isFinite(h)) return false;
+  return fromHour > toHour ? h >= fromHour || h < toHour : h >= fromHour && h < toHour;
+}
