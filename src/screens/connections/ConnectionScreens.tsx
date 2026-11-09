@@ -11,6 +11,7 @@ import { connectionsApi, type Connection, type ConnectionOption } from '../../ap
 import type { Ride } from '../../api/types';
 import { Banner } from '../../components/Banner';
 import { Button } from '../../components/Button';
+import { KgPicker } from '../../components/KgPicker';
 import { Screen } from '../../components/Screen';
 import { TextField } from '../../components/TextField';
 import {
@@ -28,6 +29,7 @@ import { colors, radius, spacing, typography } from '../../theme';
 import { shortDate, vehicleLabel } from '../../utils/format';
 import { openDirections } from '../RideDetailsScreen';
 import { mmss, ResultIcon, shared, useCountdown } from '../booking/shared';
+import { clock12 } from '../../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -50,7 +52,7 @@ export function ConnectionCard({
 }) {
   const leg = (r: Ride | null, label: string) => (
     <View style={styles.leg}>
-      <Text style={styles.legTime}>{r?.departureTime ?? '—'}</Text>
+      <Text style={styles.legTime}>{clock12(r?.departureTime) ?? '—'}</Text>
       <View style={styles.flex}>
         <Text style={shared.subtitle}>{label}</Text>
         <View style={styles.row}>
@@ -112,7 +114,7 @@ export function ConnectionDetailsScreen() {
       <View style={styles.node}>
         <Text style={shared.overline}>{label}</Text>
         <View style={styles.card}>
-          <Text style={styles.legTime}>Departs {r.departureTime}</Text>
+          <Text style={styles.legTime}>Departs {clock12(r.departureTime)}</Text>
           <View style={styles.row}>
             <Avatar name={r.driverName} size={40} verified={r.driverVerified} />
             <View style={styles.flex}>
@@ -217,7 +219,7 @@ export function ConnectionDetailsScreen() {
           <View style={styles.row}>
             <Ionicons name="time-outline" size={18} color={colors.navy} />
             <Text style={styles.body}>
-              Your next ride leaves at {o.ride2?.departureTime ?? '—'}
+              Your next ride leaves at {clock12(o.ride2?.departureTime) ?? '—'}
             </Text>
           </View>
         </View>
@@ -244,8 +246,13 @@ export function ConnectionBookScreen() {
   const [frontSeat, setFrontSeat] = useState(false);
   const [note, setNote] = useState('');
   const [address, setAddress] = useState('');
-  const [luggageKg, setLuggageKg] = useState('');
+  const [luggageKg, setLuggageKg] = useState<number | null>(null);
   const [luggageDesc, setLuggageDesc] = useState('');
+  // 9 Nov 2026: one weight for both rides, so never above the smaller of the two drivers' limits
+  const limits = [o?.ride1?.maxLuggageKg, o?.ride2?.maxLuggageKg].filter(
+    (x): x is number => x != null,
+  );
+  const rideMax = limits.length ? Math.min(...limits) : null;
   const create = useMutation({
     mutationFn: () =>
       connectionsApi.create({
@@ -254,7 +261,7 @@ export function ConnectionBookScreen() {
         frontSeatPreferred: frontSeat,
         pickupNote: note.trim(),
         pickupAddress: address.trim(),
-        luggageKg: luggageKg.trim() ? Number(luggageKg) : null,
+        luggageKg,
         luggageDescription: luggageDesc.trim(),
       }),
     onSuccess: (c) => {
@@ -311,19 +318,19 @@ export function ConnectionBookScreen() {
       </Checkbox>
       <TextField label="Note for the drivers" value={note} onChangeText={setNote} multiline />
       <TextField label="Pickup address (optional)" value={address} onChangeText={setAddress} />
-      <View style={styles.twoUp}>
-        <View style={styles.flex}>
-          <TextField
-            label="Luggage (kg)"
-            keyboardType="numeric"
-            value={luggageKg}
-            onChangeText={setLuggageKg}
-          />
-        </View>
-        <View style={styles.flex}>
-          <TextField label="Description" value={luggageDesc} onChangeText={setLuggageDesc} />
-        </View>
-      </View>
+      <KgPicker
+        value={luggageKg}
+        onChange={setLuggageKg}
+        rideMax={rideMax}
+        testID="connection-luggage"
+      />
+      {luggageKg ? (
+        <TextField
+          label="What are you bringing?"
+          value={luggageDesc}
+          onChangeText={setLuggageDesc}
+        />
+      ) : null}
     </Screen>
   );
 }
@@ -403,7 +410,7 @@ export function ConnectionStatusScreen() {
           <View key={leg.bookingId ?? i} style={styles.node}>
             <Text style={shared.overline}>
               Ride {i + 1} · {leg.ride?.originCity ?? ''} → {leg.ride?.destinationCity ?? ''} ·{' '}
-              {leg.ride?.departureTime ?? ''}
+              {clock12(leg.ride?.departureTime) ?? ''}
             </Text>
             <View style={styles.card}>
               <View style={styles.row}>
@@ -443,7 +450,7 @@ export function ConnectionStatusScreen() {
                   </LinkText>
                 ) : null}
                 <Text style={styles.body}>
-                  Your next ride leaves at {c.legs[1]?.ride?.departureTime ?? '—'}
+                  Your next ride leaves at {clock12(c.legs[1]?.ride?.departureTime) ?? '—'}
                 </Text>
               </View>
             ) : null}
@@ -489,7 +496,8 @@ export function ConnectionStatusScreen() {
           <View style={styles.flex}>
             <Text style={styles.semi}>{leg.ride?.driverName ?? `Driver ${i + 1}`}</Text>
             <Text style={shared.subtitle}>
-              {leg.ride?.originCity} → {leg.ride?.destinationCity} · {leg.ride?.departureTime ?? ''}
+              {leg.ride?.originCity} → {leg.ride?.destinationCity} ·{' '}
+              {clock12(leg.ride?.departureTime) ?? ''}
             </Text>
           </View>
           <Chip

@@ -23,6 +23,7 @@ import type { AppStackParamList } from '../../navigation/types';
 import { appMode } from '../../state/mode';
 import { colors, radius, spacing, typography } from '../../theme';
 import { naira, shortDate } from '../../utils/format';
+import { clock12 } from '../../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -140,7 +141,7 @@ function RideCard({ ride: r, onPress }: { ride: DriverRide; onPress: () => void 
     >
       <View style={styles.cardTop}>
         <Text style={styles.when}>
-          {shortDate(r.departureDate)} · {r.departureTime ?? ''}
+          {shortDate(r.departureDate)} · {clock12(r.departureTime) ?? ''}
         </Text>
         <Chip label={chip.label} tone={chip.tone} />
       </View>

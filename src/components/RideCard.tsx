@@ -5,6 +5,7 @@ import type { Ride } from '../api/types';
 import { colors, spacing, typography } from '../theme';
 import { vehicleLabel } from '../utils/format';
 import { Avatar, Card, Chip, PriceBlock } from './ui';
+import { clock12 } from '../utils/time';
 
 /**
  * Ride card (wireframe 8): time, vehicle, seats left, meeting point, driver,
@@ -15,7 +16,7 @@ export function RideCard({ ride, onPress }: { ride: Ride; onPress: () => void })
   return (
     <Card onPress={onPress} testID={`ride-card-${ride.id}`} style={full ? styles.full : undefined}>
       <View style={styles.row}>
-        <Text style={styles.time}>{ride.departureTime ?? '--:--'}</Text>
+        <Text style={styles.time}>{clock12(ride.departureTime) ?? '--:--'}</Text>
         <Text style={styles.vehicle}>{vehicleLabel(ride.vehicleType)}</Text>
         <View style={styles.flex} />
         {ride.seatsLeft != null ? (

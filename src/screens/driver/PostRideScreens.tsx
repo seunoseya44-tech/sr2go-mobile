@@ -34,6 +34,7 @@ import {
   toggleDay,
   weekdayOf,
 } from '../../repeat/repeatRides';
+import { clock12, isNightTime } from '../../utils/time';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -140,12 +141,22 @@ export function PostRideRouteScreen() {
         />
         <WhenField
           label="Departure time"
-          value={form.time}
+          value={clock12(form.time) ?? form.time}
           icon="time-outline"
           onPress={() => setPicker('time')}
           testID="post-time"
         />
       </View>
+      {isNightTime(
+        form.time,
+        appConfig().nightDepartureFromHour,
+        appConfig().nightDepartureToHour,
+      ) ? (
+        // 9 Nov 2026: Okey's rides 32 and 34 were posted for 00:00 by mistake (12 with AM on the clock)
+        <InfoBanner tone="amber" testID="night-departure">
+          {`Leaving at ${clock12(form.time)}${form.time.startsWith('00:') ? ' (midnight)' : ''}? That is at night. Check the time before you post.`}
+        </InfoBanner>
+      ) : null}
       {picker ? (
         <DateTimePicker
           value={dateValue}
@@ -533,7 +544,7 @@ export function PostRideDetailsScreen() {
           <Text style={shared.subtitle}>
             {repeatNoDays
               ? 'Choose at least one day.'
-              : `${daysText(form.repeatDays)} at ${form.time}. ${
+              : `${daysText(form.repeatDays)} at ${clock12(form.time)}. ${
                   form.repeatDays.includes(weekdayOf(form.date))
                     ? `First ride ${chipDate(form.date)}.`
                     : 'First ride on the next chosen day.'
