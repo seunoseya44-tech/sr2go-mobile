@@ -34,7 +34,7 @@ import { clearNavState, loadNavState, saveNavState } from './src/navigation/pers
 // Server release 128: defines the background task that sends the car's position (must load at start).
 import { stopLiveTrip } from './src/trip/liveTrip';
 import { clearPendingTopUps } from './src/wallet/pendingTopUps';
-import { useRatingPrompt } from './src/rating/ratingPrompt';
+import { nudgeRatingPrompt, useRatingPrompt } from './src/rating/ratingPrompt';
 
 const navigationRef = createNavigationContainerRef<AppStackParamList>();
 
@@ -152,7 +152,14 @@ function AppContent({ fontsReady }: { fontsReady: boolean }) {
         ref={navigationRef}
         theme={navigationTheme}
         initialState={status === 'signedIn' ? navState : undefined}
-        onStateChange={status === 'signedIn' ? saveNavState : undefined}
+        onStateChange={
+          status === 'signedIn'
+            ? (state) => {
+                saveNavState(state);
+                nudgeRatingPrompt(); // release 142: e.g. the driver leaving the trip screen after Complete ride
+              }
+            : undefined
+        }
       >
         <RootNavigator />
       </NavigationContainer>

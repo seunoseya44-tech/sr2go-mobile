@@ -43,6 +43,8 @@ export interface Booking {
   payBy: string | null;
   /** ISO; set when the driver accepted. Null = the driver never answered. */
   acceptedAt: string | null;
+  /** Server release 142: when this passenger boarded; "I've arrived" shows only after it. */
+  boardedAt: string | null;
   createdAt: string | null;
   boardingCode: string | null;
   /** Image URL, data URL, or a signed token to draw; null until paid. */
@@ -126,6 +128,7 @@ export function parseBooking(payload: unknown): Booking | null {
     children: num(s.children) ?? 0,
     payBy: first(s, ['pay_by', 'payment_deadline']),
     acceptedAt: first(s, ['accepted_at']),
+    boardedAt: first(s, ['boarded_at']),
     createdAt: first(s, ['created_at']),
     boardingCode: first(s, ['boarding_code']),
     qrCodeData: first(s, ['qr_code_data', 'qr_payload', 'my_qr']),
@@ -356,6 +359,12 @@ export const bookingsApi = {
   },
 
   /** The list is the only read endpoint for a single booking. */
+  /** Server release 142 (9 Nov 2026): the boarded passenger says "I've arrived" - he may rate the driver at once. */
+  async arrived(bookingId: string): Promise<unknown> {
+    const { data } = await http.post(`/api/rides/bookings/${bookingId}/arrived`);
+    return data;
+  },
+
   async get(bookingId: string): Promise<Booking | null> {
     const all = await bookingsApi.mine();
     return all.find((b) => b.id === bookingId) ?? null;
