@@ -159,6 +159,9 @@ export function ScanPassengerScreen() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
+  // Field test 9 Nov: after a failed scan the camera stops until "Scan again";
+  // before, it re-sent the same wrong QR until the server locked the code.
+  const [paused, setPaused] = useState(false);
   const bookings = useQuery({
     queryKey: ['ride-bookings', params.rideId],
     queryFn: () => driverApi.rideBookings(params.rideId),
@@ -269,6 +272,7 @@ export function ScanPassengerScreen() {
     },
     onError: (e) => {
       busy.current = false;
+      setPaused(true);
       const err = toApiError(e);
       setError(err.kind === 'unknown' && e instanceof Error ? e.message : err.message);
     },
@@ -322,12 +326,16 @@ export function ScanPassengerScreen() {
             style={styles.camera}
             facing="back"
             barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={({ data }: { data: string }) => {
-              if (busy.current || check.isPending) return;
-              busy.current = true;
-              setError(null);
-              check.mutate({ qr: data });
-            }}
+            onBarcodeScanned={
+              paused
+                ? undefined
+                : ({ data }: { data: string }) => {
+                    if (busy.current || check.isPending) return;
+                    busy.current = true;
+                    setError(null);
+                    check.mutate({ qr: data });
+                  }
+            }
           />
           <View style={styles.frame} pointerEvents="none" />
           {check.isPending ? (
@@ -342,6 +350,17 @@ export function ScanPassengerScreen() {
           <Button title="Allow camera" onPress={() => void requestPermission()} />
         </View>
       )}
+      {!typing && permission?.granted && paused ? (
+        <Button
+          title="Scan again"
+          icon="scan-outline"
+          onPress={() => {
+            setError(null);
+            setPaused(false);
+          }}
+          testID="scan-again"
+        />
+      ) : null}
       <Text style={[shared.body, styles.light, styles.center]}>
         Point at the passenger&apos;s QR
       </Text>

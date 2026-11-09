@@ -41,6 +41,9 @@ export function ScanDriverScreen() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const busy = useRef(false);
+  // Field test 9 Nov: after a failed scan the camera stops until "Scan again";
+  // before, it re-sent the same wrong QR until the server locked the code.
+  const [paused, setPaused] = useState(false);
   const pack = useQuery({
     queryKey: ['passenger-pack', params.bookingId],
     queryFn: () => packs.passenger(params.bookingId),
@@ -98,6 +101,7 @@ export function ScanDriverScreen() {
     },
     onError: (e) => {
       busy.current = false;
+      setPaused(true);
       const err = toApiError(e);
       setError(err.kind === 'unknown' && e instanceof Error ? e.message : err.message);
     },
@@ -156,12 +160,16 @@ export function ScanDriverScreen() {
             style={styles.camera}
             facing="back"
             barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-            onBarcodeScanned={({ data }: { data: string }) => {
-              if (busy.current || check.isPending) return;
-              busy.current = true;
-              setError(null);
-              check.mutate({ qr: data });
-            }}
+            onBarcodeScanned={
+              paused
+                ? undefined
+                : ({ data }: { data: string }) => {
+                    if (busy.current || check.isPending) return;
+                    busy.current = true;
+                    setError(null);
+                    check.mutate({ qr: data });
+                  }
+            }
           />
           <View style={[styles.frame, error ? styles.frameError : null]} pointerEvents="none" />
           {check.isPending ? (
@@ -176,6 +184,17 @@ export function ScanDriverScreen() {
           <Button title="Allow camera" onPress={() => void requestPermission()} />
         </View>
       )}
+      {!typing && permission?.granted && paused ? (
+        <Button
+          title="Scan again"
+          icon="scan-outline"
+          onPress={() => {
+            setError(null);
+            setPaused(false);
+          }}
+          testID="scan-again"
+        />
+      ) : null}
       {!pack.data && !pack.isPending ? (
         <Text style={[shared.small, styles.light, styles.centerText]}>
           {offline
