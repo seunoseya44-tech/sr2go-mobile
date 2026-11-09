@@ -79,7 +79,8 @@ export function SearchResultsScreen() {
       <Card onPress={() => navigation.goBack()} testID="search-summary" style={styles.summary}>
         <View style={styles.summaryText}>
           <Text style={styles.route}>
-            {search.origin.city} → {search.destination.city}
+            {/* Fix 2 (9 Nov): the places picked, not their city (Mararaba → Kubwa, not Abuja → Abuja). */}
+            {search.origin.name} → {search.destination.name}
           </Text>
           <Text style={styles.meta}>
             {shortDate(search.date)} · {seatsLabel}
