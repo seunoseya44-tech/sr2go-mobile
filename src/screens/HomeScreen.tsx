@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,7 +24,7 @@ import { env } from '../config/env';
 import type { AppStackParamList } from '../navigation/types';
 import { searchForm, useSearchForm } from '../state/searchForm';
 import { colors, radius, spacing, TAP, typography } from '../theme';
-import { addDays, chipDate, displayName, greeting, initials } from '../utils/format';
+import { addDays, chipDate, displayName, greeting, initials, isoDate } from '../utils/format';
 import { BrandLogo } from '../components/BrandLogo';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -55,6 +57,8 @@ export function HomeScreen() {
   const { user } = useAuth();
   const navigation = useNavigation<Nav>();
   const form = useSearchForm();
+  const [pickDate, setPickDate] = useState(false);
+  const atToday = form.date <= isoDate();
   const ticker = useQuery({
     queryKey: ['ticker'],
     queryFn: ridesApi.ticker,
@@ -155,22 +159,51 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.chipsRow}>
+          {/* Fix 1 (9 Nov): "‹ date ›". The date opens the calendar; "‹" stops at today. */}
           <View style={styles.dateChips}>
+            <Pressable
+              onPress={() => searchForm.set({ date: addDays(form.date, -1) })}
+              disabled={atToday}
+              accessibilityRole="button"
+              accessibilityLabel="Previous day"
+              accessibilityState={{ disabled: atToday }}
+              style={styles.dateArrow}
+              testID="date-prev"
+            >
+              <Ionicons
+                name="chevron-back"
+                size={20}
+                color={atToday ? colors.disabledText : colors.navy}
+              />
+            </Pressable>
             <Chip
               label={chipDate(form.date)}
               icon="calendar-outline"
               tone="grey"
-              onPress={() => searchForm.set({ date: addDays(form.date, 1) })}
+              onPress={() => setPickDate(true)}
               testID="date-chip"
             />
             <Pressable
-              onPress={() => searchForm.set({ date: addDays(form.date, -1) })}
-              accessibilityLabel="Previous day"
+              onPress={() => searchForm.set({ date: addDays(form.date, 1) })}
+              accessibilityRole="button"
+              accessibilityLabel="Next day"
               style={styles.dateArrow}
+              testID="date-next"
             >
-              <Ionicons name="chevron-back" size={16} color={colors.textMuted} />
+              <Ionicons name="chevron-forward" size={20} color={colors.navy} />
             </Pressable>
           </View>
+          {pickDate ? (
+            <DateTimePicker
+              value={new Date(`${form.date}T12:00:00`)}
+              mode="date"
+              minimumDate={new Date()}
+              onChange={(_event: unknown, d?: Date) => {
+                setPickDate(false);
+                if (d) searchForm.set({ date: isoDate(d) });
+              }}
+            />
+          ) : null}
           <View style={styles.seatsRow}>
             <Ionicons name="person-outline" size={16} color={colors.textMuted} />
             <Stepper
