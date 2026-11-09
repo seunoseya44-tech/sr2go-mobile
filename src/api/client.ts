@@ -119,7 +119,8 @@ export const ENDPOINTS = {
   rideMessages: (rideId: string) => `/api/rides/${rideId}/messages`,
   tundeChat: '/api/tunde/chat',
   ratings: '/api/ratings/',
-  ratingsToRate: '/api/ratings/to-rate', // 9 Nov 2026: finished trips the passenger has not rated
+  ratingsToRate: '/api/ratings/to-rate',
+  ratingsPassengersToRate: '/api/ratings/passengers-to-rate', // release 142: the driver's side // 9 Nov 2026: finished trips the passenger has not rated
   disputes: '/api/disputes/',
   disputesMine: '/api/disputes/mine',
   disputeRooms: '/api/disputes/rooms',

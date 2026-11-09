@@ -24,6 +24,7 @@ import { shortDate } from '../../utils/format';
 import { openDirections } from '../RideDetailsScreen';
 import { readEmergencyContact } from '../profile/ProfileScreens';
 import { bookingView, rateTripParams, shared } from '../booking/shared';
+import { parseTripsToRate, rateParams } from '../../rating/ratingPrompt';
 import { lagosDateTime, clock12 } from '../../utils/time';
 import { routeApi } from '../../api/route';
 
@@ -43,6 +44,14 @@ export function PassengerTripScreen() {
     refetchInterval: 20_000, // 6 Nov: see the end of the trip within ~20 s, to ask for the rating
   });
   const b = booking.data ?? null;
+  // Release 142: "I've arrived" -> the rating screen at once (the server allows it once he has boarded)
+  const arrived = useMutation({
+    mutationFn: () => bookingsApi.arrived(params.bookingId),
+    onSuccess: (data) => {
+      const trip = parseTripsToRate([data])[0];
+      if (trip) navigation.replace('RateTrip', rateParams(trip));
+    },
+  });
   // Field test 6 Nov 2026: the driver was asked to rate at the end of the trip, the passenger was not. When the
   // trip ends while this screen is open (or it was opened from the ride-completed push), go to "Rate your driver",
   // the same moment the driver rates his passengers.
@@ -343,6 +352,33 @@ export function PassengerTripScreen() {
           One tap alerts SR2Go, your driver and your emergency contact
         </Text>
       </View>
+      {/* Release 142 (Martin, 9 Nov 2026): the passenger does not wait for the driver's Complete ride to rate the
+          trip or report a problem. */}
+      {b && b.boardedAt && b.status === 'accepted' ? (
+        <Button
+          title="I've arrived"
+          icon="flag-outline"
+          onPress={() => arrived.mutate()}
+          loading={arrived.isPending}
+          testID="ive-arrived"
+        />
+      ) : null}
+      {arrived.isError ? <Banner tone="error" message={toApiError(arrived.error).message} /> : null}
+      {b ? (
+        <Button
+          title="Report a problem"
+          variant="secondary"
+          icon="alert-circle-outline"
+          onPress={() =>
+            navigation.navigate('ReportProblem', {
+              bookingId: b.id,
+              route: `${b.originCity ?? ''} → ${b.destinationCity ?? ''}`,
+              rideId: b.rideId,
+            })
+          }
+          testID="trip-report-problem"
+        />
+      ) : null}
       {rooms.data && rooms.data.length > 0 ? (
         <Button
           title="Disputes"

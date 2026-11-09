@@ -8,6 +8,7 @@
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import type { NavigationContainerRefWithCurrent } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 
 import { ENDPOINTS, http } from '../api/client';
@@ -34,10 +35,47 @@ export const BUSY_SCREENS = new Set([
   'ReportProblem',
   'DisputeRoom',
   'WriteReview',
+  // release 142: the driver's side - never over boarding, the trip or the photo camera
+  'RatePassengers',
+  'DriverBoarding',
+  'DriverBoardingList',
+  'ScanPassenger',
+  'EvidenceCamera',
+  'ActiveTrip',
 ]);
 
+/** Pushes after which a trip may now be ready to rate (release 142): checked at once, even with the app open. */
+export const RATE_NOW_PUSHES = new Set(['ride_completed']);
+
+export interface RideToRate {
+  rideId: string;
+  route: string;
+}
+
+export function parseRidesToRate(payload: unknown): RideToRate[] {
+  const list = Array.isArray(payload) ? (payload as Record<string, unknown>[]) : [];
+  return list
+    .filter((r) => r && r.ride_id != null && Number(r.passengers_to_rate ?? 0) > 0)
+    .map((r) => ({
+      rideId: String(r.ride_id),
+      route: `${String(r.origin_city ?? '')} → ${String(r.destination_city ?? '')}`,
+    }));
+}
+
 const KEY = 'sr2go_rating_asked';
+const DRIVER_KEY = 'sr2go_rating_asked_rides'; // release 142: rides the driver was offered
 const KEEP = 50;
+const NUDGE_EVERY_MS = 60_000;
+
+/** Release 142: a screen change asks again, at most once a minute (the driver gets no "trip completed" push). */
+let nudge: (() => void) | null = null;
+let lastNudge = 0;
+export function nudgeRatingPrompt(): void {
+  const now = Date.now();
+  if (!nudge || now - lastNudge < NUDGE_EVERY_MS) return;
+  lastNudge = now;
+  nudge();
+}
 
 export function parseTripsToRate(payload: unknown): TripToRate[] {
   const list = Array.isArray(payload) ? (payload as Record<string, unknown>[]) : [];
@@ -69,9 +107,9 @@ export function rateParams(t: TripToRate): AppStackParamList['RateTrip'] {
   };
 }
 
-async function loadAsked(): Promise<string[]> {
+async function loadAsked(key: string = KEY): Promise<string[]> {
   try {
-    const raw = await SecureStore.getItemAsync(KEY);
+    const raw = await SecureStore.getItemAsync(key);
     const v = raw ? (JSON.parse(raw) as unknown) : [];
     return Array.isArray(v) ? v.map(String) : [];
   } catch {
@@ -79,9 +117,9 @@ async function loadAsked(): Promise<string[]> {
   }
 }
 
-async function saveAsked(ids: string[]): Promise<void> {
+async function saveAsked(ids: string[], key: string = KEY): Promise<void> {
   try {
-    await SecureStore.setItemAsync(KEY, JSON.stringify(ids.slice(-KEEP)));
+    await SecureStore.setItemAsync(key, JSON.stringify(ids.slice(-KEEP)));
   } catch {
     // not remembered: at worst the trip is offered once more
   }
@@ -104,11 +142,26 @@ export function useRatingPrompt(
         const { data } = await http.get(ENDPOINTS.ratingsToRate);
         const asked = await loadAsked();
         const trip = pickTripToRate(parseTripsToRate(data), new Set(asked));
-        if (!trip || !nav.isReady()) return;
-        const now = nav.getCurrentRoute()?.name;
-        if (now && BUSY_SCREENS.has(now)) return;
-        await saveAsked([...asked, trip.bookingId]);
-        nav.navigate('RateTrip', rateParams(trip));
+        const busyNow = () => {
+          const r = nav.getCurrentRoute()?.name;
+          return !nav.isReady() || (!!r && BUSY_SCREENS.has(r));
+        };
+        if (trip) {
+          if (busyNow()) return;
+          await saveAsked([...asked, trip.bookingId]);
+          nav.navigate('RateTrip', rateParams(trip));
+          return;
+        }
+        // Release 142: the driver's side - "Rate your passengers" opened only after the arrival photo
+        const rides = await http
+          .get(ENDPOINTS.ratingsPassengersToRate)
+          .then((r) => parseRidesToRate(r.data))
+          .catch(() => [] as RideToRate[]);
+        const askedRides = await loadAsked(DRIVER_KEY);
+        const ride = rides.find((r) => !askedRides.includes(r.rideId));
+        if (!ride || busyNow()) return;
+        await saveAsked([...askedRides, ride.rideId], DRIVER_KEY);
+        nav.navigate('RatePassengers', { rideId: ride.rideId });
       } catch {
         // offline or server busy: ask next time the app comes to the front
       } finally {
@@ -116,12 +169,20 @@ export function useRatingPrompt(
       }
     };
     const first = setTimeout(() => void check(), 1500); // after the first screen has settled
+    nudge = () => void check();
     const sub = AppState.addEventListener('change', (s) => {
       if (s === 'active') void check();
+    });
+    // Release 142: the trip ended while the app is open on another screen - ask now, not on the next return
+    const pushed = Notifications.addNotificationReceivedListener((n) => {
+      const type = String((n.request.content.data ?? {}).type ?? '');
+      if (RATE_NOW_PUSHES.has(type)) setTimeout(() => void check(), 1500);
     });
     return () => {
       clearTimeout(first);
       sub.remove();
+      pushed.remove();
+      nudge = null;
     };
   }, [signedIn, isPassengerApp, nav]);
 }
