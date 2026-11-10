@@ -535,34 +535,46 @@ export function PostRideDetailsScreen() {
       testID="post-ride-details"
       topBar={{ title: 'Post a ride' }}
       footer={
-        <Button
-          title={form.repeat ? 'Save repeat ride' : 'Post ride'}
-          onPress={() => {
-            setError(null);
-            post.mutate();
-          }}
-          disabled={repeatNoDays}
-          loading={post.isPending}
-          loadingTitle={form.repeat ? 'Saving…' : 'Posting…'}
-        />
+        <>
+          {/* 10 Nov field test: the server's reason (e.g. too close to departure) showed at the
+              top of this long screen, out of sight. It now sits right above the button. */}
+          {error ? (
+            <Banner
+              tone="error"
+              message={error}
+              onDismiss={() => setError(null)}
+              testID="post-ride-error"
+            />
+          ) : null}
+          {errorCode === 'driver_profile_required' ? (
+            <Button
+              title="Register my car"
+              variant="secondary"
+              onPress={() => navigation.navigate('VehicleProfile')}
+            />
+          ) : null}
+          {errorCode === 'driver_not_approved' ? (
+            <Button
+              title="Check my review"
+              variant="secondary"
+              onPress={() => navigation.navigate('DriverReview')}
+            />
+          ) : null}
+          <Button
+            title={form.repeat ? 'Save repeat ride' : 'Post ride'}
+            onPress={() => {
+              setError(null);
+              setErrorCode(null);
+              post.mutate();
+            }}
+            disabled={repeatNoDays}
+            loading={post.isPending}
+            loadingTitle={form.repeat ? 'Saving…' : 'Posting…'}
+          />
+        </>
       }
     >
       <Steps active={2} />
-      {error ? <Banner tone="error" message={error} /> : null}
-      {errorCode === 'driver_profile_required' ? (
-        <Button
-          title="Register my car"
-          variant="secondary"
-          onPress={() => navigation.navigate('VehicleProfile')}
-        />
-      ) : null}
-      {errorCode === 'driver_not_approved' ? (
-        <Button
-          title="Check my review"
-          variant="secondary"
-          onPress={() => navigation.navigate('DriverReview')}
-        />
-      ) : null}
 
       <Toggle
         label="Repeat this ride"
